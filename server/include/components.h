@@ -29,7 +29,7 @@ namespace oac { namespace server {
 class CockpitComponent
 {
 public:
-	
+   
 };
 
 /**
@@ -39,32 +39,32 @@ class FlightControlUnit : public CockpitComponent
 {
 public:
 
-	enum ParameterMode
-	{
-		PARAM_MANAGED,
-		PARAM_SELECTED,
-	};
-	
-	/**
-	 * Obtain speed mode. 
-	 * */
-	virtual ParameterMode speedMode() const = 0;
-	
-	/**
-	 * Obtain selected speed value. If speed is managed, it
-	 * returns an unexpecified value.
-	 */
-	virtual Speed speedValue() const = 0;
-	
-	/**
-	 * Obtain heading mode. 
-	 */
-	virtual ParameterMode headingMode() const = 0;
-	
+   enum ParameterMode
+   {
+      PARAM_MANAGED,
+      PARAM_SELECTED,
+   };
+   
+   /**
+    * Obtain speed mode. 
+    * */
+   virtual ParameterMode speedMode() const = 0;
+   
+   /**
+    * Obtain selected speed value. If speed is managed, it
+    * returns an unexpecified value.
+    */
+   virtual Speed speedValue() const = 0;
+   
+   /**
+    * Obtain heading mode. 
+    */
+   virtual ParameterMode headingMode() const = 0;
+   
    /**
     * Obtain heading value. 
     */
-	virtual Heading headingValue() const = 0;
+   virtual Heading headingValue() const = 0;
    
    /**
     * Obtain target altitude value. 
@@ -86,7 +86,7 @@ public:
    virtual FlightControlUnit* newFlightControlUnit();
 
 };
-	
+   
 }}; //namespace oac::server
 
 #endif
