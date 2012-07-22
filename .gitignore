@@ -10,3 +10,8 @@
 *.lai
 *.la
 *.a
+
+# CodeLite project files
+OACServer.*
+OACServer*.mk
+Debug
