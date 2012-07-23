@@ -51,10 +51,20 @@ public:
    virtual ParameterMode speedMode() const = 0;
    
    /**
+    * Set speed mode. 
+    */
+   virtual void setSpeedMode(ParameterMode mode) = 0;
+   
+   /**
     * Obtain selected speed value. If speed is managed, it
     * returns an unexpecified value.
     */
    virtual Speed speedValue() const = 0;
+   
+   /**
+    * Set speed value. If speed is managed, it has no effect. 
+    */
+   virtual void setSpeedValue(const Speed& speed) = 0;
    
    /**
     * Obtain heading mode. 
@@ -62,14 +72,29 @@ public:
    virtual ParameterMode headingMode() const = 0;
    
    /**
+    * Set heading mode. 
+    */
+   virtual void setHeadingMode(ParameterMode mode) = 0;
+   
+   /**
     * Obtain heading value. 
     */
    virtual Heading headingValue() const = 0;
    
    /**
+    * Set heading value. If heading is managed, it has no effect.
+    */
+   virtual void setHeadingValue(const Heading& heading) = 0;
+   
+   /**
     * Obtain target altitude value. 
     */
-   virtual float targetAltitudeValue() const = 0;
+   virtual unsigned int targetAltitudeValue() const = 0;
+   
+   /**
+    * Set target altitude value. 
+    */
+   virtual void setTargetAltitudeValue(unsigned int value) = 0;
 
 };
 
