@@ -34,6 +34,16 @@ public:
       virtual ~AbstractEvent() {}
    };
    
+   inline virtual ~EventSender()
+   {
+      for (EventSubscriberList::iterator it = _eventSubscribers.begin(),
+           end = _eventSubscribers.end(); it != end; it++)
+      {
+         delete *it;
+      }
+      _eventSubscribers.clear();
+   }
+   
    template <typename Target, typename Event>
    void subscribe(Target* target, void (Target::* callback) (const Event&))
    {
