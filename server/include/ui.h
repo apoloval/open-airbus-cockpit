@@ -23,6 +23,7 @@
 #include <wx/spinctrl.h>
 
 #include "components.h"
+#include "test.h"
 
 namespace oac { namespace server {
 
@@ -60,15 +61,27 @@ class TestFCUController : public wxEvtHandler
 {
 public:
 
-   inline TestFCUController(TestFCUWindow* window, FlightControlUnit* fcu) :
-      _window(window), _fcu(fcu)
-   {
-   }
+   TestFCUController(TestFCUWindow* window);
 
 private:
 
 	TestFCUWindow* _window;
    FlightControlUnit* _fcu;
+   
+   void onSpeedModeToggled(
+         const FlightControlUnit::EventSpeedModeToggled& ev);
+   
+   void onSpeedValueChanged(
+         const FlightControlUnit::EventSpeedValueChanged& ev);
+   
+   void onHeadingModeToggled(
+         const FlightControlUnit::EventHeadingModeToggled& ev);
+   
+   void onHeadingValueChanged(
+      const FlightControlUnit::EventHeadingValueChanged& ev);
+      
+   void onTargetAltitudeChanged(
+      const FlightControlUnit::EventTargetAltitudeValueChanged& ev);
    
 };
 

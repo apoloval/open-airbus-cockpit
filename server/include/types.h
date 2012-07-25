@@ -31,6 +31,8 @@ public:
       UNITS_MACH,
    };
    
+   inline Speed() : _value(0.0f), _units(UNITS_KT) {}
+   
    inline Speed(float value, Units units = UNITS_KT) : 
       _value(value), _units(units)
    {
@@ -52,6 +54,8 @@ private:
 class Heading
 {
 public:
+
+   inline Heading() : _value(0.0f) {}
 
    inline Heading(float value) : _value(value)
    { this->normalise(); }

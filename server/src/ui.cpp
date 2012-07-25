@@ -111,5 +111,41 @@ TestFCUWindow::toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl)
       ctrl.Enable();
    }
 }
+
+TestFCUController::TestFCUController(TestFCUWindow* window) :
+   _window(window), _fcu(new TestFlightControlUnit())
+{
+   _fcu->subscribe(this, &TestFCUController::onSpeedModeToggled);
+   _fcu->subscribe(this, &TestFCUController::onSpeedValueChanged);
+   _fcu->subscribe(this, &TestFCUController::onHeadingModeToggled);
+   _fcu->subscribe(this, &TestFCUController::onHeadingValueChanged);
+   _fcu->subscribe(this, &TestFCUController::onTargetAltitudeChanged);
+}
+
+void
+TestFCUController::onSpeedModeToggled(
+      const FlightControlUnit::EventSpeedModeToggled& ev)
+{
+}
+
+void
+TestFCUController::onSpeedValueChanged(
+      const FlightControlUnit::EventSpeedValueChanged& ev)
+{}
+   
+void
+TestFCUController::onHeadingModeToggled(
+      const FlightControlUnit::EventHeadingModeToggled& ev)
+{}
+   
+void
+TestFCUController::onHeadingValueChanged(
+      const FlightControlUnit::EventHeadingValueChanged& ev)
+{}
+
+void
+TestFCUController::onTargetAltitudeChanged(
+      const FlightControlUnit::EventTargetAltitudeValueChanged& ev)
+{}
    
 }}; // namespace oac::server

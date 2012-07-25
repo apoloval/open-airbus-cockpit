@@ -28,7 +28,7 @@ IMPLEMENT_APP(ServerApp);
 bool ServerApp::OnInit()
 {
 	_testFCUWindow = new TestFCUWindow();
-   _testFCUController = new TestFCUController(_testFCUWindow, _fcu);
+   _testFCUController = new TestFCUController(_testFCUWindow);
    
 	SetTopWindow(_testFCUWindow);
 	_testFCUWindow->Show();

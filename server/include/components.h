@@ -20,13 +20,14 @@
 #define OAC_SERVER_COMPONENTS_H
 
 #include "types.h"
+#include "events.h"
 
 namespace oac { namespace server {
 
 /**
  * The interface of a cockpit component.
  */
-class CockpitComponent
+class CockpitComponent : public EventSender
 {
 public:
    
@@ -95,6 +96,12 @@ public:
     * Set target altitude value. 
     */
    virtual void setTargetAltitudeValue(unsigned int value) = 0;
+   
+   DECL_EVENT(EventSpeedValueChanged, Speed newValue);
+   DECL_EVENT(EventHeadingValueChanged, Heading newValue);
+   DECL_EVENT(EventSpeedModeToggled, ParameterMode newMode);
+   DECL_EVENT(EventHeadingModeToggled, ParameterMode newMode);
+   DECL_EVENT(EventTargetAltitudeValueChanged, unsigned int newValue);
 
 };
 

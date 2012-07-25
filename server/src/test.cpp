@@ -20,6 +20,32 @@
 
 namespace oac { namespace server {
 
+template<typename Event>
+void
+TestFlightControlUnit::setParameterMode(
+      ParameterMode& parameter, ParameterMode mode)
+{
+   if (parameter != mode)
+   {
+      parameter = mode;
+      Event ev;
+      ev.newMode = mode;
+      this->sendEvent(&ev);
+   }
+}
+
+template <typename Event, typename ValueType>
+void
+TestFlightControlUnit::setParameterValue(
+      ValueType& parameter, const ValueType& value)
+{
+   parameter = value;
+   Event ev;
+   ev.newValue = value;
+   this->sendEvent(&ev);
+}
+
+
 TestFlightControlUnit::TestFlightControlUnit() :
    _speed(180), _speedMode(PARAM_MANAGED),
    _heading(0), _headingMode(PARAM_MANAGED),
@@ -32,7 +58,7 @@ TestFlightControlUnit::speedMode() const
    
 void
 TestFlightControlUnit::setSpeedMode(ParameterMode mode)
-{ _speedMode = mode; }
+{ this->setParameterMode<EventSpeedModeToggled>(_speedMode, mode); }
    
 Speed
 TestFlightControlUnit::speedValue() const
@@ -40,7 +66,7 @@ TestFlightControlUnit::speedValue() const
 
 void
 TestFlightControlUnit::setSpeedValue(const Speed& speed)
-{ _speed = speed; }
+{ this->setParameterValue<EventSpeedValueChanged, Speed>(_speed, speed); }
    
 FlightControlUnit::ParameterMode
 TestFlightControlUnit::headingMode() const
@@ -48,7 +74,7 @@ TestFlightControlUnit::headingMode() const
    
 void
 TestFlightControlUnit::setHeadingMode(ParameterMode mode)
-{ _headingMode = mode; }
+{ this->setParameterMode<EventHeadingModeToggled>(_headingMode, mode); }
    
 Heading
 TestFlightControlUnit::headingValue() const
@@ -56,7 +82,7 @@ TestFlightControlUnit::headingValue() const
 
 void
 TestFlightControlUnit::setHeadingValue(const Heading& heading)
-{ _heading = heading; }
+{ this->setParameterValue<EventHeadingValueChanged, Heading>(_heading, heading); }
    
 unsigned int
 TestFlightControlUnit::targetAltitudeValue() const
@@ -64,6 +90,9 @@ TestFlightControlUnit::targetAltitudeValue() const
 
 void
 TestFlightControlUnit::setTargetAltitudeValue(unsigned int value)
-{ _targetAltitude = value; }
+{ 
+   this->setParameterValue<EventTargetAltitudeValueChanged, unsigned int>(
+         _targetAltitude, value);
+}
 
 }}; // namespace oac::server

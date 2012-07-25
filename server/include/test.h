@@ -56,6 +56,12 @@ private:
    Heading        _heading;
    ParameterMode  _headingMode;
    unsigned int   _targetAltitude;
+   
+   template <typename Event>
+   void setParameterMode(ParameterMode& parameter, ParameterMode mode);
+   
+   template <typename Event, typename ValueType>
+   void setParameterValue(ValueType& parameter, const ValueType& value);
 
 };
    
