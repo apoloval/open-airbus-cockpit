@@ -72,13 +72,31 @@ Win32SerialDevice::~Win32SerialDevice()
    CloseHandle(_handle);
 }
 
+void
+Win32SerialDevice::setBlocking(bool active)
+{
+   SetCommMask(_handle, active ? EV_RXCHAR : 0);
+   _blocking = active;
+}
+
 unsigned int
 Win32SerialDevice::read(void* buf, unsigned int nbytes) 
 throw (IOException)
 {
    DWORD bytesRead;
-   if (!ReadFile(_handle, buf, nbytes, &bytesRead, NULL))
-      throw IOException("error while reading WIN32 serial device");
+   while (true)
+   {
+      if (!ReadFile(_handle, buf, nbytes, &bytesRead, NULL))
+         throw IOException("error while reading WIN32 serial device");      
+         
+      if (!_blocking || (bytesRead > 0 && _blocking))
+         break;
+
+      DWORD event;
+      if (!WaitCommEvent(_handle, &event, NULL))
+         throw IOException(
+            "error while blocked for incoming data from serial device");
+   }
    return bytesRead;
 }
 

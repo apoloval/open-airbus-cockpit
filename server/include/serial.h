@@ -84,10 +84,21 @@ class SerialDevice
 public:
 
    inline virtual ~SerialDevice() {}
+
+   /**
+    * Set this serial device to use blocking IO.
+    */
+   virtual void setBlocking(bool active = true) = 0;
    
+   /**
+    * Read nbytes from serial device and copy them into buf. 
+    */
    virtual unsigned int read(void* buf, unsigned int nbytes) 
          throw (IOException) = 0;
 
+   /**
+    * Write nbytes obtained from given buffer to this serial device.
+    */
    virtual void write(void* buf, unsigned int nbytes) 
          throw (IOException) = 0;
 };
@@ -102,6 +113,8 @@ public:
    
    virtual ~Win32SerialDevice();
 
+   virtual void setBlocking(bool active = true);
+
    virtual unsigned int read(void* buf, unsigned int nbytes) 
          throw (IOException);
 
@@ -111,6 +124,7 @@ public:
 private:
 
    HANDLE _handle;
+   bool   _blocking;
 };
 
 class Win32SerialDeviceManager : public SerialDeviceManager
