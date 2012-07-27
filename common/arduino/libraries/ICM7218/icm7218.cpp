@@ -25,7 +25,11 @@
 #define HEXCODEB_PIN(ci)   (ci->_idPin[6])
 #define DATACOMING_PIN(ci) (ci->_idPin[7])
 
-ICM7218::ICM7218() {}
+ICM7218::ICM7218()
+{
+  for (int i = 0; i < 8; i++)
+    _cache[i] = 0xff;
+}
 
 void
 ICM7218::setIdPins(int idPin[8])
@@ -117,15 +121,19 @@ ICM7218::DisplayGroup::displayNumber(unsigned long number)
   digitalWrite(_parent->_modePin, LOW);
   for (int i = 0; i < 8; i++)
   {
-    byte digit = 0x0f;
+    byte digit;
     if (_displays[i] <= 8)
       digit = (number / long(pow(10, _displays[i]))) % 10;
+    else
+      digit = _parent->_cache[i];
     digitalWrite(_parent->_idPin[0], B0001 & digit);
     digitalWrite(_parent->_idPin[1], B0010 & digit);
     digitalWrite(_parent->_idPin[2], B0100 & digit);
     digitalWrite(_parent->_idPin[3], B1000 & digit);
     digitalWrite(_parent->_idPin[7], HIGH);
-    _parent->sendWrite();    
+    _parent->sendWrite();  
+  
+    _parent->_cache[i] = digit;  
   }
 }
 
