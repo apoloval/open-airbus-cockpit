@@ -18,7 +18,100 @@
 
 #include "ui.h"
 
+#include "serial.h"
+
 namespace oac { namespace server {
+   
+ConnectionWindow::ConnectionWindow(ConnectionController* controller) :
+   wxFrame(NULL, -1, wxT("Open Airbus Cockpit - Connection List"),
+           wxDefaultPosition, wxDefaultSize,
+           wxMINIMIZE_BOX | wxCLOSE_BOX |wxCAPTION),
+   _controller(controller)
+{
+   wxBoxSizer* rootSizer = new wxBoxSizer(wxVERTICAL);
+   
+   wxStaticBoxSizer* fcuSizer = new wxStaticBoxSizer(
+      wxHORIZONTAL, this, "Flight Control Unit");
+   fcuSizer->Add(
+         new wxStaticText(this, wxID_ANY, wxT("Status: "),
+                          wxDefaultPosition, wxSize(50, -1),
+                          wxALIGN_RIGHT),
+         0, wxALL, 10);
+   _fcuStatusText = new wxStaticText(this, wxID_ANY, wxT("disconnected"),
+                          wxDefaultPosition, wxSize(50, -1),
+                          wxALIGN_LEFT);
+   fcuSizer->Add(_fcuStatusText, 0, wxALL, 10);
+   
+   _fcuConnectButton = new wxButton(this, FCU_CONNECT, wxT("Connect"));		
+   fcuSizer->Add(_fcuConnectButton, 0, wxEXPAND | wxALL, 10);
+   
+   rootSizer->Add(fcuSizer, 0, wxALIGN_CENTER |wxALL, 20);
+   
+   this->SetSizer(rootSizer);
+
+   /* Connect wx events. */
+   this->Connect(FCU_CONNECT, wxEVT_COMMAND_BUTTON_CLICKED,
+                 wxCommandEventHandler(ConnectionWindow::onFCUConnectPressed));
+}
+
+void
+ConnectionWindow::onFCUConnectPressed(wxCommandEvent& event)
+{
+   if (!_controller->isFCUConnected())
+      this->connectFCU();
+}
+
+void
+ConnectionWindow::connectFCU()
+{
+   try
+   {
+      SerialDeviceInfo dev;
+      if (this->selectSerialDevice(dev))
+      {
+         _fcuConnectButton->Disable();
+         _fcuStatusText->SetLabel(wxT("connecting"));
+      }
+   }
+   catch (NotFoundException&)
+   {
+      wxMessageDialog* dialog = new wxMessageDialog(this, 
+         wxT("No serial device was found. Please check that "
+         "Arduino drivers are successfully installed"));
+      dialog->ShowModal();
+      delete dialog;
+   }
+}
+
+bool
+ConnectionWindow::selectSerialDevice(SerialDeviceInfo& dev)
+throw (NotFoundException)
+{
+   SerialDeviceInfoArray devs;
+   _controller->listSerialDevices(devs);
+   if (devs.size() == 0)
+      throw NotFoundException("no serial device was found");
+
+   wxArrayString choices;
+   for (unsigned int i = 0; i < devs.size(); i++)
+      choices.Add(devs[i].name);
+   wxSingleChoiceDialog* dialog = new wxSingleChoiceDialog(
+         this, wxT("Please choice a USB/Serial port"), 
+         wxT("Port selection"), choices);
+   if (dialog->ShowModal() == wxID_CANCEL)
+      return false;
+   dev = devs[dialog->GetSelection()];
+   return true;
+}
+
+ConnectionController::ConnectionController() : 
+   _fcuConnected(false), 
+   _serialDeviceManager(&SerialDeviceManager::getDefault())
+{}
+
+void
+ConnectionController::listSerialDevices(SerialDeviceInfoArray& devs)
+{ _serialDeviceManager->listSerialDevices(devs); }
 
 TestFCUWindow::TestFCUWindow() : 
    wxFrame(NULL, -1, wxT("Open Airbus Cockpit"), 
@@ -76,7 +169,7 @@ TestFCUWindow::TestFCUWindow() :
    this->Connect(TOGGLE_SPEED, wxEVT_COMMAND_BUTTON_CLICKED,
                  wxCommandEventHandler(TestFCUWindow::onToggleSpeedMode));
    this->Connect(TOGGLE_HEADING, wxEVT_COMMAND_BUTTON_CLICKED,
-                 wxCommandEventHandler(TestFCUWindow::onToggleHeadingMode));
+                 wxCommandEventHandler(TestFCUWindow::onToggleHeadingMode));   
 }
 
 void

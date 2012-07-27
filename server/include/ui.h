@@ -22,10 +22,58 @@
 #include <wx/wx.h>
 #include <wx/spinctrl.h>
 
+#include "exception.h"
 #include "components.h"
+#include "serial.h"
 #include "test.h"
 
 namespace oac { namespace server {
+
+class ConnectionController;
+
+class ConnectionWindow : public wxFrame
+{
+public:
+
+   enum IDs
+   {
+      FCU_CONNECT,
+   };
+
+   ConnectionWindow(ConnectionController* controller);
+   
+private:
+
+   ConnectionController*   _controller;
+
+   wxStaticText*           _fcuStatusText;
+   wxButton*               _fcuConnectButton;
+   
+   void onFCUConnectPressed(wxCommandEvent& event);
+   
+   bool selectSerialDevice(SerialDeviceInfo& dev) throw (NotFoundException);
+   
+   void connectFCU();
+
+};
+
+class ConnectionController
+{
+public:
+
+   ConnectionController();
+
+   inline bool isFCUConnected() const
+   { return _fcuConnected; }
+   
+   void listSerialDevices(SerialDeviceInfoArray& devs);
+
+private:
+
+   bool _fcuConnected;
+   SerialDeviceManager* _serialDeviceManager;
+
+};
 
 class TestFCUWindow : public wxFrame
 {
