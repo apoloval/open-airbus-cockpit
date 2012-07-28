@@ -28,66 +28,27 @@
 #include "test.h"
 
 namespace oac { namespace server {
-
-class ConnectionController;
-
-class ConnectionWindow : public wxFrame
-{
-public:
-
-   enum IDs
-   {
-      FCU_CONNECT,
-   };
-
-   ConnectionWindow(ConnectionController* controller);
    
-private:
-
-   ConnectionController*   _controller;
-
-   wxStaticText*           _fcuStatusText;
-   wxButton*               _fcuConnectButton;
-   
-   void onFCUConnectPressed(wxCommandEvent& event);
-   
-   bool selectSerialDevice(SerialDeviceInfo& dev) throw (NotFoundException);
-   
-   void connectFCU();
-
-};
-
-class ConnectionController
-{
-public:
-
-   ConnectionController();
-
-   inline bool isFCUConnected() const
-   { return _fcuConnected; }
-   
-   void listSerialDevices(SerialDeviceInfoArray& devs);
-
-private:
-
-   bool _fcuConnected;
-   SerialDeviceManager* _serialDeviceManager;
-
-};
-
 class TestFCUWindow : public wxFrame
 {
 public:
 
    enum IDs 
    {
-      TOGGLE_SPEED = 100,
+      WIN          = 100,
+      TOGGLE_SPEED,
       TOGGLE_HEADING,
    };
+   
+   static bool isActiveInstance();
 	
    TestFCUWindow();
    
+   virtual ~TestFCUWindow();
+   
 private:
+
+   static unsigned int _numberOfInstances;
 
    wxButton* _toggleSpeedModeButton;
    bool _toggleSpeedModeState;
@@ -102,18 +63,20 @@ private:
    void onToggleHeadingMode(wxCommandEvent& event);
    
    void toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl);
+   
+   DECLARE_EVENT_TABLE()
 
 };
 
-class TestFCUController : public wxEvtHandler
+class TestFCUController
 {
 public:
 
-   TestFCUController(TestFCUWindow* window);
+   TestFCUController(wxApp* app);
 
 private:
 
-	TestFCUWindow* _window;
+   wxApp* _app;
    FlightControlUnit* _fcu;
    
    void onSpeedModeToggled(
@@ -131,6 +94,80 @@ private:
    void onTargetAltitudeChanged(
       const FlightControlUnit::EventTargetAltitudeValueChanged& ev);
    
+};
+
+class ConnectionController;
+
+class ConnectionWindow : public wxFrame
+{
+public:
+
+   enum IDs
+   {
+      WIN = 200, 
+      FCU_CONNECT,
+      FCU_TEST,
+   };
+
+   ConnectionWindow(wxApp* app, ConnectionController* controller);
+   
+private:
+
+   static wxColour DISCONNECTED_COLOUR;
+   static wxColour CONNECTED_COLOUR;
+
+   wxApp* _app;
+   ConnectionController* _controller;
+
+   struct DeviceControls
+   {
+      wxStaticText*  statusText;
+      wxButton*      connectButton;
+      wxButton*      testButton;
+      wxFrame*       testWindow;
+   };
+   
+   DeviceControls _fcu;
+   
+   wxBoxSizer* initDeviceControls(DeviceControls& ctrls, const wxString& title,
+                                  int connectEvt, int testEvt);
+
+   void onFCUConnectPressed(wxCommandEvent& event);
+   void onFCUTestPressed(wxCommandEvent& event);
+   
+   bool selectSerialDevice(SerialDeviceInfo& dev) throw (NotFoundException);
+   
+   void connectFCU();
+   void disconnectFCU();
+   
+   static void setStatus(DeviceControls& ctrls, bool connected);
+   
+   DECLARE_EVENT_TABLE()
+};
+
+class ConnectionController
+{
+public:
+
+   ConnectionController(wxApp* app);
+
+   inline bool isFCUConnected() const
+   { return _fcuSerialDevice; }
+   
+   void listSerialDevices(SerialDeviceInfoArray& devs);
+   
+   void connectFCU(const SerialDeviceInfo& dev);
+   
+   void disconnectFCU();
+   
+   TestFCUController* createTestFCUController();
+
+private:
+
+   wxApp* _app;
+   SerialDeviceManager* _serialDeviceManager;
+   SerialDevice* _fcuSerialDevice;
+
 };
 
 }}; // namespace oac::server
