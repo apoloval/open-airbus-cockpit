@@ -36,6 +36,8 @@ public:
     
     void displayNumber(unsigned long number);
     
+    void displayDash();
+    
   private:
   
     byte _displays[8];
@@ -53,6 +55,8 @@ public:
   
   void displaySingleDigit(unsigned int  digit, unsigned int  digitValue);
   
+  void displayDigits(byte digits[8]);
+  
 private:
 
   byte _idPin[8];  
@@ -62,6 +66,8 @@ private:
   byte _cache[8];
   
   void sendWrite();  
+  
+  void sendFullDataComing();
 
 };
 

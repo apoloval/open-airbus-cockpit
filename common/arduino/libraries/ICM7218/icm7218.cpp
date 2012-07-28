@@ -27,73 +27,104 @@
 
 ICM7218::ICM7218()
 {
-  for (int i = 0; i < 8; i++)
-    _cache[i] = 0xff;
+   for (int i = 0; i < 8; i++)
+      _cache[i] = 0xff;
 }
 
 void
 ICM7218::setIdPins(int idPin[8])
 {
-  for (int i = 0; i < 8; i++)
-  {
-    _idPin[i] = idPin[i];
-    pinMode(_idPin[i], OUTPUT);
-  }
+   for (int i = 0; i < 8; i++)
+   {
+      _idPin[i] = idPin[i];
+      pinMode(_idPin[i], OUTPUT);
+   }
 }
 
 void
 ICM7218::setModePin(int pin)
 {
-  _modePin = pin;
-  pinMode(_modePin, OUTPUT);
+   _modePin = pin;
+   pinMode(_modePin, OUTPUT);
 }
 
 void
 ICM7218::setWritePin(int pin)
 {
-  _writePin = pin;
-  pinMode(_writePin, OUTPUT);
+   _writePin = pin;
+   pinMode(_writePin, OUTPUT);
   
-  // WRITE must remain high from now on
-  digitalWrite(_writePin, HIGH);
+   // WRITE must remain high from now on
+   digitalWrite(_writePin, HIGH);
 }
 
 void
 ICM7218::displaySingleDigit(unsigned int  digit, unsigned int  digitValue)
 {
-  if (digit < 1 || digit > 8)
-    return;
-  digitalWrite(_modePin, HIGH);
-  digitalWrite(DATACOMING_PIN(this), LOW);
-  digitalWrite(SHUTDOWN_PIN(this), HIGH);
-  digitalWrite(DECODE_PIN(this), LOW);
-  digitalWrite(HEXCODEB_PIN(this), LOW);
-  digitalWrite(_idPin[0], B0001 & (digit - 1));
-  digitalWrite(_idPin[1], B0010 & (digit - 1));
-  digitalWrite(_idPin[2], B0100 & (digit - 1));
-  digitalWrite(_idPin[3], B1000 & (digit - 1));
-  sendWrite();
+   if (digit < 1 || digit > 8)
+      return;
+   digitalWrite(_modePin, HIGH);
+   digitalWrite(DATACOMING_PIN(this), LOW);
+   digitalWrite(SHUTDOWN_PIN(this), HIGH);
+   digitalWrite(DECODE_PIN(this), LOW);
+   digitalWrite(HEXCODEB_PIN(this), LOW);
+   digitalWrite(_idPin[0], B0001 & (digit - 1));
+   digitalWrite(_idPin[1], B0010 & (digit - 1));
+   digitalWrite(_idPin[2], B0100 & (digit - 1));
+   digitalWrite(_idPin[3], B1000 & (digit - 1));
+   sendWrite();
   
-  digitalWrite(_modePin, LOW);
-  digitalWrite(_idPin[0], B0001 & digitValue);
-  digitalWrite(_idPin[1], B0010 & digitValue);
-  digitalWrite(_idPin[2], B0100 & digitValue);
-  digitalWrite(_idPin[3], B1000 & digitValue);
-  sendWrite();  
+   digitalWrite(_modePin, LOW);
+   digitalWrite(_idPin[0], B0001 & digitValue);
+   digitalWrite(_idPin[1], B0010 & digitValue);
+   digitalWrite(_idPin[2], B0100 & digitValue);
+   digitalWrite(_idPin[3], B1000 & digitValue);
+   sendWrite();  
+}
+
+void
+ICM7218::displayDigits(byte digits[8])
+{
+   sendFullDataComing();
+  
+   digitalWrite(_modePin, LOW);
+   for (int i = 0; i < 8; i++)
+   {
+      digitalWrite(_idPin[0], B0001 & digits[i]);
+      digitalWrite(_idPin[1], B0010 & digits[i]);
+      digitalWrite(_idPin[2], B0100 & digits[i]);
+      digitalWrite(_idPin[3], B1000 & digits[i]);
+      digitalWrite(_idPin[7], HIGH);
+      sendWrite();  
+  
+      _cache[i] = digits[i];  
+   }
 }
 
 void
 ICM7218::sendWrite()
 {
-  digitalWrite(_writePin, LOW);
-  digitalWrite(_writePin, HIGH);
+   digitalWrite(_writePin, LOW);
+   digitalWrite(_writePin, HIGH);
+}
+
+void
+ICM7218::sendFullDataComing()
+{
+   digitalWrite(_modePin, HIGH);
+   digitalWrite(DATACOMING_PIN(this), HIGH);
+   digitalWrite(BANKSELECT_PIN(this), HIGH);
+   digitalWrite(SHUTDOWN_PIN(this), HIGH);
+   digitalWrite(DECODE_PIN(this), LOW);
+   digitalWrite(HEXCODEB_PIN(this), LOW);
+   sendWrite();
 }
 
 ICM7218::DisplayGroup::DisplayGroup()
  : _parent(NULL)
 {
-  for (int i = 0; i < 8; i++)
-    _displays[i] = i + 1;
+   for (int i = 0; i < 8; i++)
+      _displays[i] = i + 1;
 }
 
 void
@@ -103,38 +134,32 @@ ICM7218::DisplayGroup::setParent(ICM7218* parent)
 void
 ICM7218::DisplayGroup::setDisplays(int displays[8])
 {
-  for (int i = 0; i < 8; i++)
-    _displays[i] = byte(displays[i]);
+   for (int i = 0; i < 8; i++)
+      _displays[i] = byte(displays[i]);
 }
 
 void
 ICM7218::DisplayGroup::displayNumber(unsigned long number)
 {
-  digitalWrite(_parent->_modePin, HIGH);
-  digitalWrite(DATACOMING_PIN(_parent), HIGH);
-  digitalWrite(BANKSELECT_PIN(_parent), HIGH);
-  digitalWrite(SHUTDOWN_PIN(_parent), HIGH);
-  digitalWrite(DECODE_PIN(_parent), LOW);
-  digitalWrite(HEXCODEB_PIN(_parent), LOW);
-  _parent->sendWrite();
-  
-  digitalWrite(_parent->_modePin, LOW);
-  for (int i = 0; i < 8; i++)
-  {
-    byte digit;
-    if (_displays[i] <= 8)
-      digit = (number / long(pow(10, _displays[i]))) % 10;
-    else
-      digit = _parent->_cache[i];
-    digitalWrite(_parent->_idPin[0], B0001 & digit);
-    digitalWrite(_parent->_idPin[1], B0010 & digit);
-    digitalWrite(_parent->_idPin[2], B0100 & digit);
-    digitalWrite(_parent->_idPin[3], B1000 & digit);
-    digitalWrite(_parent->_idPin[7], HIGH);
-    _parent->sendWrite();  
-  
-    _parent->_cache[i] = digit;  
-  }
+   byte digits[8];
+   
+   for (int i = 0; i < 8; i++)
+   {
+      if (_displays[i] <= 8)
+         digits[i] = (number / long(pow(10, _displays[i]))) % 10;
+      else
+         digits[i] = _parent->_cache[i];
+   }
+   _parent->displayDigits(digits);
+}
+
+void
+ICM7218::DisplayGroup::displayDash()
+{
+   byte digits[8];
+   for (int i = 0; i < 8; i++)
+      digits[i] = (_displays[i] <= 8) ? 0x0a : _parent->_cache[i];
+   _parent->displayDigits(digits);
 }
 
 
