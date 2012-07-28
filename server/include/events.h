@@ -23,8 +23,6 @@
 
 namespace oac { namespace server {
 
-class EventReceiver {};
-   
 class EventSender
 {
 public:
