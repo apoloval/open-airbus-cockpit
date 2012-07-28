@@ -19,6 +19,15 @@
 #ifndef OACSP_H
 #define OACSP_H
 
+#ifndef ARDUINO
+#include <stdint.h>
+
+namespace oac {
+
+typedef uint8_t byte;
+typedef uint16_t word;   
+#endif
+
 struct PingCommand
 {
    byte type;
@@ -126,5 +135,10 @@ enum FCUStatusMask
    MASK_FCU_HDG_MOD  = 0x1000,
    MASK_FCU_VS_MOD   = 0x2000,
 };
+
+#ifndef ARDUINO
+}; // namespace oac
+#endif
+
 
 #endif
