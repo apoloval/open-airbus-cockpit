@@ -26,10 +26,11 @@ bool
 TestFCUWindow::isActiveInstance()
 { return _numberOfInstances; }
 
-TestFCUWindow::TestFCUWindow() : 
+TestFCUWindow::TestFCUWindow(TestFCUController* controller) : 
    wxFrame(NULL, WIN, wxT("Open Airbus Cockpit"), 
            wxDefaultPosition, wxDefaultSize,
            wxMINIMIZE_BOX | wxCLOSE_BOX | wxCAPTION),
+   _controller(controller),
    _toggleSpeedModeState(false),
    _toggleHeadingModeState(false)
 {
@@ -44,7 +45,7 @@ TestFCUWindow::TestFCUWindow() :
    speedModeSizer->Add(speedModeText, 0, wxALL, 10);
    
    _selectedSpeedControl = new wxSpinCtrl(
-         this, wxID_ANY, wxT("200"), 
+         this, SPIN_SPEED, wxT("200"), 
          wxDefaultPosition, wxSize(50, -1));
    speedModeSizer->Add(_selectedSpeedControl, 0, wxEXPAND | wxALL, 10);
    _selectedSpeedControl->SetRange(50, 400);
@@ -65,9 +66,9 @@ TestFCUWindow::TestFCUWindow() :
    headingModeSizer->Add(headingModeText, 0, wxALL, 10);
    
    _selectedHeadingControl = new wxSpinCtrl(
-         this, wxID_ANY, wxT("000"), wxDefaultPosition, wxSize(50, -1));
+         this, SPIN_HEADING, wxT("000"), wxDefaultPosition, wxSize(50, -1));
    headingModeSizer->Add(_selectedHeadingControl, 0, wxEXPAND | wxALL, 10);
-   _selectedHeadingControl->SetRange(0, 359);
+   _selectedHeadingControl->SetRange(-1, 360);
    _selectedHeadingControl->Disable();
    
    this->_toggleHeadingModeButton = new wxButton(
@@ -85,6 +86,7 @@ TestFCUWindow::TestFCUWindow() :
 TestFCUWindow::~TestFCUWindow()
 {
    _numberOfInstances--;
+   delete _controller;
 }
 
 unsigned int TestFCUWindow::_numberOfInstances = 0;
@@ -92,6 +94,7 @@ unsigned int TestFCUWindow::_numberOfInstances = 0;
 void
 TestFCUWindow::onToggleSpeedMode(wxCommandEvent& event)
 {
+   _controller->fcu()->toggleSpeedMode();
    this->toggleMode(_toggleSpeedModeState, 
                     *_toggleSpeedModeButton, 
                     *_selectedSpeedControl);
@@ -100,9 +103,33 @@ TestFCUWindow::onToggleSpeedMode(wxCommandEvent& event)
 void
 TestFCUWindow::onToggleHeadingMode(wxCommandEvent& event)
 { 
+   _controller->fcu()->toggleHeadingMode();
    this->toggleMode(_toggleHeadingModeState, 
                     *_toggleHeadingModeButton, 
                     *_selectedHeadingControl);
+}
+
+void
+TestFCUWindow::onSpeedValueChanged(wxSpinEvent& event)
+{
+   _controller->fcu()->setSpeedValue(Speed(event.GetPosition()));
+}
+		
+void
+TestFCUWindow::onHeadingValueChanged(wxSpinEvent& event)
+{
+   int pos = event.GetPosition();
+   if (pos == -1)
+   {
+      pos = 359;
+      _selectedHeadingControl->SetValue(pos);
+   }
+   else if (pos == 360)
+   {
+      pos = 0;
+      _selectedHeadingControl->SetValue(pos);
+   }
+   _controller->fcu()->setHeadingValue(Heading(pos));
 }
 		
 void
@@ -123,46 +150,19 @@ TestFCUWindow::toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl)
 }
 
 BEGIN_EVENT_TABLE(TestFCUWindow, wxFrame)
-   EVT_BUTTON(TOGGLE_SPEED, TestFCUWindow::onToggleSpeedMode)
-   EVT_BUTTON(TOGGLE_HEADING, TestFCUWindow::onToggleHeadingMode)
+   EVT_BUTTON     (TOGGLE_SPEED,    TestFCUWindow::onToggleSpeedMode)
+   EVT_BUTTON     (TOGGLE_HEADING,  TestFCUWindow::onToggleHeadingMode)
+   EVT_SPINCTRL   (SPIN_SPEED,      TestFCUWindow::onSpeedValueChanged)
+   EVT_SPINCTRL   (SPIN_HEADING,    TestFCUWindow::onHeadingValueChanged)
 END_EVENT_TABLE()
 
-TestFCUController::TestFCUController(wxApp* app) :
-   _app(app), _fcu(new TestFlightControlUnit())
-{
-   _fcu->subscribe(this, &TestFCUController::onSpeedModeToggled);
-   _fcu->subscribe(this, &TestFCUController::onSpeedValueChanged);
-   _fcu->subscribe(this, &TestFCUController::onHeadingModeToggled);
-   _fcu->subscribe(this, &TestFCUController::onHeadingValueChanged);
-   _fcu->subscribe(this, &TestFCUController::onTargetAltitudeChanged);
-}
-
-void
-TestFCUController::onSpeedModeToggled(
-      const FlightControlUnit::EventSpeedModeToggled& ev)
+TestFCUController::TestFCUController(wxApp* app, SerialDevice* serialDevice) :
+   _app(app), _fcu(new TestFlightControlUnit()),
+   _serialDevice(serialDevice), 
+   _fcuManager(new FCUDeviceManager(_serialDevice, _fcu))
 {
 }
 
-void
-TestFCUController::onSpeedValueChanged(
-      const FlightControlUnit::EventSpeedValueChanged& ev)
-{}
-   
-void
-TestFCUController::onHeadingModeToggled(
-      const FlightControlUnit::EventHeadingModeToggled& ev)
-{}
-   
-void
-TestFCUController::onHeadingValueChanged(
-      const FlightControlUnit::EventHeadingValueChanged& ev)
-{}
-
-void
-TestFCUController::onTargetAltitudeChanged(
-      const FlightControlUnit::EventTargetAltitudeValueChanged& ev)
-{}
-   
 ConnectionWindow::ConnectionWindow(
       wxApp* app, ConnectionController* controller) :
    wxFrame(NULL, WIN, wxT("Open Airbus Cockpit - Connection List"),
@@ -224,7 +224,8 @@ void
 ConnectionWindow::onFCUTestPressed(wxCommandEvent& event)
 {
    if (!TestFCUWindow::isActiveInstance())
-      _fcu.testWindow = new TestFCUWindow();
+      _fcu.testWindow = new TestFCUWindow(
+            _controller->createTestFCUController());
    _app->SetTopWindow(_fcu.testWindow);
    _fcu.testWindow->Show();
 }
@@ -331,6 +332,11 @@ ConnectionController::disconnectFCU()
 
 TestFCUController*
 ConnectionController::createTestFCUController()
-{ return new TestFCUController(_app); }
+{ 
+   if (!_fcuSerialDevice)
+      throw IllegalStateException("cannot create test FCU controller for "
+                                  "disconnected serial device");
+   return new TestFCUController(_app, _fcuSerialDevice);
+}
 
 }}; // namespace oac::server

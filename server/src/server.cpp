@@ -29,15 +29,7 @@ IMPLEMENT_APP(ServerApp);
 
 bool ServerApp::OnInit()
 {
-   /*
-	_testFCUWindow = new TestFCUWindow();
-   _testFCUController = new TestFCUController(_testFCUWindow);
-   
-	SetTopWindow(_testFCUWindow);
-	_testFCUWindow->Show();
-   */
-   
-   _connectionWindow = new ConnectionWindow(new ConnectionController());
+   _connectionWindow = new ConnectionWindow(this, new ConnectionController(this));
    this->SetTopWindow(_connectionWindow);
    _connectionWindow->Show();
 

@@ -26,8 +26,11 @@
 #include "components.h"
 #include "serial.h"
 #include "test.h"
+#include "devices.h"
 
 namespace oac { namespace server {
+
+class TestFCUController;
    
 class TestFCUWindow : public wxFrame
 {
@@ -38,17 +41,21 @@ public:
       WIN          = 100,
       TOGGLE_SPEED,
       TOGGLE_HEADING,
+      SPIN_SPEED,
+      SPIN_HEADING,
    };
    
    static bool isActiveInstance();
 	
-   TestFCUWindow();
+   TestFCUWindow(TestFCUController* controller);
    
    virtual ~TestFCUWindow();
    
 private:
 
    static unsigned int _numberOfInstances;
+   
+   TestFCUController* _controller;
 
    wxButton* _toggleSpeedModeButton;
    bool _toggleSpeedModeState;
@@ -58,9 +65,10 @@ private:
    bool _toggleHeadingModeState;
    wxSpinCtrl* _selectedHeadingControl;
 
-   void onToggleSpeedMode(wxCommandEvent& event);
-   
+   void onToggleSpeedMode(wxCommandEvent& event);   
    void onToggleHeadingMode(wxCommandEvent& event);
+   void onSpeedValueChanged(wxSpinEvent& event);
+   void onHeadingValueChanged(wxSpinEvent& event);
    
    void toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl);
    
@@ -72,27 +80,17 @@ class TestFCUController
 {
 public:
 
-   TestFCUController(wxApp* app);
-
+   TestFCUController(wxApp* app, SerialDevice* serialDevice);
+   
+   inline FlightControlUnit* fcu() 
+   { return _fcu; }
+   
 private:
 
    wxApp* _app;
    FlightControlUnit* _fcu;
-   
-   void onSpeedModeToggled(
-         const FlightControlUnit::EventSpeedModeToggled& ev);
-   
-   void onSpeedValueChanged(
-         const FlightControlUnit::EventSpeedValueChanged& ev);
-   
-   void onHeadingModeToggled(
-         const FlightControlUnit::EventHeadingModeToggled& ev);
-   
-   void onHeadingValueChanged(
-      const FlightControlUnit::EventHeadingValueChanged& ev);
-      
-   void onTargetAltitudeChanged(
-      const FlightControlUnit::EventTargetAltitudeValueChanged& ev);
+   SerialDevice* _serialDevice;
+   FCUDeviceManager* _fcuManager;
    
 };
 
@@ -152,6 +150,9 @@ public:
    ConnectionController(wxApp* app);
 
    inline bool isFCUConnected() const
+   { return _fcuSerialDevice; }
+   
+   inline SerialDevice* FCUSerialDevice() const
    { return _fcuSerialDevice; }
    
    void listSerialDevices(SerialDeviceInfoArray& devs);
