@@ -97,6 +97,24 @@ public:
     */
    virtual void setTargetAltitudeValue(unsigned int value) = 0;
    
+   /**
+    * Toggle speed mode. 
+    */
+   inline void toggleSpeedMode()
+   {
+      setSpeedMode(
+         (speedMode() == PARAM_MANAGED) ? PARAM_SELECTED : PARAM_MANAGED);
+   }; 
+   
+   /**
+    * Toggle heading mode.
+    */
+   inline void toggleHeadingMode()
+   {
+      setHeadingMode(
+         (headingMode() == PARAM_MANAGED) ? PARAM_SELECTED : PARAM_MANAGED);
+   }; 
+   
    DECL_EVENT(EventSpeedValueChanged, Speed newValue);
    DECL_EVENT(EventHeadingValueChanged, Heading newValue);
    DECL_EVENT(EventSpeedModeToggled, ParameterMode newMode);
