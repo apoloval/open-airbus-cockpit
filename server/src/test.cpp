@@ -18,6 +18,8 @@
 
 #include "test.h"
 
+#include <OACSP/oacsp.h>
+
 namespace oac { namespace server {
 
 template<typename Event>

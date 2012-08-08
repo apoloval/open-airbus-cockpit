@@ -26,68 +26,36 @@
 #include "components.h"
 #include "serial.h"
 #include "test.h"
+#include "devices.h"
 
 namespace oac { namespace server {
 
-class ConnectionController;
-
-class ConnectionWindow : public wxFrame
-{
-public:
-
-   enum IDs
-   {
-      FCU_CONNECT,
-   };
-
-   ConnectionWindow(ConnectionController* controller);
+class TestFCUController;
    
-private:
-
-   ConnectionController*   _controller;
-
-   wxStaticText*           _fcuStatusText;
-   wxButton*               _fcuConnectButton;
-   
-   void onFCUConnectPressed(wxCommandEvent& event);
-   
-   bool selectSerialDevice(SerialDeviceInfo& dev) throw (NotFoundException);
-   
-   void connectFCU();
-
-};
-
-class ConnectionController
-{
-public:
-
-   ConnectionController();
-
-   inline bool isFCUConnected() const
-   { return _fcuConnected; }
-   
-   void listSerialDevices(SerialDeviceInfoArray& devs);
-
-private:
-
-   bool _fcuConnected;
-   SerialDeviceManager* _serialDeviceManager;
-
-};
-
 class TestFCUWindow : public wxFrame
 {
 public:
 
    enum IDs 
    {
-      TOGGLE_SPEED = 100,
+      WIN          = 100,
+      TOGGLE_SPEED,
       TOGGLE_HEADING,
+      SPIN_SPEED,
+      SPIN_HEADING,
    };
+   
+   static bool isActiveInstance();
 	
-   TestFCUWindow();
+   TestFCUWindow(TestFCUController* controller);
+   
+   virtual ~TestFCUWindow();
    
 private:
+
+   static unsigned int _numberOfInstances;
+   
+   TestFCUController* _controller;
 
    wxButton* _toggleSpeedModeButton;
    bool _toggleSpeedModeState;
@@ -97,40 +65,110 @@ private:
    bool _toggleHeadingModeState;
    wxSpinCtrl* _selectedHeadingControl;
 
-   void onToggleSpeedMode(wxCommandEvent& event);
-   
+   void onToggleSpeedMode(wxCommandEvent& event);   
    void onToggleHeadingMode(wxCommandEvent& event);
+   void onSpeedValueChanged(wxSpinEvent& event);
+   void onHeadingValueChanged(wxSpinEvent& event);
    
    void toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl);
+   
+   DECLARE_EVENT_TABLE()
 
 };
 
-class TestFCUController : public wxEvtHandler
+class TestFCUController
 {
 public:
 
-   TestFCUController(TestFCUWindow* window);
+   TestFCUController(wxApp* app, SerialDevice* serialDevice);
+   
+   inline FlightControlUnit* fcu() 
+   { return _fcu; }
+   
+private:
+
+   wxApp* _app;
+   FlightControlUnit* _fcu;
+   SerialDevice* _serialDevice;
+   FCUDeviceManager* _fcuManager;
+   
+};
+
+class ConnectionController;
+
+class ConnectionWindow : public wxFrame
+{
+public:
+
+   enum IDs
+   {
+      WIN = 200, 
+      FCU_CONNECT,
+      FCU_TEST,
+   };
+
+   ConnectionWindow(wxApp* app, ConnectionController* controller);
+   
+private:
+
+   static wxColour DISCONNECTED_COLOUR;
+   static wxColour CONNECTED_COLOUR;
+
+   wxApp* _app;
+   ConnectionController* _controller;
+
+   struct DeviceControls
+   {
+      wxStaticText*  statusText;
+      wxButton*      connectButton;
+      wxButton*      testButton;
+      wxFrame*       testWindow;
+   };
+   
+   DeviceControls _fcu;
+   
+   wxBoxSizer* initDeviceControls(DeviceControls& ctrls, const wxString& title,
+                                  int connectEvt, int testEvt);
+
+   void onFCUConnectPressed(wxCommandEvent& event);
+   void onFCUTestPressed(wxCommandEvent& event);
+   
+   bool selectSerialDevice(SerialDeviceInfo& dev) throw (NotFoundException);
+   
+   void connectFCU();
+   void disconnectFCU();
+   
+   static void setStatus(DeviceControls& ctrls, bool connected);
+   
+   DECLARE_EVENT_TABLE()
+};
+
+class ConnectionController
+{
+public:
+
+   ConnectionController(wxApp* app);
+
+   inline bool isFCUConnected() const
+   { return _fcuSerialDevice; }
+   
+   inline SerialDevice* FCUSerialDevice() const
+   { return _fcuSerialDevice; }
+   
+   void listSerialDevices(SerialDeviceInfoArray& devs);
+   
+   void connectFCU(const SerialDeviceInfo& dev);
+   
+   void disconnectFCU();
+   
+   TestFCUController* createTestFCUController();
 
 private:
 
-	TestFCUWindow* _window;
-   FlightControlUnit* _fcu;
-   
-   void onSpeedModeToggled(
-         const FlightControlUnit::EventSpeedModeToggled& ev);
-   
-   void onSpeedValueChanged(
-         const FlightControlUnit::EventSpeedValueChanged& ev);
-   
-   void onHeadingModeToggled(
-         const FlightControlUnit::EventHeadingModeToggled& ev);
-   
-   void onHeadingValueChanged(
-      const FlightControlUnit::EventHeadingValueChanged& ev);
-      
-   void onTargetAltitudeChanged(
-      const FlightControlUnit::EventTargetAltitudeValueChanged& ev);
-   
+   wxApp* _app;
+   SerialDeviceManager* _serialDeviceManager;
+   SerialDevice* _fcuSerialDevice;
+
 };
 
 }}; // namespace oac::server

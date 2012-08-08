@@ -65,6 +65,15 @@ deviceForName(const std::string& devName)
 Win32SerialDevice::Win32SerialDevice(HANDLE handle) :
    _handle(handle)
 {   
+   DCB dcb;
+   if (!GetCommState(_handle, &dcb))
+      throw IllegalStateException("cannot obtain PCB for given handler");
+   dcb.BaudRate = CBR_9600;
+   dcb.ByteSize = 8;
+   dcb.Parity = NOPARITY;
+   dcb.StopBits = ONESTOPBIT;
+   if (!SetCommState(_handle, &dcb))
+      throw IllegalStateException("cannot set PCB for given handler");
 }
 
 Win32SerialDevice::~Win32SerialDevice()
@@ -101,7 +110,7 @@ throw (IOException)
 }
 
 void
-Win32SerialDevice::write(void* buf, unsigned int nbytes) 
+Win32SerialDevice::write(const void* buf, unsigned int nbytes) 
 throw (IOException)
 {
    DWORD bytesWritten;

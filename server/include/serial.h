@@ -99,7 +99,7 @@ public:
    /**
     * Write nbytes obtained from given buffer to this serial device.
     */
-   virtual void write(void* buf, unsigned int nbytes) 
+   virtual void write(const void* buf, unsigned int nbytes) 
          throw (IOException) = 0;
 };
 
@@ -118,7 +118,7 @@ public:
    virtual unsigned int read(void* buf, unsigned int nbytes) 
          throw (IOException);
 
-   virtual void write(void* buf, unsigned int nbytes) 
+   virtual void write(const void* buf, unsigned int nbytes) 
          throw (IOException);
    
 private:
