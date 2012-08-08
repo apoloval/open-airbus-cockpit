@@ -36,18 +36,18 @@ void setSpeed(word value, bool selected = true)
 {
    selectedSpeed = value;
    if (selected)
-      speedDisplayGroup.displayNumber(selectedSpeed);
+      speedDisplayGroup.loadNumber(selectedSpeed);
    else
-      speedDisplayGroup.displayDash();
+      speedDisplayGroup.loadDash();
 }
 
 void setHeading(word value, bool selected = true)
 {
    selectedHeading = value;
    if (selected)
-      headingDisplayGroup.displayNumber(selectedHeading);
+      headingDisplayGroup.loadNumber(selectedHeading);
    else
-      headingDisplayGroup.displayDash();
+      headingDisplayGroup.loadDash();
 }
 
 void setStatus(word value)
@@ -103,10 +103,10 @@ void processCommand(union Command& cmd)
 
 void setup()
 {
-   int idPins[] = { 2, 3, 4, 5, 6, 7, 8, 9 };
-   leftDisplayController.setWritePin(11);
-   leftDisplayController.setModePin(10);
-   leftDisplayController.setIdPins(idPins);
+   int leftDisplayIdPins[] = { 22, 23, 24, 25, 26, 27, 28, 29 };
+   leftDisplayController.setWritePin(30);
+   leftDisplayController.setModePin(31);
+   leftDisplayController.setIdPins(leftDisplayIdPins);
   
    int speedDisplays[] = { 0, 1, 2, -1, -1, -1, -1, -1 };
    speedDisplayGroup.setParent(&leftDisplayController);
@@ -128,5 +128,6 @@ void loop()
       Serial.readBytes((char*) &cmd, sizeof(Command));
       processCommand(cmd);
    }
+   leftDisplayController.display();
 }
 

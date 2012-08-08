@@ -25,7 +25,7 @@
 #define HEXCODEB_PIN(ci)   (ci->_idPin[6])
 #define DATACOMING_PIN(ci) (ci->_idPin[7])
 
-ICM7218::ICM7218()
+ICM7218::ICM7218() : _isDirty(false)
 {
    for (int i = 0; i < 8; i++)
       _cache[i] = 0xff;
@@ -56,6 +56,22 @@ ICM7218::setWritePin(int pin)
   
    // WRITE must remain high from now on
    digitalWrite(_writePin, HIGH);
+}
+
+void
+ICM7218::loadSingleDigit(unsigned int digit, unsigned int digitValue)
+{
+   if (digit < 8)
+      _cache[digit] = digitValue;
+   _isDirty = true;
+}
+
+void
+ICM7218::loadDigits(byte digits[8])
+{
+   for (int i = 0; i < 8; i++)
+      _cache[i] = digits[i];
+   _isDirty = true;
 }
 
 void
@@ -96,8 +112,16 @@ ICM7218::displayDigits(byte digits[8])
       digitalWrite(_idPin[3], B1000 & digits[i]);
       digitalWrite(_idPin[7], HIGH);
       sendWrite();  
-  
-      _cache[i] = digits[i];  
+   }
+}
+
+void
+ICM7218::display()
+{
+   if (_isDirty)
+   {
+      displayDigits(_cache);
+      _isDirty = false;
    }
 }
 
@@ -139,27 +163,34 @@ ICM7218::DisplayGroup::setDisplays(int displays[8])
 }
 
 void
-ICM7218::DisplayGroup::displayNumber(unsigned long number)
+ICM7218::DisplayGroup::loadNumber(unsigned long number)
 {
    byte digits[8];
+
+   byte values[8];
+   for (int i = 0; i < 8; i++)
+   {
+      values[i] = number % 10;
+      number /= 10;
+   }
    
    for (int i = 0; i < 8; i++)
    {
       if (_displays[i] <= 8)
-         digits[i] = (number / long(pow(10, _displays[i]))) % 10;
+         digits[i] = values[_displays[i]];
       else
          digits[i] = _parent->_cache[i];
    }
-   _parent->displayDigits(digits);
+   _parent->loadDigits(digits);
 }
 
 void
-ICM7218::DisplayGroup::displayDash()
+ICM7218::DisplayGroup::loadDash()
 {
    byte digits[8];
    for (int i = 0; i < 8; i++)
       digits[i] = (_displays[i] <= 8) ? 0x0a : _parent->_cache[i];
-   _parent->displayDigits(digits);
+   _parent->loadDigits(digits);
 }
 
 

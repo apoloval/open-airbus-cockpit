@@ -34,9 +34,9 @@ public:
     
     void setDisplays(int displays[8]);
     
-    void displayNumber(unsigned long number);
+    void loadNumber(unsigned long number);
     
-    void displayDash();
+    void loadDash();
     
   private:
   
@@ -53,9 +53,15 @@ public:
   
   void setModePin(int pin);
   
+  void loadSingleDigit(unsigned int digit, unsigned int digitValue);
+  
+  void loadDigits(byte digits[8]);
+  
   void displaySingleDigit(unsigned int  digit, unsigned int  digitValue);
   
   void displayDigits(byte digits[8]);
+  
+  void display();
   
 private:
 
@@ -64,6 +70,7 @@ private:
   byte _modePin;
   
   byte _cache[8];
+  byte _isDirty;
   
   void sendWrite();  
   
