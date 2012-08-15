@@ -1,12 +1,6 @@
 #include "icm7218.h"
 #include "oacsp.h"
 
-word status;
-unsigned long selectedSpeed;
-unsigned long selectedHeading;
-
-word buttonState;
-
 enum ButtonStateMask
 {
    BTN_FD       = 0x0001,
@@ -26,36 +20,134 @@ enum ButtonStateMask
    BTN_VS_DISP  = 0x4000,
 };
 
-ICM7218 leftDisplayController;
+enum OutputPins
+{
+   PIN_ICM7218_1_ID0       = 22,
+   PIN_ICM7218_1_ID1       = 23,
+   PIN_ICM7218_1_ID2       = 24,
+   PIN_ICM7218_1_ID3       = 25,
+   PIN_ICM7218_1_ID4       = 26,
+   PIN_ICM7218_1_ID5       = 27,
+   PIN_ICM7218_1_ID6       = 28,
+   PIN_ICM7218_1_ID7       = 29,
+   PIN_ICM7218_1_WRITE     = 30,
+   PIN_ICM7218_1_MODE      = 31,
+   PIN_ICM7218_2_ID0       = 32,
+   PIN_ICM7218_2_ID1       = 33,
+   PIN_ICM7218_2_ID2       = 34,
+   PIN_ICM7218_2_ID3       = 35,
+   PIN_ICM7218_2_ID4       = 36,
+   PIN_ICM7218_2_ID5       = 37,
+   PIN_ICM7218_2_ID6       = 38,
+   PIN_ICM7218_2_ID7       = 39,
+   PIN_ICM7218_2_WRITE     = 40,
+   PIN_ICM7218_2_MODE      = 41,
+   PIN_SPD_MACH_MODE       = 42,
+   PIN_HDG_TRK_VS_FPA_MODE = 43,
+   PIN_SPD_MANAGED_MODE    = 44,
+   PIN_HDG_MANAGED_MODE    = 45,
+   PIN_ALT_MANAGED_MODE    = 46,
+};
+
+enum ParameterMode
+{
+   PARAM_SELECTED,
+   PARAM_MANAGED,
+};
+
+enum SpeedMachMode
+{
+   MODE_SPEED,
+   MODE_MACH,
+};
+
+word status;
+unsigned long selectedSpeed;
+unsigned long selectedHeading;
+unsigned long selectedAltitude;
+unsigned long selectedVerticalSpeed;
+
+word buttonState;
+
+ICM7218 displayController[2];
 ICM7218::DisplayGroup speedDisplayGroup;
 ICM7218::DisplayGroup headingDisplayGroup;
+ICM7218::DisplayGroup altitudeDisplayGroup;
+ICM7218::DisplayGroup verticalSpeedDisplayGroup;
 
 Command cmd;
 
-void setSpeed(word value, bool selected = true)
+void setSpeed(word value, 
+              ParameterMode paramMode = PARAM_SELECTED,
+              SpeedMachMode displayMode = MODE_SPEED)
 {
    selectedSpeed = value;
-   if (selected)
+   if (displayMode == MODE_SPEED)
+      digitalWrite(PIN_SPD_MACH_MODE, 0);
+   else // displayMode == MODE_MACH
+   {      
+      digitalWrite(PIN_SPD_MACH_MODE, 1);
+      value = (word)((float) value / 573.0f);
+   }
+   if (paramMode == PARAM_SELECTED)
+   {
       speedDisplayGroup.loadNumber(selectedSpeed);
-   else
+      digitalWrite(PIN_SPD_MANAGED_MODE, 0);
+   }
+   else // paramMode == PARAM_MANAGED
+   {
       speedDisplayGroup.loadDash();
+      digitalWrite(PIN_SPD_MANAGED_MODE, 1);
+   }
 }
 
-void setHeading(word value, bool selected = true)
+void setHeading(word value, 
+                ParameterMode paramMode = PARAM_SELECTED)
 {
    selectedHeading = value;
-   if (selected)
+   if (paramMode == PARAM_SELECTED)
+   {
       headingDisplayGroup.loadNumber(selectedHeading);
-   else
+      digitalWrite(PIN_HDG_MANAGED_MODE, 0);
+   }
+   else // paramMode == PARAM_MANAGED
+   {
       headingDisplayGroup.loadDash();
+      digitalWrite(PIN_HDG_MANAGED_MODE, 1);
+   }
+}
+
+void setAltitude(word value)
+{
+   selectedAltitude = value;
+   altitudeDisplayGroup.loadNumber(selectedAltitude);
+   
+}
+
+void setVerticalSpeed(word value,
+                      ParameterMode paramMode = PARAM_SELECTED)
+{
+   if (paramMode == PARAM_SELECTED)
+   {
+      verticalSpeedDisplayGroup.loadNumber(selectedHeading);
+   }
+   else // paramMode == PARAM_MANAGED
+   {
+      verticalSpeedDisplayGroup.loadDash();
+   }
 }
 
 void setStatus(word value)
 {
    status = value;
       
-   setSpeed(selectedSpeed, status & MASK_FCU_SPD_MOD);
-   setHeading(selectedHeading, status & MASK_FCU_HDG_MOD);
+   setSpeed(selectedSpeed, 
+         (status & MASK_FCU_SPD_MOD) ? PARAM_SELECTED : PARAM_MANAGED,
+         (status & MASK_FCU_SPD_DISP) ? MODE_MACH : MODE_SPEED);
+   setHeading(selectedHeading, 
+         (status & MASK_FCU_HDG_MOD) ? PARAM_SELECTED : PARAM_MANAGED);
+   setVerticalSpeed(selectedVerticalSpeed,
+         (status & MASK_FCU_VS_MOD) ? PARAM_SELECTED : PARAM_MANAGED);
    
    // TODO: update the rest of displays
 }
@@ -83,6 +175,7 @@ void reset()
 {
    buttonState = 0;
    setStatus(0);
+   setAltitude(18000);
 }
 
 void processCommand(union Command& cmd)
@@ -103,18 +196,46 @@ void processCommand(union Command& cmd)
 
 void setup()
 {
-   int leftDisplayIdPins[] = { 22, 23, 24, 25, 26, 27, 28, 29 };
-   leftDisplayController.setWritePin(30);
-   leftDisplayController.setModePin(31);
-   leftDisplayController.setIdPins(leftDisplayIdPins);
+   int icm7218Pins[2][8] = {
+      {
+         PIN_ICM7218_1_ID0, PIN_ICM7218_1_ID1, PIN_ICM7218_1_ID2, 
+         PIN_ICM7218_1_ID3, PIN_ICM7218_1_ID4, PIN_ICM7218_1_ID5, 
+         PIN_ICM7218_1_ID6, PIN_ICM7218_1_ID7, 
+      },
+      {
+         PIN_ICM7218_2_ID0, PIN_ICM7218_2_ID1, PIN_ICM7218_2_ID2, 
+         PIN_ICM7218_2_ID3, PIN_ICM7218_2_ID4, PIN_ICM7218_2_ID5, 
+         PIN_ICM7218_2_ID6, PIN_ICM7218_2_ID7, 
+      },
+   };
+   displayController[0].setIdPins(icm7218Pins[0]);
+   displayController[0].setWritePin(PIN_ICM7218_1_WRITE);
+   displayController[0].setModePin(PIN_ICM7218_1_MODE);
   
-   int speedDisplays[] = { 0, 1, 2, -1, -1, -1, -1, -1 };
-   speedDisplayGroup.setParent(&leftDisplayController);
-   speedDisplayGroup.setDisplays(speedDisplays);
+   displayController[1].setIdPins(icm7218Pins[1]);
+   displayController[1].setWritePin(PIN_ICM7218_2_WRITE);
+   displayController[1].setModePin(PIN_ICM7218_2_MODE);
+   
+   int leftDisplays[] = { 0, 1, 2, -1, -1, -1, -1, -1 };
+   int rightDisplays[] = { -1, -1, -1, 0, 1, 2, 3, 4 };
 
-   int headingDisplays[] = { -1, -1, -1, 0, 1, 2, -1, -1 };
-   headingDisplayGroup.setParent(&leftDisplayController);
-   headingDisplayGroup.setDisplays(headingDisplays);
+   speedDisplayGroup.setParent(&displayController[0]);
+   speedDisplayGroup.setDisplays(leftDisplays);
+
+   headingDisplayGroup.setParent(&displayController[1]);
+   headingDisplayGroup.setDisplays(leftDisplays);
+   
+   altitudeDisplayGroup.setParent(&displayController[0]);
+   altitudeDisplayGroup.setDisplays(rightDisplays);
+   
+   verticalSpeedDisplayGroup.setParent(&displayController[1]);
+   verticalSpeedDisplayGroup.setDisplays(rightDisplays);
+   
+   pinMode(PIN_SPD_MACH_MODE, OUTPUT);
+   pinMode(PIN_HDG_TRK_VS_FPA_MODE, OUTPUT);
+   pinMode(PIN_SPD_MANAGED_MODE, OUTPUT);
+   pinMode(PIN_HDG_MANAGED_MODE, OUTPUT);
+   pinMode(PIN_ALT_MANAGED_MODE, OUTPUT);
 
    reset();  
   
@@ -128,6 +249,7 @@ void loop()
       Serial.readBytes((char*) &cmd, sizeof(Command));
       processCommand(cmd);
    }
-   leftDisplayController.display();
+   displayController[0].display();
+   displayController[1].display();
 }
 

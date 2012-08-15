@@ -120,20 +120,19 @@ enum EventType
 
 enum FCUStatusMask
 {
-   MASK_FCU_FD       = 0x0001,
-   MASK_FCU_AP1      = 0x0002,
-   MASK_FCU_AP2      = 0x0004,
-   MASK_FCU_LOC      = 0x0008,
-   MASK_FCU_ILS      = 0x0010,
-   MASK_FCU_ATHR     = 0x0020,
-   MASK_FCU_EXP      = 0x0040,
-   MASK_FCU_APPR     = 0x0080,
-   MASK_FCU_SPD_DISP = 0x0100,
-   MASK_FCU_HDG_DISP = 0x0200,
-   MASK_FCU_VS_DISP  = 0x0400,
-   MASK_FCU_SPD_MOD  = 0x0800,
-   MASK_FCU_HDG_MOD  = 0x1000,
-   MASK_FCU_VS_MOD   = 0x2000,
+   MASK_FCU_FD             = 0x0001,
+   MASK_FCU_AP1            = 0x0002,
+   MASK_FCU_AP2            = 0x0004,
+   MASK_FCU_LOC            = 0x0008,
+   MASK_FCU_ILS            = 0x0010,
+   MASK_FCU_ATHR           = 0x0020,
+   MASK_FCU_EXP            = 0x0040,
+   MASK_FCU_APPR           = 0x0080,
+   MASK_FCU_SPD_DISP       = 0x0100,
+   MASK_FCU_LAT_VER_DISP   = 0x0200,
+   MASK_FCU_SPD_MOD        = 0x0400,
+   MASK_FCU_HDG_MOD        = 0x0800,
+   MASK_FCU_VS_MOD         = 0x1000,
 };
 
 #ifndef ARDUINO
