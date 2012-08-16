@@ -17,4 +17,6 @@
 # CodeLite project files
 OACServer.*
 OACServer*.mk
+OAC_Server.*
+OAC_Server*.mk
 Debug
