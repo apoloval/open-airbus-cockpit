@@ -163,25 +163,15 @@ ICM7218::DisplayGroup::setDisplays(int displays[8])
 }
 
 void
-ICM7218::DisplayGroup::loadNumber(unsigned long number)
+ICM7218::DisplayGroup::loadUnsigned(unsigned long number)
 {
-   byte digits[8];
+   loadNumber(number, true, false);
+}
 
-   byte values[8];
-   for (int i = 0; i < 8; i++)
-   {
-      values[i] = number % 10;
-      number /= 10;
-   }
-   
-   for (int i = 0; i < 8; i++)
-   {
-      if (_displays[i] <= 8)
-         digits[i] = values[_displays[i]];
-      else
-         digits[i] = _parent->_cache[i];
-   }
-   _parent->loadDigits(digits);
+void
+ICM7218::DisplayGroup::loadSigned(long number)
+{
+   loadNumber(abs(number), number >= 0, true);
 }
 
 void
@@ -193,4 +183,30 @@ ICM7218::DisplayGroup::loadDash()
    _parent->loadDigits(digits);
 }
 
-
+void
+ICM7218::DisplayGroup::loadNumber(
+      unsigned long number, bool isPositive, bool loadSign)
+{
+   byte digits[8];
+   
+   byte values[8];
+   byte signDigit = 0;   
+   for (int i = 0; i < 8; i++)
+   {
+      values[i] = number % 10;
+      number /= 10;
+      if (_displays[i] < 8 && signDigit < _displays[i])
+         signDigit = _displays[i];
+   }
+   
+   for (int i = 0; i < 8; i++)
+   {
+      if (loadSign && _displays[i] == signDigit)
+         digits[i] = isPositive ? 0x0f : 0x0a;
+      else if (_displays[i] <= 8)
+         digits[i] = values[_displays[i]];
+      else
+         digits[i] = _parent->_cache[i];
+   }
+   _parent->loadDigits(digits);
+}

@@ -62,9 +62,9 @@ enum SpeedMachMode
 };
 
 word status;
-unsigned long selectedSpeed;
-unsigned long selectedHeading;
-unsigned long selectedAltitude;
+unsigned int selectedSpeed;
+unsigned int selectedHeading;
+unsigned int selectedAltitude;
 int selectedVerticalSpeed;
 
 word buttonState;
@@ -91,7 +91,7 @@ void setSpeed(word value,
    }
    if (paramMode == PARAM_SELECTED)
    {
-      speedDisplayGroup.loadNumber(selectedSpeed);
+      speedDisplayGroup.loadUnsigned(selectedSpeed);
       digitalWrite(PIN_SPD_MANAGED_MODE, 0);
    }
    else // paramMode == PARAM_MANAGED
@@ -107,7 +107,7 @@ void setHeading(word value,
    selectedHeading = value;
    if (paramMode == PARAM_SELECTED)
    {
-      headingDisplayGroup.loadNumber(selectedHeading);
+      headingDisplayGroup.loadUnsigned(selectedHeading);
       digitalWrite(PIN_HDG_MANAGED_MODE, 0);
    }
    else // paramMode == PARAM_MANAGED
@@ -120,17 +120,17 @@ void setHeading(word value,
 void setAltitude(word value)
 {
    selectedAltitude = value;
-   altitudeDisplayGroup.loadNumber(selectedAltitude);
+   altitudeDisplayGroup.loadUnsigned(selectedAltitude);
    
 }
 
 void setVerticalSpeed(word value,
                       ParameterMode paramMode = PARAM_SELECTED)
 {
-   selectedVerticalSpeed = value;
+   selectedVerticalSpeed = *((int*) &value);
    if (paramMode == PARAM_SELECTED)
    {
-      verticalSpeedDisplayGroup.loadNumber(selectedVerticalSpeed);
+      verticalSpeedDisplayGroup.loadSigned(selectedVerticalSpeed);
    }
    else // paramMode == PARAM_MANAGED
    {

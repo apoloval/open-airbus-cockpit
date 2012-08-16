@@ -34,7 +34,9 @@ public:
     
     void setDisplays(int displays[8]);
     
-    void loadNumber(unsigned long number);
+    void loadUnsigned(unsigned long number);
+    
+    void loadSigned(long number);
     
     void loadDash();
     
@@ -42,6 +44,8 @@ public:
   
     byte _displays[8];
     ICM7218* _parent;
+    
+    void loadNumber(unsigned long number, bool isPositive, bool loadSign);
   
   };
 
