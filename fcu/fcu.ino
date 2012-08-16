@@ -65,7 +65,7 @@ word status;
 unsigned long selectedSpeed;
 unsigned long selectedHeading;
 unsigned long selectedAltitude;
-unsigned long selectedVerticalSpeed;
+int selectedVerticalSpeed;
 
 word buttonState;
 
@@ -127,9 +127,10 @@ void setAltitude(word value)
 void setVerticalSpeed(word value,
                       ParameterMode paramMode = PARAM_SELECTED)
 {
+   selectedVerticalSpeed = value;
    if (paramMode == PARAM_SELECTED)
    {
-      verticalSpeedDisplayGroup.loadNumber(selectedHeading);
+      verticalSpeedDisplayGroup.loadNumber(selectedVerticalSpeed);
    }
    else // paramMode == PARAM_MANAGED
    {
@@ -164,6 +165,12 @@ void writeVariable(struct WriteVarCommand& cmd)
          break;
       case VAR_FCU_SEL_HDG:
          setHeading(cmd.data);
+         break;
+      case VAR_FCU_TGT_ALT:
+         setAltitude(cmd.data);
+         break;
+      case VAR_FCU_SEL_VS:
+         setVerticalSpeed(cmd.data);
          break;
       default:
          Serial.print("Invalid offset ");
