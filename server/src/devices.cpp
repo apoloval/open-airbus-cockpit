@@ -22,32 +22,32 @@ namespace oac { namespace server {
 
 FCUDeviceManager::FCUDeviceManager(
       SerialDevice* serialDevice, FlightControlUnit* fcu) :
-   _serialDevice(serialDevice), _fcu(fcu)
+   _serialDevice(serialDevice), _fcu(fcu),
+   _protocolManager(new SerialProtocolManager(serialDevice))
 {
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedValueChanged);
    _fcu->subscribe(this, &FCUDeviceManager::onHeadingModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onHeadingValueChanged);
    _fcu->subscribe(this, &FCUDeviceManager::onTargetAltitudeChanged);  
+   _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedModeToggled);
+   _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedValueChanged);
 
-   Command cmd;
-   cmd.type = CMD_RESET;
-   sendCommand(cmd);
+   _protocolManager->sendReset();
+   
+   // Set the altitude to its current value to trigger the event
+   // and send the proper command to the serial device. 
+   _fcu->setTargetAltitudeValue(_fcu->targetAltitudeValue());
 }
 
 void
 FCUDeviceManager::onSpeedModeToggled(
          const FlightControlUnit::EventSpeedModeToggled& ev)
 {
-   sendStatus();
+   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-   {
-      Command cmd;
-      cmd.type = CMD_WRITE_VAR;
-      cmd.writeVar.offset = VAR_FCU_SEL_SPD;
-      cmd.writeVar.data = word(_fcu->speedValue().asKnots());
-      sendCommand(cmd);      
-   }
+      _protocolManager->sendWriteVar(
+            VAR_FCU_SEL_SPD, word(_fcu->speedValue().asKnots()));
 }
    
 void 
@@ -55,28 +55,17 @@ FCUDeviceManager::onSpeedValueChanged(
          const FlightControlUnit::EventSpeedValueChanged& ev)
 {
    if (_fcu->speedMode() == FlightControlUnit::PARAM_SELECTED)
-   {
-      Command cmd;
-      cmd.type = CMD_WRITE_VAR;
-      cmd.writeVar.offset = VAR_FCU_SEL_SPD;
-      cmd.writeVar.data = word(ev.newValue.asKnots());
-      sendCommand(cmd);      
-   }
+      _protocolManager->sendWriteVar(
+            VAR_FCU_SEL_SPD, word(ev.newValue.asKnots()));
 }
    
 void 
 FCUDeviceManager::onHeadingModeToggled(
          const FlightControlUnit::EventHeadingModeToggled& ev)
 {
-   sendStatus();
+   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-   {
-      Command cmd;
-      cmd.type = CMD_WRITE_VAR;
-      cmd.writeVar.offset = VAR_FCU_SEL_HDG;
-      cmd.writeVar.data = word(_fcu->headingValue());
-      sendCommand(cmd);      
-   }
+         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, _fcu->headingValue());
 }
    
 void 
@@ -84,51 +73,33 @@ FCUDeviceManager::onHeadingValueChanged(
       const FlightControlUnit::EventHeadingValueChanged& ev)
 {            
    if (_fcu->headingMode() == FlightControlUnit::PARAM_SELECTED)
-   {
-      Command cmd;
-      cmd.type = CMD_WRITE_VAR;
-      cmd.writeVar.offset = VAR_FCU_SEL_HDG;
-      cmd.writeVar.data = word(ev.newValue);
-      sendCommand(cmd);      
-   }
+         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, word(ev.newValue));
 }
       
 void 
 FCUDeviceManager::onTargetAltitudeChanged(
       const FlightControlUnit::EventTargetAltitudeValueChanged& ev)
-{            
+{
+   _protocolManager->sendWriteVar(VAR_FCU_TGT_ALT, word(ev.newValue));
 }
 
-void
-FCUDeviceManager::sendCommand(const Command& cmd)
+void 
+FCUDeviceManager::onVerticalSpeedModeToggled(
+      const FlightControlUnit::EventVerticalSpeedModeToggled& ev)
 {
-   _serialDevice->write(&(cmd.type), 1);
-   switch (cmd.type)
-   {
-      case CMD_PING:
-      case CMD_PONG:
-         _serialDevice->write(&(cmd.ping.deviceType), 1);
-         _serialDevice->write(&(cmd.ping.majorVersion), 1);
-         _serialDevice->write(&(cmd.ping.minorVersion), 1);
-         _serialDevice->write(&(cmd.ping.padding), 12);
-         break;
-      case CMD_RESET:
-         _serialDevice->write(&(cmd.reset.padding), 15);
-         break;
-      case CMD_WRITE_VAR:
-         _serialDevice->write(&(cmd.writeVar.offset), 2);
-         _serialDevice->write(&(cmd.writeVar.data), 2);
-         _serialDevice->write(&(cmd.writeVar.padding), 11);
-         break;
-      case CMD_NOTIFY_EVENT:
-         _serialDevice->write(&(cmd.notifyEvent.event), 2);
-         _serialDevice->write(&(cmd.notifyEvent.param1), 2);
-         _serialDevice->write(&(cmd.notifyEvent.param2), 2);
-         _serialDevice->write(&(cmd.notifyEvent.param3), 2);
-         _serialDevice->write(&(cmd.notifyEvent.param4), 2);
-         _serialDevice->write(&(cmd.notifyEvent.padding), 5);
-         break;
-   }
+   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+   if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
+         _protocolManager->sendWriteVar(
+               VAR_FCU_SEL_VS, _fcu->verticalSpeedValue());
+}
+   
+void
+FCUDeviceManager::onVerticalSpeedValueChanged(
+      const FlightControlUnit::EventVerticalSpeedValueChanged& ev)
+{
+   if (_fcu->verticalSpeedMode() == FlightControlUnit::PARAM_SELECTED)
+      _protocolManager->sendWriteVar(VAR_FCU_SEL_VS, 
+            _fcu->verticalSpeedValue());         
 }
 
 word
@@ -141,16 +112,6 @@ FCUDeviceManager::status()
       val |= MASK_FCU_HDG_MOD;
    // TODO: complete the rest of state flags
    return val;
-}
-
-void
-FCUDeviceManager::sendStatus()
-{
-   Command cmd;
-   cmd.type = CMD_WRITE_VAR;
-   cmd.writeVar.offset = VAR_FCU_STATUS;
-   cmd.writeVar.data = status();
-   sendCommand(cmd);
 }
 
 }}; // namespace oac::server

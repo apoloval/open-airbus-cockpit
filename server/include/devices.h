@@ -23,6 +23,7 @@
 
 #include "components.h"
 #include "serial.h"
+#include "oacsp-utils.h"
 
 namespace oac { namespace server {
 
@@ -36,6 +37,7 @@ private:
 
    SerialDevice* _serialDevice;
    FlightControlUnit* _fcu;
+   SerialProtocolManager* _protocolManager;
 
    void onSpeedModeToggled(
          const FlightControlUnit::EventSpeedModeToggled& ev);
@@ -51,12 +53,15 @@ private:
       
    void onTargetAltitudeChanged(
          const FlightControlUnit::EventTargetAltitudeValueChanged& ev);
-
-   void sendCommand(const Command& cmd);
    
+   void onVerticalSpeedModeToggled(
+         const FlightControlUnit::EventVerticalSpeedModeToggled& ev);
+   
+   void onVerticalSpeedValueChanged(
+         const FlightControlUnit::EventVerticalSpeedValueChanged& ev);
+
    word status();
    
-   void sendStatus();
 };
    
 }}; // namespace oac::server

@@ -47,7 +47,15 @@ public:
 
    virtual unsigned int targetAltitudeValue() const;
 
-   virtual void setTargetAltitudeValue(unsigned int value);
+   virtual void setTargetAltitudeValue(unsigned int targetAltitude);
+
+   virtual ParameterMode verticalSpeedMode() const;
+   
+   virtual void setVerticalSpeedMode(ParameterMode mode);
+   
+   virtual int verticalSpeedValue() const;
+   
+   virtual void setVerticalSpeedValue(int verticalSpeed);
 
 private:
 
@@ -56,6 +64,8 @@ private:
    Heading        _heading;
    ParameterMode  _headingMode;
    unsigned int   _targetAltitude;
+   int            _verticalSpeed;
+   ParameterMode  _verticalSpeedMode;
    
    template <typename Event>
    void setParameterMode(ParameterMode& parameter, ParameterMode mode);

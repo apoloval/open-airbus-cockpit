@@ -91,10 +91,32 @@ TestFlightControlUnit::targetAltitudeValue() const
 { return _targetAltitude; }
 
 void
-TestFlightControlUnit::setTargetAltitudeValue(unsigned int value)
+TestFlightControlUnit::setTargetAltitudeValue(unsigned int targetAltitude)
 { 
    this->setParameterValue<EventTargetAltitudeValueChanged, unsigned int>(
-         _targetAltitude, value);
+         _targetAltitude, targetAltitude);
+}
+
+FlightControlUnit::ParameterMode
+TestFlightControlUnit::verticalSpeedMode() const
+{ return _verticalSpeedMode; }
+   
+void
+TestFlightControlUnit::setVerticalSpeedMode(ParameterMode mode)
+{ 
+   this->setParameterMode<EventVerticalSpeedModeToggled>(
+         _verticalSpeedMode, mode);
+}
+   
+int
+TestFlightControlUnit::verticalSpeedValue() const
+{ return _verticalSpeed; }
+   
+void
+TestFlightControlUnit::setVerticalSpeedValue(int verticalSpeed)
+{ 
+   this->setParameterValue<EventVerticalSpeedValueChanged, int>(
+         _verticalSpeed, verticalSpeed);
 }
 
 }}; // namespace oac::server

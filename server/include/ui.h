@@ -41,8 +41,11 @@ public:
       WIN          = 100,
       TOGGLE_SPEED,
       TOGGLE_HEADING,
+      TOGGLE_VERTICAL_SPEED,
       SPIN_SPEED,
       SPIN_HEADING,
+      SPIN_ALTITUDE,
+      SPIN_VERTICAL_SPEED,
    };
    
    static bool isActiveInstance();
@@ -64,11 +67,20 @@ private:
    wxButton* _toggleHeadingModeButton;
    bool _toggleHeadingModeState;
    wxSpinCtrl* _selectedHeadingControl;
+   
+   wxSpinCtrl* _targetAltitudeControl;
 
+   wxButton* _toggleVerticalSpeedModeButton;
+   bool _toggleVerticalSpeedModeState;
+   wxSpinCtrl* _selectedVerticalSpeedControl;
+   
    void onToggleSpeedMode(wxCommandEvent& event);   
    void onToggleHeadingMode(wxCommandEvent& event);
+   void onToggleVerticalSpeedMode(wxCommandEvent& event);
    void onSpeedValueChanged(wxSpinEvent& event);
    void onHeadingValueChanged(wxSpinEvent& event);
+   void onTargetAltitudeChanged(wxSpinEvent& event);
+   void onVerticalSpeedChanged(wxSpinEvent& event);
    
    void toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl);
    

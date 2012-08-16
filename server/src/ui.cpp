@@ -46,7 +46,7 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
    
    _selectedSpeedControl = new wxSpinCtrl(
          this, SPIN_SPEED, wxT("200"), 
-         wxDefaultPosition, wxSize(50, -1));
+         wxDefaultPosition, wxSize(100, -1));
    speedModeSizer->Add(_selectedSpeedControl, 0, wxEXPAND | wxALL, 10);
    _selectedSpeedControl->SetRange(50, 400);
    _selectedSpeedControl->Disable();
@@ -56,7 +56,7 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
    speedModeSizer->Add(this->_toggleSpeedModeButton, 0, 
                        wxEXPAND | wxALL, 10);
    
-   rootSizer->Add(speedModeSizer, 0, wxALIGN_CENTER);
+   rootSizer->Add(speedModeSizer, 0, wxALIGN_LEFT);
    
    /* Heading mode selection. */
    wxBoxSizer* headingModeSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -66,7 +66,7 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
    headingModeSizer->Add(headingModeText, 0, wxALL, 10);
    
    _selectedHeadingControl = new wxSpinCtrl(
-         this, SPIN_HEADING, wxT("000"), wxDefaultPosition, wxSize(50, -1));
+         this, SPIN_HEADING, wxT("000"), wxDefaultPosition, wxSize(100, -1));
    headingModeSizer->Add(_selectedHeadingControl, 0, wxEXPAND | wxALL, 10);
    _selectedHeadingControl->SetRange(-1, 360);
    _selectedHeadingControl->Disable();
@@ -74,10 +74,46 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
    this->_toggleHeadingModeButton = new wxButton(
          this, TOGGLE_HEADING, wxT("Selected Mode"));		
    headingModeSizer->Add(this->_toggleHeadingModeButton, 0, 
-                         wxEXPAND | wxALL, 10);
+                         wxEXPAND | wxALL, 10);   
+                         
+   rootSizer->Add(headingModeSizer, 0, wxALIGN_LEFT);
    
-   rootSizer->Add(headingModeSizer, 0, wxALIGN_CENTER);
+   /* Target altitude selection. */
+   wxBoxSizer* altitudeSizer = new wxBoxSizer(wxHORIZONTAL);
+   wxStaticText* targetAltitudeText = new wxStaticText(
+         this, wxID_ANY, wxT("Target altitude"), wxDefaultPosition,
+         wxSize(100, -1), wxALIGN_RIGHT);
+   altitudeSizer->Add(targetAltitudeText, 0, wxALL, 10);
+   _targetAltitudeControl = new wxSpinCtrl(
+         this, SPIN_ALTITUDE, wxT("7000"), wxDefaultPosition, wxSize(100, -1));
+   _targetAltitudeControl->SetRange(100, 60000);
+   altitudeSizer->Add(_targetAltitudeControl, 0, wxEXPAND | wxALL, 10);
+   
+   rootSizer->Add(altitudeSizer, 0, wxALIGN_LEFT);
+   
 		
+   /* Vertical speed mode selection. */
+   wxBoxSizer* verticalSpeedModeSizer = new wxBoxSizer(wxHORIZONTAL);
+   wxStaticText* verticalSpeedModeText = new wxStaticText(
+         this, wxID_ANY, wxT("Vertical speed"), wxDefaultPosition, 
+         wxSize(100, -1), wxALIGN_RIGHT);
+   verticalSpeedModeSizer->Add(verticalSpeedModeText, 0, wxALL, 10);
+   
+   _selectedVerticalSpeedControl = new wxSpinCtrl(
+         this, SPIN_VERTICAL_SPEED, wxT("000"), 
+         wxDefaultPosition, wxSize(100, -1));
+   verticalSpeedModeSizer->Add(_selectedVerticalSpeedControl, 
+         0, wxEXPAND | wxALL, 10);
+   _selectedVerticalSpeedControl->SetRange(-9900, 9900);
+   _selectedVerticalSpeedControl->Disable();
+   
+   this->_toggleVerticalSpeedModeButton = new wxButton(
+         this, TOGGLE_VERTICAL_SPEED, wxT("Selected Mode"));		
+   verticalSpeedModeSizer->Add(this->_toggleVerticalSpeedModeButton, 0, 
+                         wxEXPAND | wxALL, 10);   
+                         
+   rootSizer->Add(verticalSpeedModeSizer, 0, wxALIGN_LEFT);
+   
    this->SetSizer(rootSizer);
    
    _numberOfInstances++;
@@ -110,6 +146,15 @@ TestFCUWindow::onToggleHeadingMode(wxCommandEvent& event)
 }
 
 void
+TestFCUWindow::onToggleVerticalSpeedMode(wxCommandEvent& event)
+{
+   _controller->fcu()->toggleVerticalSpeedMode();
+   this->toggleMode(_toggleVerticalSpeedModeState, 
+                    *_toggleVerticalSpeedModeButton, 
+                    *_selectedVerticalSpeedControl);
+}
+
+void
 TestFCUWindow::onSpeedValueChanged(wxSpinEvent& event)
 {
    _controller->fcu()->setSpeedValue(Speed(event.GetPosition()));
@@ -131,6 +176,44 @@ TestFCUWindow::onHeadingValueChanged(wxSpinEvent& event)
    }
    _controller->fcu()->setHeadingValue(Heading(pos));
 }
+
+void
+TestFCUWindow::onTargetAltitudeChanged(wxSpinEvent& event)
+{
+   static unsigned long lastAlt = (event.GetValue() / 100) * 100;
+   unsigned long alt = event.GetValue();
+   if (lastAlt < alt)
+   {
+      alt = lastAlt + 100;
+      _targetAltitudeControl->SetValue(alt);
+   }
+   else if (lastAlt > alt)
+   {
+      alt = lastAlt - 100;
+      _targetAltitudeControl->SetValue(alt);
+   }
+   _controller->fcu()->setTargetAltitudeValue(alt);
+   lastAlt = alt;
+}
+
+void
+TestFCUWindow::onVerticalSpeedChanged(wxSpinEvent& event)
+{
+   static int lastSpeed = (event.GetValue() / 100) * 100;
+   int speed = event.GetValue();
+   if (lastSpeed < speed)
+   {
+      speed = lastSpeed + 100;
+      _selectedVerticalSpeedControl->SetValue(speed);
+   }
+   else if (lastSpeed > speed)
+   {
+      speed = lastSpeed - 100;
+      _selectedVerticalSpeedControl->SetValue(speed);
+   }
+   _controller->fcu()->setVerticalSpeedValue(speed);
+   lastSpeed = speed;
+}
 		
 void
 TestFCUWindow::toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl)
@@ -150,10 +233,20 @@ TestFCUWindow::toggleMode(bool& stateFlag, wxButton& btn, wxSpinCtrl& ctrl)
 }
 
 BEGIN_EVENT_TABLE(TestFCUWindow, wxFrame)
-   EVT_BUTTON     (TOGGLE_SPEED,    TestFCUWindow::onToggleSpeedMode)
-   EVT_BUTTON     (TOGGLE_HEADING,  TestFCUWindow::onToggleHeadingMode)
-   EVT_SPINCTRL   (SPIN_SPEED,      TestFCUWindow::onSpeedValueChanged)
-   EVT_SPINCTRL   (SPIN_HEADING,    TestFCUWindow::onHeadingValueChanged)
+   EVT_BUTTON  (TOGGLE_SPEED,          
+                TestFCUWindow::onToggleSpeedMode)
+   EVT_BUTTON  (TOGGLE_HEADING,        
+                TestFCUWindow::onToggleHeadingMode)
+   EVT_BUTTON  (TOGGLE_VERTICAL_SPEED, 
+                TestFCUWindow::onToggleVerticalSpeedMode)
+   EVT_SPINCTRL(SPIN_SPEED,      
+                TestFCUWindow::onSpeedValueChanged)
+   EVT_SPINCTRL(SPIN_HEADING,    
+                TestFCUWindow::onHeadingValueChanged)
+   EVT_SPINCTRL(SPIN_ALTITUDE,   
+                TestFCUWindow::onTargetAltitudeChanged)
+   EVT_SPINCTRL(SPIN_VERTICAL_SPEED,
+                TestFCUWindow::onVerticalSpeedChanged)
 END_EVENT_TABLE()
 
 TestFCUController::TestFCUController(wxApp* app, SerialDevice* serialDevice) :

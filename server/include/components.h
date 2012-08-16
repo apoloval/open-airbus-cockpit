@@ -98,6 +98,26 @@ public:
    virtual void setTargetAltitudeValue(unsigned int value) = 0;
    
    /**
+    * Obtain vertical speed mode. 
+    */
+   virtual ParameterMode verticalSpeedMode() const = 0;
+   
+   /**
+    * Set vertical speed mode. 
+    */
+   virtual void setVerticalSpeedMode(ParameterMode mode) = 0;
+   
+   /**
+    * Obtain vertical speed value. 
+    */
+   virtual int verticalSpeedValue() const = 0;
+   
+   /**
+    * Set vertical speed value. If vertical speed is managed, it has no effect.
+    */
+   virtual void setVerticalSpeedValue(int verticalSpeed) = 0;
+   
+   /**
     * Toggle speed mode. 
     */
    inline void toggleSpeedMode()
@@ -115,11 +135,22 @@ public:
          (headingMode() == PARAM_MANAGED) ? PARAM_SELECTED : PARAM_MANAGED);
    }; 
    
+   /**
+    * Toggle vertical speed mode.
+    */
+   inline void toggleVerticalSpeedMode()
+   {
+      setVerticalSpeedMode((verticalSpeedMode() == PARAM_MANAGED) 
+            ? PARAM_SELECTED : PARAM_MANAGED);
+   }
+   
    DECL_EVENT(EventSpeedValueChanged, Speed newValue);
    DECL_EVENT(EventHeadingValueChanged, Heading newValue);
    DECL_EVENT(EventSpeedModeToggled, ParameterMode newMode);
    DECL_EVENT(EventHeadingModeToggled, ParameterMode newMode);
    DECL_EVENT(EventTargetAltitudeValueChanged, unsigned int newValue);
+   DECL_EVENT(EventVerticalSpeedModeToggled, ParameterMode newMode);
+   DECL_EVENT(EventVerticalSpeedValueChanged, int newValue);
 
 };
 
