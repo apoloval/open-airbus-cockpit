@@ -66,6 +66,8 @@ private:
 
    struct AbstractSubscriber
    {
+      virtual ~AbstractSubscriber() {}
+      
       virtual void invoke(const AbstractEvent*) = 0;
    };
 

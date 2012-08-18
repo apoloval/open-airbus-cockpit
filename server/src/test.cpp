@@ -47,10 +47,21 @@ TestFlightControlUnit::setParameterValue(
    this->sendEvent(&ev);
 }
 
+template <typename Event, typename ValueType>
+void
+TestFlightControlUnit::setParameterUnits(
+      ValueType& parameter, const ValueType& units)
+{
+   parameter = units;
+   Event ev;
+   ev.newUnits = units;
+   this->sendEvent(&ev);
+}
+
 
 TestFlightControlUnit::TestFlightControlUnit() :
    _speed(180), _speedMode(PARAM_MANAGED),
-   _heading(0), _headingMode(PARAM_MANAGED),
+   _course(0), _courseMode(PARAM_MANAGED),
    _targetAltitude(7000)
 {}
 
@@ -61,6 +72,17 @@ TestFlightControlUnit::speedMode() const
 void
 TestFlightControlUnit::setSpeedMode(ParameterMode mode)
 { this->setParameterMode<EventSpeedModeToggled>(_speedMode, mode); }
+
+Speed::Units
+TestFlightControlUnit::speedUnits() const
+{ return _speedUnits; }
+
+void
+TestFlightControlUnit::setSpeedUnits(Speed::Units units)
+{ 
+   this->setParameterUnits<EventSpeedUnitsToggled, Speed::Units>(
+         _speedUnits, units);
+}
    
 Speed
 TestFlightControlUnit::speedValue() const
@@ -71,20 +93,20 @@ TestFlightControlUnit::setSpeedValue(const Speed& speed)
 { this->setParameterValue<EventSpeedValueChanged, Speed>(_speed, speed); }
    
 FlightControlUnit::ParameterMode
-TestFlightControlUnit::headingMode() const
-{ return _headingMode; }
+TestFlightControlUnit::courseMode() const
+{ return _courseMode; }
    
 void
-TestFlightControlUnit::setHeadingMode(ParameterMode mode)
-{ this->setParameterMode<EventHeadingModeToggled>(_headingMode, mode); }
+TestFlightControlUnit::setCourseMode(ParameterMode mode)
+{ this->setParameterMode<EventCourseModeToggled>(_courseMode, mode); }
    
-Heading
-TestFlightControlUnit::headingValue() const
-{ return _heading; }
+Course
+TestFlightControlUnit::courseValue() const
+{ return _course; }
 
 void
-TestFlightControlUnit::setHeadingValue(const Heading& heading)
-{ this->setParameterValue<EventHeadingValueChanged, Heading>(_heading, heading); }
+TestFlightControlUnit::setCourseValue(const Course& course)
+{ this->setParameterValue<EventCourseValueChanged, Course>(_course, course); }
    
 unsigned int
 TestFlightControlUnit::targetAltitudeValue() const

@@ -45,11 +45,11 @@ private:
    void onSpeedValueChanged(
          const FlightControlUnit::EventSpeedValueChanged& ev);
    
-   void onHeadingModeToggled(
-         const FlightControlUnit::EventHeadingModeToggled& ev);
+   void onCourseModeToggled(
+         const FlightControlUnit::EventCourseModeToggled& ev);
    
-   void onHeadingValueChanged(
-         const FlightControlUnit::EventHeadingValueChanged& ev);
+   void onCourseValueChanged(
+         const FlightControlUnit::EventCourseValueChanged& ev);
       
    void onTargetAltitudeChanged(
          const FlightControlUnit::EventTargetAltitudeValueChanged& ev);

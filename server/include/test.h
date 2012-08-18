@@ -33,17 +33,21 @@ public:
    
    virtual void setSpeedMode(ParameterMode mode);
    
+   virtual Speed::Units speedUnits() const;
+
+   virtual void setSpeedUnits(Speed::Units units);      
+
    virtual Speed speedValue() const;
    
    virtual void setSpeedValue(const Speed& speed);
 
-   virtual ParameterMode headingMode() const;
+   virtual ParameterMode courseMode() const;
    
-   virtual void setHeadingMode(ParameterMode mode);
+   virtual void setCourseMode(ParameterMode mode);
    
-   virtual Heading headingValue() const;
+   virtual Course courseValue() const;
    
-   virtual void setHeadingValue(const Heading& heading);
+   virtual void setCourseValue(const Course& course);
 
    virtual unsigned int targetAltitudeValue() const;
 
@@ -61,8 +65,9 @@ private:
 
    Speed          _speed;
    ParameterMode  _speedMode;
-   Heading        _heading;
-   ParameterMode  _headingMode;
+   Speed::Units   _speedUnits;
+   Course         _course;
+   ParameterMode  _courseMode;
    unsigned int   _targetAltitude;
    int            _verticalSpeed;
    ParameterMode  _verticalSpeedMode;
@@ -72,6 +77,9 @@ private:
    
    template <typename Event, typename ValueType>
    void setParameterValue(ValueType& parameter, const ValueType& value);
+
+   template <typename Event, typename ValueType>
+   void setParameterUnits(ValueType& parameter, const ValueType& units);
 
 };
    

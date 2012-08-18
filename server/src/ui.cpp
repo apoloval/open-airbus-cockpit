@@ -32,7 +32,7 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
            wxMINIMIZE_BOX | wxCLOSE_BOX | wxCAPTION),
    _controller(controller),
    _toggleSpeedModeState(false),
-   _toggleHeadingModeState(false)
+   _toggleCourseModeState(false)
 {
    wxBoxSizer* rootSizer = new wxBoxSizer(wxVERTICAL);
    
@@ -58,25 +58,25 @@ TestFCUWindow::TestFCUWindow(TestFCUController* controller) :
    
    rootSizer->Add(speedModeSizer, 0, wxALIGN_LEFT);
    
-   /* Heading mode selection. */
-   wxBoxSizer* headingModeSizer = new wxBoxSizer(wxHORIZONTAL);
-   wxStaticText* headingModeText = new wxStaticText(
-         this, wxID_ANY, wxT("Selected heading"), wxDefaultPosition, 
+   /* Course mode selection. */
+   wxBoxSizer* courseModeSizer = new wxBoxSizer(wxHORIZONTAL);
+   wxStaticText* courseModeText = new wxStaticText(
+         this, wxID_ANY, wxT("Selected course"), wxDefaultPosition, 
          wxSize(100, -1), wxALIGN_RIGHT);
-   headingModeSizer->Add(headingModeText, 0, wxALL, 10);
+   courseModeSizer->Add(courseModeText, 0, wxALL, 10);
    
-   _selectedHeadingControl = new wxSpinCtrl(
+   _selectedCourseControl = new wxSpinCtrl(
          this, SPIN_HEADING, wxT("000"), wxDefaultPosition, wxSize(100, -1));
-   headingModeSizer->Add(_selectedHeadingControl, 0, wxEXPAND | wxALL, 10);
-   _selectedHeadingControl->SetRange(-1, 360);
-   _selectedHeadingControl->Disable();
+   courseModeSizer->Add(_selectedCourseControl, 0, wxEXPAND | wxALL, 10);
+   _selectedCourseControl->SetRange(-1, 360);
+   _selectedCourseControl->Disable();
    
-   this->_toggleHeadingModeButton = new wxButton(
+   this->_toggleCourseModeButton = new wxButton(
          this, TOGGLE_HEADING, wxT("Selected Mode"));		
-   headingModeSizer->Add(this->_toggleHeadingModeButton, 0, 
+   courseModeSizer->Add(this->_toggleCourseModeButton, 0, 
                          wxEXPAND | wxALL, 10);   
                          
-   rootSizer->Add(headingModeSizer, 0, wxALIGN_LEFT);
+   rootSizer->Add(courseModeSizer, 0, wxALIGN_LEFT);
    
    /* Target altitude selection. */
    wxBoxSizer* altitudeSizer = new wxBoxSizer(wxHORIZONTAL);
@@ -137,12 +137,12 @@ TestFCUWindow::onToggleSpeedMode(wxCommandEvent& event)
 }
 	
 void
-TestFCUWindow::onToggleHeadingMode(wxCommandEvent& event)
+TestFCUWindow::onToggleCourseMode(wxCommandEvent& event)
 { 
-   _controller->fcu()->toggleHeadingMode();
-   this->toggleMode(_toggleHeadingModeState, 
-                    *_toggleHeadingModeButton, 
-                    *_selectedHeadingControl);
+   _controller->fcu()->toggleCourseMode();
+   this->toggleMode(_toggleCourseModeState, 
+                    *_toggleCourseModeButton, 
+                    *_selectedCourseControl);
 }
 
 void
@@ -161,20 +161,20 @@ TestFCUWindow::onSpeedValueChanged(wxSpinEvent& event)
 }
 		
 void
-TestFCUWindow::onHeadingValueChanged(wxSpinEvent& event)
+TestFCUWindow::onCourseValueChanged(wxSpinEvent& event)
 {
    int pos = event.GetPosition();
    if (pos == -1)
    {
       pos = 359;
-      _selectedHeadingControl->SetValue(pos);
+      _selectedCourseControl->SetValue(pos);
    }
    else if (pos == 360)
    {
       pos = 0;
-      _selectedHeadingControl->SetValue(pos);
+      _selectedCourseControl->SetValue(pos);
    }
-   _controller->fcu()->setHeadingValue(Heading(pos));
+   _controller->fcu()->setCourseValue(Course(pos));
 }
 
 void
@@ -236,13 +236,13 @@ BEGIN_EVENT_TABLE(TestFCUWindow, wxFrame)
    EVT_BUTTON  (TOGGLE_SPEED,          
                 TestFCUWindow::onToggleSpeedMode)
    EVT_BUTTON  (TOGGLE_HEADING,        
-                TestFCUWindow::onToggleHeadingMode)
+                TestFCUWindow::onToggleCourseMode)
    EVT_BUTTON  (TOGGLE_VERTICAL_SPEED, 
                 TestFCUWindow::onToggleVerticalSpeedMode)
    EVT_SPINCTRL(SPIN_SPEED,      
                 TestFCUWindow::onSpeedValueChanged)
    EVT_SPINCTRL(SPIN_HEADING,    
-                TestFCUWindow::onHeadingValueChanged)
+                TestFCUWindow::onCourseValueChanged)
    EVT_SPINCTRL(SPIN_ALTITUDE,   
                 TestFCUWindow::onTargetAltitudeChanged)
    EVT_SPINCTRL(SPIN_VERTICAL_SPEED,

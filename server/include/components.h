@@ -46,6 +46,12 @@ public:
       PARAM_SELECTED,
    };
    
+   enum VerticalLateralUnits
+   {
+      UNITS_HDG_VS,
+      UNITS_TRACK_FPA,
+   };
+   
    /**
     * Obtain speed mode. 
     * */
@@ -55,6 +61,16 @@ public:
     * Set speed mode. 
     */
    virtual void setSpeedMode(ParameterMode mode) = 0;
+   
+   /**
+    * Obtain speed display units.
+    */
+   virtual Speed::Units speedUnits() const = 0;
+   
+   /**
+    * Set speed display units.
+    */
+   virtual void setSpeedUnits(Speed::Units units) = 0;      
    
    /**
     * Obtain selected speed value. If speed is managed, it
@@ -68,24 +84,24 @@ public:
    virtual void setSpeedValue(const Speed& speed) = 0;
    
    /**
-    * Obtain heading mode. 
+    * Obtain course mode. 
     */
-   virtual ParameterMode headingMode() const = 0;
+   virtual ParameterMode courseMode() const = 0;
    
    /**
-    * Set heading mode. 
+    * Set course mode. 
     */
-   virtual void setHeadingMode(ParameterMode mode) = 0;
+   virtual void setCourseMode(ParameterMode mode) = 0;
    
    /**
-    * Obtain heading value. 
+    * Obtain course value. 
     */
-   virtual Heading headingValue() const = 0;
+   virtual Course courseValue() const = 0;
    
    /**
-    * Set heading value. If heading is managed, it has no effect.
+    * Set course value. If course is managed, it has no effect.
     */
-   virtual void setHeadingValue(const Heading& heading) = 0;
+   virtual void setCourseValue(const Course& course) = 0;
    
    /**
     * Obtain target altitude value. 
@@ -127,12 +143,12 @@ public:
    }; 
    
    /**
-    * Toggle heading mode.
+    * Toggle course mode.
     */
-   inline void toggleHeadingMode()
+   inline void toggleCourseMode()
    {
-      setHeadingMode(
-         (headingMode() == PARAM_MANAGED) ? PARAM_SELECTED : PARAM_MANAGED);
+      setCourseMode(
+         (courseMode() == PARAM_MANAGED) ? PARAM_SELECTED : PARAM_MANAGED);
    }; 
    
    /**
@@ -145,9 +161,10 @@ public:
    }
    
    DECL_EVENT(EventSpeedValueChanged, Speed newValue);
-   DECL_EVENT(EventHeadingValueChanged, Heading newValue);
+   DECL_EVENT(EventCourseValueChanged, Course newValue);
    DECL_EVENT(EventSpeedModeToggled, ParameterMode newMode);
-   DECL_EVENT(EventHeadingModeToggled, ParameterMode newMode);
+   DECL_EVENT(EventSpeedUnitsToggled, Speed::Units newUnits);
+   DECL_EVENT(EventCourseModeToggled, ParameterMode newMode);
    DECL_EVENT(EventTargetAltitudeValueChanged, unsigned int newValue);
    DECL_EVENT(EventVerticalSpeedModeToggled, ParameterMode newMode);
    DECL_EVENT(EventVerticalSpeedValueChanged, int newValue);

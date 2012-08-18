@@ -27,8 +27,8 @@ FCUDeviceManager::FCUDeviceManager(
 {
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedValueChanged);
-   _fcu->subscribe(this, &FCUDeviceManager::onHeadingModeToggled);
-   _fcu->subscribe(this, &FCUDeviceManager::onHeadingValueChanged);
+   _fcu->subscribe(this, &FCUDeviceManager::onCourseModeToggled);
+   _fcu->subscribe(this, &FCUDeviceManager::onCourseValueChanged);
    _fcu->subscribe(this, &FCUDeviceManager::onTargetAltitudeChanged);  
    _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedValueChanged);
@@ -60,19 +60,19 @@ FCUDeviceManager::onSpeedValueChanged(
 }
    
 void 
-FCUDeviceManager::onHeadingModeToggled(
-         const FlightControlUnit::EventHeadingModeToggled& ev)
+FCUDeviceManager::onCourseModeToggled(
+         const FlightControlUnit::EventCourseModeToggled& ev)
 {
    _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, _fcu->headingValue());
+         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, _fcu->courseValue());
 }
    
 void 
-FCUDeviceManager::onHeadingValueChanged(
-      const FlightControlUnit::EventHeadingValueChanged& ev)
+FCUDeviceManager::onCourseValueChanged(
+      const FlightControlUnit::EventCourseValueChanged& ev)
 {            
-   if (_fcu->headingMode() == FlightControlUnit::PARAM_SELECTED)
+   if (_fcu->courseMode() == FlightControlUnit::PARAM_SELECTED)
          _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, word(ev.newValue));
 }
       
@@ -108,7 +108,7 @@ FCUDeviceManager::status()
    word val = 0;
    if (_fcu->speedMode() == FlightControlUnit::PARAM_SELECTED)
       val |= MASK_FCU_SPD_MOD;
-   if (_fcu->headingMode() == FlightControlUnit::PARAM_SELECTED)
+   if (_fcu->courseMode() == FlightControlUnit::PARAM_SELECTED)
       val |= MASK_FCU_HDG_MOD;
    // TODO: complete the rest of state flags
    return val;

@@ -64,9 +64,9 @@ private:
    bool _toggleSpeedModeState;
    wxSpinCtrl* _selectedSpeedControl;
    
-   wxButton* _toggleHeadingModeButton;
-   bool _toggleHeadingModeState;
-   wxSpinCtrl* _selectedHeadingControl;
+   wxButton* _toggleCourseModeButton;
+   bool _toggleCourseModeState;
+   wxSpinCtrl* _selectedCourseControl;
    
    wxSpinCtrl* _targetAltitudeControl;
 
@@ -75,10 +75,10 @@ private:
    wxSpinCtrl* _selectedVerticalSpeedControl;
    
    void onToggleSpeedMode(wxCommandEvent& event);   
-   void onToggleHeadingMode(wxCommandEvent& event);
+   void onToggleCourseMode(wxCommandEvent& event);
    void onToggleVerticalSpeedMode(wxCommandEvent& event);
    void onSpeedValueChanged(wxSpinEvent& event);
-   void onHeadingValueChanged(wxSpinEvent& event);
+   void onCourseValueChanged(wxSpinEvent& event);
    void onTargetAltitudeChanged(wxSpinEvent& event);
    void onVerticalSpeedChanged(wxSpinEvent& event);
    

@@ -51,17 +51,27 @@ private:
 
 };
 
-class Heading
+class Course
 {
 public:
 
-   inline Heading() : _value(0.0f) {}
+   enum Type
+   {
+      TYPE_HEADING,
+      TYPE_TRACK,
+   };
 
-   inline Heading(float value) : _value(value)
+   inline Course() : Course(0.0f, TYPE_HEADING) {}
+
+   inline Course(float value, Type type = TYPE_HEADING) : 
+         _value(value), _type(type)
    { this->normalise(); }
    
    inline float value() const
    { return _value; }
+   
+   inline Type type() const
+   { return _type; }
    
    inline operator float () const
    { return value(); }
@@ -69,6 +79,7 @@ public:
 private:
 
    float _value;
+   Type  _type;
    
    inline void normalise()
    {
