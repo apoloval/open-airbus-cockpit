@@ -22,7 +22,7 @@
 #include <exception>
 #include <string>
 
-namespace oac { namespace server {
+namespace oac {
 
 class Exception : public std::exception
 {
@@ -42,7 +42,7 @@ private:
 };
 
 #define DECL_EXCEPTION(type) \
-   class type : public ::oac::server::Exception \
+   class type : public ::oac::Exception \
    {\
    public:\
       inline type(const std::string& message) : Exception(message) {} \
@@ -53,6 +53,6 @@ DECL_EXCEPTION(IllegalStateException);
 DECL_EXCEPTION(NotFoundException);
 DECL_EXCEPTION(InvalidInputException);
 
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

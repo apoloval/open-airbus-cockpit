@@ -19,7 +19,7 @@
 #ifndef OAC_SERVER_TYPES_H
 #define OAC_SERVER_TYPES_H
 
-namespace oac { namespace server {
+namespace oac {
 
 class Speed
 {
@@ -61,7 +61,7 @@ public:
       TYPE_TRACK,
    };
 
-   inline Course() : Course(0.0f, TYPE_HEADING) {}
+   inline Course() : _value(0.0f), _type(TYPE_HEADING) {}
 
    inline Course(float value, Type type = TYPE_HEADING) : 
          _value(value), _type(type)
@@ -91,6 +91,6 @@ private:
    
 };
 	
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

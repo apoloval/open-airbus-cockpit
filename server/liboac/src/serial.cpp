@@ -18,42 +18,42 @@
 
 #include "serial.h"
 
-#ifdef __WIN32
+#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
 #include <cstdio>
 #endif
 
-namespace oac { namespace server {
+namespace oac {
 
 SerialDeviceManager&
 SerialDeviceManager::getDefault()
 {
-   static Win32SerialDeviceManager* singleton = NULL;
+   static SerialDeviceManager* singleton = NULL;
    if (!singleton)
    {
-#ifdef __WIN32
+#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
       singleton = new Win32SerialDeviceManager();
 #endif
    }
    return *singleton;
 }
 
-#ifdef __WIN32
+#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
 
 namespace {
    
-std::string
+std::wstring
 deviceNameForPortNumer(unsigned int portNumber)
 {
-   char name[16];
+   WCHAR name[16];
    if (portNumber < 10)
-      sprintf(name, "COM%d", portNumber);  
+      wsprintf(name, L"COM%d", portNumber);
    else
-      sprintf(name, "\\\\.\\COM%d", portNumber);   
+      wsprintf(name, L"\\\\.\\COM%d", portNumber);
    return name;
 }
 
 SerialDeviceInfo
-deviceForName(const std::string& devName)
+deviceForName(const std::wstring& devName)
 {
    SerialDeviceInfo dev;
    dev.name = devName;
@@ -124,9 +124,9 @@ Win32SerialDeviceManager::listSerialDevices(SerialDeviceInfoArray& devs) const
    devs.clear();
    for (unsigned int i = 0; i < 256; i++)
    {
-      std::string devName = deviceNameForPortNumer(i);
-      HANDLE handle = ::CreateFile(devName.c_str(), GENERIC_READ | GENERIC_WRITE,
-                                  0, NULL, OPEN_EXISTING, 0, NULL);
+      auto devName = deviceNameForPortNumer(i);
+      auto handle = ::CreateFile(devName.c_str(), GENERIC_READ | GENERIC_WRITE,
+                                 0, NULL, OPEN_EXISTING, 0, NULL);
       if (handle != INVALID_HANDLE_VALUE) {
          devs.push_back(deviceForName(devName));
          CloseHandle(handle);      
@@ -138,8 +138,8 @@ Win32SerialDevice*
 Win32SerialDeviceManager::open(const SerialDeviceInfo& dev) 
 throw (NotFoundException)
 {
-   HANDLE handle = ::CreateFile(dev.name.c_str(), GENERIC_READ | GENERIC_WRITE,
-                                 0, NULL, OPEN_EXISTING, 0, NULL);
+   auto handle = ::CreateFile(dev.name.c_str(), GENERIC_READ | GENERIC_WRITE,
+                              0, NULL, OPEN_EXISTING, 0, NULL);
    if (handle != INVALID_HANDLE_VALUE) {
       return new Win32SerialDevice(handle);
    }
@@ -149,4 +149,4 @@ throw (NotFoundException)
    
 #endif
 
-}}; // namespace oac::server
+}; // namespace oac

@@ -18,7 +18,7 @@
 
 #include "oacsp-utils.h"
 
-namespace oac { namespace server {
+namespace oac {
 
 void
 SerialProtocolManager::sendReset()
@@ -70,4 +70,4 @@ SerialProtocolManager::sendCommand(const Command& cmd)
    }
 }
 
-}}; //namespace oac::server
+}; //namespace oac

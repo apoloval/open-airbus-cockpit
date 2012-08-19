@@ -19,11 +19,10 @@
 #ifndef OAC_SERVER_OACSP_UTILS_H
 #define OAC_SERVER_OACSP_UTILS_H
 
-#include <OACSP/oacsp.h>
-
+#include "oacsp.h"
 #include "serial.h"
 
-namespace oac { namespace server {
+namespace oac {
    
 class SerialProtocolManager
 {
@@ -42,6 +41,6 @@ private:
    SerialDevice* _serialDevice;
 };
    
-}}; //namespace oac::server
+}; // namespace oac
 
 #endif

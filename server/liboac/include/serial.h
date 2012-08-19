@@ -22,27 +22,29 @@
 #include <string>
 #include <vector>
 
-#ifdef __WIN32
+#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
 /* Raw IO is not included in Windows versions previous to WinXP SP2. The
  * following macros should be declared in order to force the included
  * headers files to declare such a types. 
  */
+/*
 #ifndef _WIN32_WINNT
 #define _WIN32_WINNT 0x0502
 #endif
 #ifndef _WINVER
 #define _WINVER 0x0502
 #endif
+*/
 #include <Windows.h>
 #include <Winuser.h>
 #endif
 
-
+#include "platform.h"
 #include "exception.h"
 
-namespace oac { namespace server {
+namespace oac {
 
-typedef std::string SerialDeviceName;
+typedef std::wstring SerialDeviceName;
 
 struct SerialDeviceInfo
 {
@@ -103,7 +105,7 @@ public:
          throw (IOException) = 0;
 };
 
-#ifdef __WIN32
+#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
 
 class Win32SerialDevice : public SerialDevice
 {
@@ -138,6 +140,6 @@ public:
 };
 #endif
 
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

@@ -18,20 +18,30 @@
 
 #include "devices.h"
 
-namespace oac { namespace server {
+namespace oac {
 
 FCUDeviceManager::FCUDeviceManager(
       SerialDevice* serialDevice, FlightControlUnit* fcu) :
    _serialDevice(serialDevice), _fcu(fcu),
    _protocolManager(new SerialProtocolManager(serialDevice))
 {
-   _fcu->subscribe(this, &FCUDeviceManager::onSpeedModeToggled);
+   // _fcu->subscribe(this, &FCUDeviceManager::onSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedValueChanged);
    _fcu->subscribe(this, &FCUDeviceManager::onCourseModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onCourseValueChanged);
    _fcu->subscribe(this, &FCUDeviceManager::onTargetAltitudeChanged);  
    _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onVerticalSpeedValueChanged);
+   
+   _fcu->subscribe<FlightControlUnit::EventSpeedModeToggled>(
+         [this](const FlightControlUnit::EventSpeedModeToggled& ev)
+         {
+            this->_protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+            if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
+               this->_protocolManager->sendWriteVar(
+                     VAR_FCU_SEL_SPD, word(_fcu->speedValue().asKnots()));
+         }
+   );
 
    _protocolManager->sendReset();
    
@@ -65,7 +75,8 @@ FCUDeviceManager::onCourseModeToggled(
 {
    _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, _fcu->courseValue());
+      _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG,
+                                     word(_fcu->courseValue()));
 }
    
 void 
@@ -98,8 +109,7 @@ FCUDeviceManager::onVerticalSpeedValueChanged(
       const FlightControlUnit::EventVerticalSpeedValueChanged& ev)
 {
    if (_fcu->verticalSpeedMode() == FlightControlUnit::PARAM_SELECTED)
-      _protocolManager->sendWriteVar(VAR_FCU_SEL_VS, 
-            _fcu->verticalSpeedValue());         
+      _protocolManager->sendWriteVar(VAR_FCU_SEL_VS, ev.newValue);         
 }
 
 word
@@ -114,4 +124,4 @@ FCUDeviceManager::status()
    return val;
 }
 
-}}; // namespace oac::server
+}; // namespace oac

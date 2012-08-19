@@ -22,7 +22,7 @@
 #include "components.h"
 #include "types.h"
 
-namespace oac { namespace server {
+namespace oac {
 
 class TestFlightControlUnit : public FlightControlUnit {
 public:
@@ -83,6 +83,6 @@ private:
 
 };
    
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

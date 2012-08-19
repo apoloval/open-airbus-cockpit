@@ -19,13 +19,12 @@
 #ifndef OAC_SERVER_DEVICES_H
 #define OAC_SERVER_DEVICES_H
 
-#include <OACSP/oacsp.h>
-
 #include "components.h"
-#include "serial.h"
+#include "oacsp.h"
 #include "oacsp-utils.h"
+#include "serial.h"
 
-namespace oac { namespace server {
+namespace oac {
 
 class FCUDeviceManager
 {
@@ -64,6 +63,6 @@ private:
    
 };
    
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

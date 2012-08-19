@@ -16,11 +16,10 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "oacsp.h"
 #include "test.h"
 
-#include <OACSP/oacsp.h>
-
-namespace oac { namespace server {
+namespace oac {
 
 template<typename Event>
 void
@@ -141,4 +140,4 @@ TestFlightControlUnit::setVerticalSpeedValue(int verticalSpeed)
          _verticalSpeed, verticalSpeed);
 }
 
-}}; // namespace oac::server
+}; // namespace oac

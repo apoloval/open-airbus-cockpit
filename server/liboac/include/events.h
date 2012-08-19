@@ -20,8 +20,9 @@
 #define OAC_SERVER_EVENTS_H
 
 #include <list>
+#include <functional>
 
-namespace oac { namespace server {
+namespace oac {
 
 class EventSender
 {
@@ -45,8 +46,15 @@ public:
    template <typename Target, typename Event>
    void subscribe(Target* target, void (Target::* callback) (const Event&))
    {
-      AbstractSubscriber* subscriber = 
-            new EventSubscriber<Target, Event>(target, callback);
+      auto subscriber = new FunctionMemberEventSubscriber<Target, Event>(
+            target, callback);
+      _eventSubscribers.push_back(subscriber);
+   }
+   
+   template <typename Event>
+   void subscribe(std::function<void(const Event&)> lambda)
+   {
+      auto subscriber = new LambdaEventSubscriber<Event>(lambda);
       _eventSubscribers.push_back(subscriber);
    }
 
@@ -72,12 +80,12 @@ private:
    };
 
    template <typename Target, typename Event>
-   struct EventSubscriber : AbstractSubscriber
+   struct FunctionMemberEventSubscriber : AbstractSubscriber
    {
       Target* _target;
       void (Target::* _callback)(const Event&);
       
-      EventSubscriber(Target* target, 
+      FunctionMemberEventSubscriber(Target* target, 
                       void (Target::* callback)(const Event&)) :
          _target(target), _callback(callback)
       {}
@@ -92,15 +100,34 @@ private:
       }
    };
    
+   template <typename Event>
+   struct LambdaEventSubscriber : AbstractSubscriber
+   {
+      std::function<void(const Event&)> _lambda;
+      
+      LambdaEventSubscriber(std::function<void(const Event&)>& lambda) :
+            _lambda(lambda)
+      {}
+      
+      virtual void invoke(const AbstractEvent* ev)
+      {
+         const Event* narrowed = dynamic_cast<const Event*>(ev);
+         if (narrowed)
+         {
+            _lambda(*narrowed);
+         }
+      }
+   };
+   
    typedef std::list<AbstractSubscriber*> EventSubscriberList;
    
    EventSubscriberList _eventSubscribers;
 
 };
 
-#define DECL_EVENT(name, fielddecl...) \
-   struct name : ::oac::server::EventSender::AbstractEvent { fielddecl; }; \
+#define DECL_EVENT(name, ...) \
+   struct name : ::oac::EventSender::AbstractEvent { __VA_ARGS__; }; \
 
-}}; // namespace oac::server
+}; // namespace oac
 
 #endif

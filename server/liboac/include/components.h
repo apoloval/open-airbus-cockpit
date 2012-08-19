@@ -22,7 +22,7 @@
 #include "types.h"
 #include "events.h"
 
-namespace oac { namespace server {
+namespace oac {
 
 /**
  * The interface of a cockpit component.
@@ -185,6 +185,6 @@ public:
 
 };
    
-}}; //namespace oac::server
+}; //namespace oac
 
 #endif

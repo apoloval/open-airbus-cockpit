@@ -1,6 +1,9 @@
 # OSX stuff
 .DS_Store
 
+# Build directories
+build/
+
 # Compiled Object files
 *.slo
 *.lo
@@ -20,3 +23,10 @@ OACServer*.mk
 OAC_Server.*
 OAC_Server*.mk
 Debug
+
+# QT project files
+*.pro.user
+*.config
+*.creator
+*.files
+*.includes
