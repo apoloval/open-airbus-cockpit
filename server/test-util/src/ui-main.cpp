@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Qt/QInputDialog.h>
-#include <Qt/QMessageBox.h>
+#include <QtGui/QInputDialog.h>
+#include <QtGui/QMessageBox.h>
 
 #include "ui-main.h"
 
@@ -25,7 +25,7 @@ namespace oac { namespace testutil {
 
 MainWindow::MainWindow(MainController* ctrl)
    : QWidget(nullptr, Qt::Dialog | Qt::MSWindowsFixedSizeDialogHint),
-     _ctrl(ctrl)
+     _ctrl(ctrl), _fcuTestWindow(nullptr)
 {
    if (!ctrl)
       _ctrl = new MainController();
@@ -59,6 +59,8 @@ MainWindow::MainWindow(MainController* ctrl)
    _fcuTestButton = new QPushButton(tr("Test"), this);
    fcuLayout->addWidget(_fcuTestButton);
    _fcuTestButton->setDisabled(true);
+   this->connect(_fcuTestButton, SIGNAL(clicked()),
+                 this, SLOT(onTestFcuButtonPressed()));
 }
 
 bool
@@ -78,7 +80,7 @@ MainWindow::selectSerialDevice(QString &selected)
 
    QStringList items;
    for (auto it = devInfos.begin(), end = devInfos.end(); it != end; ++it) {
-      items << QString::fromStdWString(it->name);
+      items << QString::fromStdString(it->name);
    }
    bool ok;
    selected = QInputDialog::getItem(this, tr("Select a serial port"),
@@ -95,7 +97,7 @@ MainWindow::onFcuConnectionButtonPressed()
       QString selectedDev;
       if (this->selectSerialDevice(selectedDev))
       {
-         _ctrl->connectFcu(selectedDev.toStdWString());
+         _ctrl->connectFcu(selectedDev.toStdString());
          _fcuStatusValueLabel->setText(tr("connected to ") + selectedDev);
          _fcuStatusValueLabel->setStyleSheet(tr("QLabel {color: green}"));
          _fcuConnectionButton->setText(tr("Disconnect"));
@@ -109,7 +111,25 @@ MainWindow::onFcuConnectionButtonPressed()
       _fcuStatusValueLabel->setStyleSheet(tr("QLabel {color: red}"));
       _fcuConnectionButton->setText(tr("Connect"));
       _fcuTestButton->setDisabled(true);
+      if (_fcuTestWindow)
+         _fcuTestWindow->close();
    }
 }
+
+void
+MainWindow::onTestFcuButtonPressed()
+{
+   if (!_fcuTestWindow)
+   {
+      FlightControlUnit* fcu = _ctrl->fcuDevInfo().fcu;
+      _fcuTestWindow = new FCUTestWindow(fcu, this);
+      this->connect(_fcuTestWindow, SIGNAL(destroyed()),
+                    this, SLOT(onTestFcuWindowDestroyed()));
+   }
+   _fcuTestWindow->show();
+}
+
+void MainWindow::onTestFcuWindowDestroyed()
+{ _fcuTestWindow = nullptr; }
 
 }}; // namespace oac::testutil

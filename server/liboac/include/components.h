@@ -19,6 +19,7 @@
 #ifndef OAC_SERVER_COMPONENTS_H
 #define OAC_SERVER_COMPONENTS_H
 
+#include "config.h"
 #include "types.h"
 #include "events.h"
 
@@ -27,7 +28,7 @@ namespace oac {
 /**
  * The interface of a cockpit component.
  */
-class CockpitComponent : public EventSender
+class LIBOAC_EXPORT CockpitComponent : public EventSender
 {
 public:
    
@@ -36,7 +37,7 @@ public:
 /**
  * The interface of a flight control unit cockpit component. 
  */
-class FlightControlUnit : public CockpitComponent
+class LIBOAC_EXPORT FlightControlUnit : public CockpitComponent
 {
 public:
 
@@ -174,14 +175,14 @@ public:
 /**
  * The interface of any class capable of building cockpit components. 
  */
-class ComponentBuilder
+class LIBOAC_EXPORT ComponentBuilder
 {
 public:
 
    /**
     * Create a new flight control unit component. 
     */
-   virtual FlightControlUnit* newFlightControlUnit();
+   virtual FlightControlUnit* newFlightControlUnit() = 0;
 
 };
    

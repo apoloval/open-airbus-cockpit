@@ -16,18 +16,27 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <QApplication>
+#ifndef OAC_SERVER_CONFIG_H
+#define OAC_SERVER_CONFIG_H
 
-#include "ui-main.h"
+#include <KarenCore/platform.h>
 
-using namespace oac::testutil;
+#ifdef LIBOAC_BUILD
+   #if KAREN_COMPILER == KAREN_COMPILER_CYGWIN || \
+       KAREN_COMPILER == KAREN_COMPILER_MINGW || \
+       KAREN_COMPILER == KAREN_COMPILER_CLANG
+      #define LIBOAC_EXPORT __attribute__((dllexport))
+   #else
+      #define LIBOAC_EXPORT __declspec(dllexport)
+   #endif
+#else
+   #if KAREN_COMPILER == KAREN_COMPILER_CYGWIN || \
+       KAREN_COMPILER == KAREN_COMPILER_MINGW || \
+       KAREN_COMPILER == KAREN_COMPILER_CLANG
+      #define LIBOAC_EXPORT __attribute__((dllimport))
+   #else
+      #define LIBOAC_EXPORT __declspec(dllimport)
+   #endif
+#endif
 
-int main(int argc, char *argv[])
-{
-   int newArgsCount = 0;
-   char *newArgs[] = { "MyAppName", "", ""};
-   QApplication a(newArgsCount, newArgs);
-   MainWindow w;
-   w.show();
-   return a.exec();
-}
+#endif

@@ -20,23 +20,25 @@
 #define OAC_SERVER_DEVICES_H
 
 #include "components.h"
+#include "config.h"
 #include "oacsp.h"
 #include "oacsp-utils.h"
 #include "serial.h"
 
 namespace oac {
 
-class FCUDeviceManager
+class LIBOAC_EXPORT FCUDeviceManager
 {
 public:
 
-   FCUDeviceManager(SerialDevice* serialDevice, FlightControlUnit* fcu);
+   FCUDeviceManager(const Ptr<SerialDevice>& serialDevice,
+                    const Ptr<FlightControlUnit>& fcu);
 
 private:
 
-   SerialDevice* _serialDevice;
-   FlightControlUnit* _fcu;
-   SerialProtocolManager* _protocolManager;
+   Ptr<SerialDevice> _serialDevice;
+   Ptr<FlightControlUnit> _fcu;
+   SerialProtocolManager _protocolManager;
 
    void onSpeedModeToggled(
          const FlightControlUnit::EventSpeedModeToggled& ev);
@@ -62,7 +64,7 @@ private:
    word status();
    
 };
-   
+
 }; // namespace oac
 
 #endif

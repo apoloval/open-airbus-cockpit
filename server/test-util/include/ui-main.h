@@ -26,6 +26,7 @@
 #include <QtGui/QWidget>
 
 #include "ctrl-main.h"
+#include "ui-fcu.h"
 
 namespace oac { namespace testutil {
 
@@ -48,11 +49,15 @@ private:
     QPushButton* _fcuConnectionButton;
     QPushButton* _fcuTestButton;
 
+    FCUTestWindow* _fcuTestWindow;
+
     bool selectSerialDevice(QString& selected);
 
 private slots:
 
     void onFcuConnectionButtonPressed();
+    void onTestFcuButtonPressed();
+    void onTestFcuWindowDestroyed();
 
 };
 

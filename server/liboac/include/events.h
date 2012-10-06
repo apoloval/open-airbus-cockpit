@@ -22,9 +22,11 @@
 #include <list>
 #include <functional>
 
+#include "config.h"
+
 namespace oac {
 
-class EventSender
+class LIBOAC_EXPORT EventSender
 {
 public:
 

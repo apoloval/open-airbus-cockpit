@@ -22,31 +22,21 @@
 #include <string>
 #include <vector>
 
-#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
-/* Raw IO is not included in Windows versions previous to WinXP SP2. The
- * following macros should be declared in order to force the included
- * headers files to declare such a types. 
- */
-/*
-#ifndef _WIN32_WINNT
-#define _WIN32_WINNT 0x0502
-#endif
-#ifndef _WINVER
-#define _WINVER 0x0502
-#endif
-*/
 #include <Windows.h>
 #include <Winuser.h>
-#endif
 
-#include "platform.h"
+#include <KarenCore/platform.h>
+#include <KarenCore/string.h>
+
+#include "config.h"
 #include "exception.h"
+#include "types.h"
 
 namespace oac {
 
-typedef std::wstring SerialDeviceName;
+typedef String SerialDeviceName;
 
-struct SerialDeviceInfo
+struct LIBOAC_EXPORT SerialDeviceInfo
 {
    SerialDeviceName name;
 };
@@ -58,7 +48,7 @@ class SerialDevice;
 /**
  * The interface for any object capable of managing serial devices.
  */
-class SerialDeviceManager
+class LIBOAC_EXPORT SerialDeviceManager
 {
 public:
 
@@ -81,7 +71,7 @@ public:
 
 };
 
-class SerialDevice
+class LIBOAC_EXPORT SerialDevice
 {
 public:
 
@@ -105,9 +95,9 @@ public:
          throw (IOException) = 0;
 };
 
-#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
+#if KAREN_PLATFORM == KAREN_PLATFORM_WINDOWS
 
-class Win32SerialDevice : public SerialDevice
+class LIBOAC_EXPORT Win32SerialDevice : public SerialDevice
 {
 public:
 
@@ -129,7 +119,7 @@ private:
    bool   _blocking;
 };
 
-class Win32SerialDeviceManager : public SerialDeviceManager
+class LIBOAC_EXPORT Win32SerialDeviceManager : public SerialDeviceManager
 {
 public:
    

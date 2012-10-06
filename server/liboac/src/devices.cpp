@@ -21,9 +21,10 @@
 namespace oac {
 
 FCUDeviceManager::FCUDeviceManager(
-      SerialDevice* serialDevice, FlightControlUnit* fcu) :
+      const Ptr<SerialDevice>& serialDevice,
+      const Ptr<FlightControlUnit>& fcu) :
    _serialDevice(serialDevice), _fcu(fcu),
-   _protocolManager(new SerialProtocolManager(serialDevice))
+   _protocolManager(serialDevice)
 {
    // _fcu->subscribe(this, &FCUDeviceManager::onSpeedModeToggled);
    _fcu->subscribe(this, &FCUDeviceManager::onSpeedValueChanged);
@@ -36,14 +37,14 @@ FCUDeviceManager::FCUDeviceManager(
    _fcu->subscribe<FlightControlUnit::EventSpeedModeToggled>(
          [this](const FlightControlUnit::EventSpeedModeToggled& ev)
          {
-            this->_protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+            _protocolManager.sendWriteVar(VAR_FCU_STATUS, status());
             if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-               this->_protocolManager->sendWriteVar(
+               _protocolManager.sendWriteVar(
                      VAR_FCU_SEL_SPD, word(_fcu->speedValue().asKnots()));
          }
    );
 
-   _protocolManager->sendReset();
+   _protocolManager.sendReset();
    
    // Set the altitude to its current value to trigger the event
    // and send the proper command to the serial device. 
@@ -54,9 +55,9 @@ void
 FCUDeviceManager::onSpeedModeToggled(
          const FlightControlUnit::EventSpeedModeToggled& ev)
 {
-   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+   _protocolManager.sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-      _protocolManager->sendWriteVar(
+      _protocolManager.sendWriteVar(
             VAR_FCU_SEL_SPD, word(_fcu->speedValue().asKnots()));
 }
    
@@ -65,7 +66,7 @@ FCUDeviceManager::onSpeedValueChanged(
          const FlightControlUnit::EventSpeedValueChanged& ev)
 {
    if (_fcu->speedMode() == FlightControlUnit::PARAM_SELECTED)
-      _protocolManager->sendWriteVar(
+      _protocolManager.sendWriteVar(
             VAR_FCU_SEL_SPD, word(ev.newValue.asKnots()));
 }
    
@@ -73,9 +74,9 @@ void
 FCUDeviceManager::onCourseModeToggled(
          const FlightControlUnit::EventCourseModeToggled& ev)
 {
-   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+   _protocolManager.sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-      _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG,
+      _protocolManager.sendWriteVar(VAR_FCU_SEL_HDG,
                                      word(_fcu->courseValue()));
 }
    
@@ -84,23 +85,23 @@ FCUDeviceManager::onCourseValueChanged(
       const FlightControlUnit::EventCourseValueChanged& ev)
 {            
    if (_fcu->courseMode() == FlightControlUnit::PARAM_SELECTED)
-         _protocolManager->sendWriteVar(VAR_FCU_SEL_HDG, word(ev.newValue));
+         _protocolManager.sendWriteVar(VAR_FCU_SEL_HDG, word(ev.newValue));
 }
       
 void 
 FCUDeviceManager::onTargetAltitudeChanged(
       const FlightControlUnit::EventTargetAltitudeValueChanged& ev)
 {
-   _protocolManager->sendWriteVar(VAR_FCU_TGT_ALT, word(ev.newValue));
+   _protocolManager.sendWriteVar(VAR_FCU_TGT_ALT, word(ev.newValue));
 }
 
 void 
 FCUDeviceManager::onVerticalSpeedModeToggled(
       const FlightControlUnit::EventVerticalSpeedModeToggled& ev)
 {
-   _protocolManager->sendWriteVar(VAR_FCU_STATUS, status());
+   _protocolManager.sendWriteVar(VAR_FCU_STATUS, status());
    if (ev.newMode == FlightControlUnit::PARAM_SELECTED)
-         _protocolManager->sendWriteVar(
+         _protocolManager.sendWriteVar(
                VAR_FCU_SEL_VS, _fcu->verticalSpeedValue());
 }
    
@@ -109,7 +110,7 @@ FCUDeviceManager::onVerticalSpeedValueChanged(
       const FlightControlUnit::EventVerticalSpeedValueChanged& ev)
 {
    if (_fcu->verticalSpeedMode() == FlightControlUnit::PARAM_SELECTED)
-      _protocolManager->sendWriteVar(VAR_FCU_SEL_VS, ev.newValue);         
+      _protocolManager.sendWriteVar(VAR_FCU_SEL_VS, ev.newValue);
 }
 
 word

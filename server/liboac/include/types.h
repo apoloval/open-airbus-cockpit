@@ -19,9 +19,11 @@
 #ifndef OAC_SERVER_TYPES_H
 #define OAC_SERVER_TYPES_H
 
+#include "config.h"
+
 namespace oac {
 
-class Speed
+class LIBOAC_EXPORT Speed
 {
 public:
 
@@ -51,7 +53,7 @@ private:
 
 };
 
-class Course
+class LIBOAC_EXPORT Course
 {
 public:
 

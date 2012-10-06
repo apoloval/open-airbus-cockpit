@@ -59,7 +59,7 @@ TestFlightControlUnit::setParameterUnits(
 
 
 TestFlightControlUnit::TestFlightControlUnit() :
-   _speed(180), _speedMode(PARAM_MANAGED),
+   _speed(180), _speedMode(PARAM_MANAGED), _speedUnits(Speed::UNITS_KT),
    _course(0), _courseMode(PARAM_MANAGED),
    _targetAltitude(7000)
 {}

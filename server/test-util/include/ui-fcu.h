@@ -16,48 +16,46 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_TESTUTIL_CTRLMAIN_H
-#define OAC_TESTUTIL_CTRLMAIN_H
+#ifndef OAC_TESTUTIL_UI_FCU_H
+#define OAC_TESTUTIL_UI_FCU_H
+
+#include <QtGui/QGroupBox>
+#include <QtGui/QLCDNumber>
+#include <QtGui/QRadioButton>
+#include <QtGui/QSpinBox>
+#include <QtGui/QWidget>
 
 #include <devices.h>
-#include <list>
-#include <serial.h>
 
 namespace oac { namespace testutil {
 
-class MainController
+class FCUTestWindow : public QWidget
 {
+   Q_OBJECT
+
 public:
 
-   struct DevInfo
-   {
-      bool connected;
-      SerialDevice* serialDevice;
-
-      inline DevInfo() : connected(false), serialDevice(nullptr) {}
-   };
-
-   struct FCUDevInfo : DevInfo
-   {
-      FlightControlUnit* fcu;
-
-      inline FCUDevInfo() : DevInfo(), fcu(nullptr) {}
-   };
-
-   MainController(SerialDeviceManager* serialDeviceManager = NULL);
-
-   inline const FCUDevInfo& fcuDevInfo() const
-   { return _fcuDevInfo; }
-
-   void connectFcu(const SerialDeviceName& devName);
-
-   void disconnectFcu();
+   FCUTestWindow(FlightControlUnit* fcu, QWidget* parent = nullptr);
 
 private:
 
-   struct FCUDevInfo _fcuDevInfo;
-   SerialDeviceManager* _devManager;
+   FlightControlUnit* _fcu;
 
+   QLCDNumber* _speedLCDNumber;
+   QSpinBox* _speedSpinBox;
+   QRadioButton* _speedManagedRadioButton;
+   QRadioButton* _speedSelectedRadioButton;
+   QGroupBox* _speedDisplayGroupBox;
+   QRadioButton* _speedKnotsRadioButton;
+   QRadioButton* _speedMachRadioButton;
+
+   void createSpeedWidgets(QLayout* rootLayout);
+
+private slots:
+
+   void onSpeedManaged();
+   void onSpeedSelected();
+   void onSpeedValueChanged(int newValue);
 };
 
 }}; // namespace oac::testutil

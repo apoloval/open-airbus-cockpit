@@ -22,9 +22,11 @@
 #include <exception>
 #include <string>
 
+#include "config.h"
+
 namespace oac {
 
-class Exception : public std::exception
+class LIBOAC_EXPORT Exception : public std::exception
 {
 public:
    
@@ -48,10 +50,11 @@ private:
       inline type(const std::string& message) : Exception(message) {} \
    }
 
-DECL_EXCEPTION(IOException);
 DECL_EXCEPTION(IllegalStateException);
-DECL_EXCEPTION(NotFoundException);
 DECL_EXCEPTION(InvalidInputException);
+DECL_EXCEPTION(IOException);
+DECL_EXCEPTION(NotFoundException);
+DECL_EXCEPTION(NullPointerException);
 
 }; // namespace oac
 

@@ -20,11 +20,12 @@
 #define OAC_SERVER_TEST_H
 
 #include "components.h"
+#include "config.h"
 #include "types.h"
 
 namespace oac {
 
-class TestFlightControlUnit : public FlightControlUnit {
+class LIBOAC_EXPORT TestFlightControlUnit : public FlightControlUnit {
 public:
 
    TestFlightControlUnit();

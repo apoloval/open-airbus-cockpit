@@ -18,40 +18,17 @@
 
 #include <test.h>
 
-#include "ctrl-main.h"
+#include "ctrl-fcu.h"
 
 namespace oac { namespace testutil {
 
-MainController::MainController(SerialDeviceManager *serialDeviceManager)
-   : _devManager(serialDeviceManager
-                          ? serialDeviceManager
-                          : &SerialDeviceManager::getDefault())
+FCUTestController::FCUTestController(const Ptr<SerialDevice>& serialDev,
+                                     const Ptr<FlightControlUnit>& fcu)
+   : _fcu(fcu),
+     _fcuManager(new FCUDeviceManager(serialDev, fcu))
 {
-}
-
-void
-MainController::connectFcu(const SerialDeviceName &devName)
-{
-   if (!_fcuDevInfo.connected)
-   {
-      SerialDeviceInfo devInfo = { devName };
-      _fcuDevInfo.serialDevice =_devManager->open(devInfo);
-      _fcuDevInfo.fcu = new TestFlightControlUnit();
-      _fcuDevInfo.connected = true;
-   }
-}
-
-void
-MainController::disconnectFcu()
-{
-   if (_fcuDevInfo.connected)
-   {
-      delete _fcuDevInfo.serialDevice;
-      delete _fcuDevInfo.fcu;
-      _fcuDevInfo.serialDevice = nullptr;
-      _fcuDevInfo.fcu = nullptr;
-      _fcuDevInfo.connected = false;
-   }
+   if (!_fcu)
+      _fcu = new TestFlightControlUnit();
 }
 
 }}; // namespace oac::testutil

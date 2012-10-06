@@ -18,8 +18,14 @@
 
 #include "serial.h"
 
-#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
+#ifdef KAREN_PLATFORM_IS_WIN32
 #include <cstdio>
+#endif
+
+#ifdef KAREN_PLATFORM_IS_WIN32
+   #define NEW_SERIALDEV_MANAGER new Win32SerialDeviceManager()
+#else
+   #error No implementation available of serial dev manager for target platform
 #endif
 
 namespace oac {
@@ -30,30 +36,28 @@ SerialDeviceManager::getDefault()
    static SerialDeviceManager* singleton = NULL;
    if (!singleton)
    {
-#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
-      singleton = new Win32SerialDeviceManager();
-#endif
+      singleton = NEW_SERIALDEV_MANAGER;
    }
    return *singleton;
 }
 
-#if OAC_PLATFORM == OAC_PLATFORM_WINDOWS
+#ifdef KAREN_PLATFORM_IS_WIN32
 
 namespace {
    
-std::wstring
+String
 deviceNameForPortNumer(unsigned int portNumber)
 {
-   WCHAR name[16];
+   char name[16];
    if (portNumber < 10)
-      wsprintf(name, L"COM%d", portNumber);
+      sprintf_s(name, 16, "COM%d", portNumber);
    else
-      wsprintf(name, L"\\\\.\\COM%d", portNumber);
+      sprintf_s(name, 16, "\\\\.\\COM%d", portNumber);
    return name;
 }
 
 SerialDeviceInfo
-deviceForName(const std::wstring& devName)
+deviceForName(const String& devName)
 {
    SerialDeviceInfo dev;
    dev.name = devName;
@@ -125,7 +129,7 @@ Win32SerialDeviceManager::listSerialDevices(SerialDeviceInfoArray& devs) const
    for (unsigned int i = 0; i < 256; i++)
    {
       auto devName = deviceNameForPortNumer(i);
-      auto handle = ::CreateFile(devName.c_str(), GENERIC_READ | GENERIC_WRITE,
+      auto handle = ::CreateFile(devName, GENERIC_READ | GENERIC_WRITE,
                                  0, NULL, OPEN_EXISTING, 0, NULL);
       if (handle != INVALID_HANDLE_VALUE) {
          devs.push_back(deviceForName(devName));
@@ -138,7 +142,7 @@ Win32SerialDevice*
 Win32SerialDeviceManager::open(const SerialDeviceInfo& dev) 
 throw (NotFoundException)
 {
-   auto handle = ::CreateFile(dev.name.c_str(), GENERIC_READ | GENERIC_WRITE,
+   auto handle = ::CreateFile(dev.name, GENERIC_READ | GENERIC_WRITE,
                               0, NULL, OPEN_EXISTING, 0, NULL);
    if (handle != INVALID_HANDLE_VALUE) {
       return new Win32SerialDevice(handle);
