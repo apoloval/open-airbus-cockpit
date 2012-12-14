@@ -416,19 +416,31 @@ public:
       auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
       
       fcu.spd_dsp_mod = this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY)
-            ? FCU_MOD_KNOTS : FCU_MOD_MACH;
+            ? FCU_MOD_MACH : FCU_MOD_KNOTS;
       fcu.lat_ver_dsp_mod = (wilco_fcu->hdg_track_display_mode &&
             wilco_fcu->vs_fpa_display_mode)
-            ? FCU_MOD_HDG_VS : FCU_MOD_TRK_FPA;
+            ? FCU_MOD_TRK_FPA: FCU_MOD_HDG_VS;
+      fcu.alt_dsp_mod = (wilco_fcu->metric_altitude)
+            ? FCU_ALT_METERS : FCU_ALT_FEET;
       fcu.loc = toBinarySwitch(wilco_fcu->armed_lateral_mode == LAT_MOD_LOC &&
             wilco_fcu->armed_vertical_mode != VER_MOD_GS);
       fcu.athr = toBinarySwitch(wilco_fcu->auto_thrust);
       fcu.exp = toBinarySwitch(wilco_fcu->expedite);
       fcu.appr = toBinarySwitch(wilco_fcu->armed_vertical_mode == VER_MOD_GS);
       fcu.ap1 = toBinarySwitch(wilco_fcu->autopilot == AP_1 ||
-         wilco_fcu->autopilot == AP_BOTH);
+            wilco_fcu->autopilot == AP_BOTH);
       fcu.ap2 = toBinarySwitch(wilco_fcu->autopilot == AP_2 ||
-         wilco_fcu->autopilot == AP_BOTH);
+            wilco_fcu->autopilot == AP_BOTH);
+      fcu.spd_mngt_mod = wilco_fcu->speed_knob
+            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
+      fcu.hdg_mngt_mod = wilco_fcu->heading_knob
+            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
+      fcu.vs_mngt_mod = wilco_fcu->vertical_speed_knob
+            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
+      fcu.sel_track = Degrees(wilco_fcu->selected_track);
+      fcu.sel_alt = wilco_fcu->target_altitude;
+      fcu.sel_vs = wilco_fcu->selected_vertical_speed;
+      fcu.sel_fpa = wilco_fcu->selected_fpa;
    }
 
    virtual void getEFISControlPanel(EFISControlPanel& panel) const
@@ -451,8 +463,8 @@ public:
 
    virtual void debug() const
    {
-      auto data = this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT);
-      this->trackChanges(&data, sizeof(DWORD));
+      auto data = this->getDataObject<FCU*>(VADDR_FCU);
+      this->trackChanges(data, 0x94);
    }
 
 private:

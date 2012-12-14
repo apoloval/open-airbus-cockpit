@@ -86,23 +86,6 @@ public:
       SWITCHED_ON = 1,
    };
 
-   enum FCUKnob
-   {
-      KNOB_SELECTED = 0,
-      KNOB_MANAGED = 1,
-   };
-
-   enum FCUSpeedDisplayMode {
-      FCU_MOD_KNOTS = 0,
-      FCU_MOD_MACH = 1,
-   };
-
-   enum FCULateralVerticalDisplayMode
-   {
-      FCU_MOD_HDG_VS = 0,
-      FCU_MOD_TRK_FPA = 1,
-   };
-
    enum AutoThrust
    {
       ATHR_DISENGAGED = 0,
@@ -115,17 +98,6 @@ public:
       AP_1 = 1,
       AP_2 = 2,
       AP_BOTH = 3,
-   };
-
-   struct FCU {
-      FCUSpeedDisplayMode spd_dsp_mod;
-      FCULateralVerticalDisplayMode lat_ver_dsp_mod;
-      BinarySwitch loc;
-      BinarySwitch athr;
-      BinarySwitch exp;
-      BinarySwitch appr;
-      BinarySwitch ap1;
-      BinarySwitch ap2;
    };
 
    enum SpeedMode
@@ -279,6 +251,53 @@ public:
       SD_PAGE_FCTL,
       SD_PAGE_UNKNOWN,
       SD_PAGE_STS,
+   };
+
+   enum FCUSpeedDisplayMode {
+      FCU_MOD_KNOTS = 0,
+      FCU_MOD_MACH = 1,
+   };
+
+   enum FCULateralVerticalDisplayMode
+   {
+      FCU_MOD_HDG_VS = 0,
+      FCU_MOD_TRK_FPA = 1,
+   };
+
+   enum FCUAltitudeDisplayMode {
+      FCU_ALT_FEET,
+      FCU_ALT_METERS,
+   };
+
+   enum FCUManagementMode
+   {
+      FCU_MNGT_SELECTED = 0,
+      FCU_MNGT_MANAGED = 1,
+   };
+
+   typedef UINT32 Knots;
+   typedef FLOAT Mach;
+   typedef FLOAT Degrees;
+   typedef UINT32 Feet;
+   typedef INT32 FeetPerMin;
+
+   struct FCU {
+      FCUSpeedDisplayMode spd_dsp_mod;
+      FCULateralVerticalDisplayMode lat_ver_dsp_mod;
+      FCUAltitudeDisplayMode alt_dsp_mod;
+      BinarySwitch loc;
+      BinarySwitch athr;
+      BinarySwitch exp;
+      BinarySwitch appr;
+      BinarySwitch ap1;
+      BinarySwitch ap2;
+      FCUManagementMode spd_mngt_mod;
+      FCUManagementMode hdg_mngt_mod;
+      FCUManagementMode vs_mngt_mod;
+      Degrees sel_track;
+      Feet sel_alt;
+      FeetPerMin sel_vs;
+      Degrees sel_fpa;
    };
 
    enum NDModeSwitch {

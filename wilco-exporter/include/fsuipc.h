@@ -54,29 +54,11 @@ public:
    }
 
    template <typename T>
-   void readLazy(Offset offset, T& t) const throw (IOException)
-   {
-      DWORD result;
-      if (!FSUIPC_Read(offset, sizeof(T), &t, &result))
-         throw IOException(IOErrorMessage("reading data lazily", result));
-   }
-
-   template <typename T>
    void write(Offset offset, const T& t) throw (IOException)
    {
       DWORD result;
-      if (FSUIPC_Write(offset, sizeof(T), (void*) &t, &result))
-         if (FSUIPC_Process(&result))
-            return;
-      throw IOException(IOErrorMessage("writing data", result));
-   }
-
-   template <typename T>
-   void writeLazy(Offset offset, const T& t) throw (IOException)
-   {
-      DWORD result;
       if (!FSUIPC_Write(offset, sizeof(T), (void*) &t, &result))
-         throw IOException(IOErrorMessage("writing data lazily", result));
+         throw IOException(IOErrorMessage("writing data", result));
    }
 
    inline void flush(void) throw (IOException)
@@ -92,7 +74,7 @@ protected:
 
 private:
 
-   std::string IOErrorMessage(const std::string& action, DWORD result)
+   static std::string IOErrorMessage(const std::string& action, DWORD result)
    {
       return str(boost::format("IO error while %s: %s") % 
          action.c_str() % GetMessageForFSUIPCResult(result));
