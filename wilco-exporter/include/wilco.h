@@ -66,12 +66,6 @@ public:
       TCAS_BELLOW = 3,
    };
 
-   enum BarometricMode
-   {
-      BARO_SELECTED = 0,
-      BARO_STANDARD = 1,
-   };
-
    enum IRSStatus
    {
       IRS_NOT_ALIGNED,
@@ -310,7 +304,21 @@ public:
       ND_BP__VOR,
    };
 
+   enum BarometricMode
+   {
+      BARO_SELECTED = 0,
+      BARO_STANDARD = 1,
+   };
+
+   enum BarometricFormat
+   {
+      BARO_FMT_IN_HG,
+      BARO_FMT_H_PA,
+   };
+
    struct EFISControlPanel {
+      BarometricMode baro_mode;
+      BarometricFormat baro_fmt;
       BinarySwitch ils;
       NDModeSwitch nd_mode;
       NDRangeSwitch nd_range;

@@ -27,49 +27,52 @@ inline void ExportModuleState(FSUIPC& fsuipc)
    fsuipc.write<BYTE>(0x5600, 1);   
 }
 
-inline void ExportEFISAndFCUButtonLights(
-      const WilcoCockpit& cockpit, FSUIPC& fsuipc)
-{
-   WilcoCockpit::FCU fcu;
-   cockpit.getFCU(fcu);
+struct EFISControlPanelAndFCU {
 
-   WilcoCockpit::EFISControlPanel efis;
-   cockpit.getEFISControlPanel(efis);
-
-   auto mcp_sw = cockpit.getMCPSwitches();
-
-   struct Lights
+   inline static void ExportButtonLights(
+         const WilcoCockpit::FCU& fcu, 
+         const WilcoCockpit::EFISControlPanel& efis,
+         const WilcoCockpit::MCPSwitches& mcp_sw,
+         FSUIPC& fsuipc)
    {
-      BYTE ils;
-      BYTE cstr;
-      BYTE wpt;
-      BYTE vord;
-      BYTE ndb;
-      BYTE arpt;
-      BYTE loc;
-      BYTE ap1;
-      BYTE ap2;
-      BYTE athr;
-      BYTE exped;
-      BYTE appr;
-   } lights = 
-   {
-      efis.ils,
-      mcp_sw == WilcoCockpit::MCP_CONSTRAINT,
-      mcp_sw == WilcoCockpit::MCP_WAYPOINT,
-      mcp_sw == WilcoCockpit::MCP_VORD,
-      mcp_sw == WilcoCockpit::MCP_NDB,
-      mcp_sw == WilcoCockpit::MCP_AIRPORT,
-      fcu.loc,
-      fcu.ap1,
-      fcu.ap2,
-      fcu.athr,
-      fcu.exp,
-      fcu.appr,
-   };
+      BYTE lights[] = 
+      {
+         efis.ils,
+         mcp_sw == WilcoCockpit::MCP_CONSTRAINT,
+         mcp_sw == WilcoCockpit::MCP_WAYPOINT,
+         mcp_sw == WilcoCockpit::MCP_VORD,
+         mcp_sw == WilcoCockpit::MCP_NDB,
+         mcp_sw == WilcoCockpit::MCP_AIRPORT,
+         fcu.loc,
+         fcu.ap1,
+         fcu.ap2,
+         fcu.athr,
+         fcu.exp,
+         fcu.appr,
+      };
 
-   fsuipc.write<Lights>(0x560E, lights);
-}
+      fsuipc.write<decltype(lights)>(0x560E, lights);
+   }
+
+   inline static void ExportModeButtonsAndSwitches(
+         const WilcoCockpit::EFISControlPanel& efis,
+         FSUIPC& fsuipc)
+   {
+      fsuipc.write<BYTE>(0x561C, efis.baro_fmt);
+      fsuipc.write<BYTE>(0x561F, efis.baro_mode);
+   }
+
+   inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
+      WilcoCockpit::FCU fcu;
+      WilcoCockpit::EFISControlPanel efis;
+      auto mcp_sw = cockpit.getMCPSwitches();
+      cockpit.getFCU(fcu);
+      cockpit.getEFISControlPanel(efis);
+
+      ExportButtonLights(fcu, efis, mcp_sw, fsuipc);
+      ExportModeButtonsAndSwitches(efis, fsuipc);
+   }
+};
 
 }; // anonymous namespace
 
@@ -77,7 +80,7 @@ void
 ExportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc)
 {
    ExportModuleState(fsuipc);
-   ExportEFISAndFCUButtonLights(cockpit, fsuipc);
+   EFISControlPanelAndFCU::Export(cockpit, fsuipc);
    fsuipc.write<BYTE>(0x56D3, cockpit.getGpuSwitch());
 }
 

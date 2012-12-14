@@ -433,6 +433,10 @@ public:
 
    virtual void getEFISControlPanel(EFISControlPanel& panel) const
    {
+      panel.baro_mode = (BarometricMode)
+            this->getDataObject<DWORD>(VADDR_BARO_STD);
+      panel.baro_fmt = (BarometricFormat)
+            this->getDataObject<DWORD>(VADDR_BARO_FORMAT);
       panel.ils = toBinarySwitch(
             this->getDataObject<DWORD>(VADDR_ILS_SWITCH));
       panel.nd_mode = (NDModeSwitch)
