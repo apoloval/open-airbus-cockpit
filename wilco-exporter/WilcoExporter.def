@@ -1,0 +1,4 @@
+LIBRARY	"WilcoExporter"
+EXPORTS
+DLLStart
+DLLStop
