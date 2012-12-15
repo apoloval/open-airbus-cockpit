@@ -24,6 +24,8 @@
 
 namespace oac { namespace we {
 
+void ImportState(WilcoCockpit& cockpit, FSUIPC& fsuipc);
+
 void ExportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc);
 
 }}; // namespace oac::we

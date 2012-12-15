@@ -16,9 +16,6 @@
 * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <sstream>
-#include <stdexcept>
-
 #include <Windows.h>
 
 #include <Boost/format.hpp>
@@ -39,6 +36,11 @@ typedef size_t VirtualAddress;
 enum VirtualAddressKey
 {
    VADDR_BASE,
+   VADDR_FN_PUSH_MCP_CONSTRAINT,
+   VADDR_FN_PUSH_MCP_WAYPOINT,
+   VADDR_FN_PUSH_MCP_VORD,
+   VADDR_FN_PUSH_MCP_NDB,
+   VADDR_FN_PUSH_MCP_AIRPORT,
    VADDR_FN_IS_APU_AVAILABLE,
    VADDR_FN_GET_FADEC_MODE,
    VADDR_ND_RANGE,
@@ -77,6 +79,11 @@ static const DllInfo DLL_INFO[] =
    { TEXT("A320CFM_FeelThere.DLL"),
       {
          VirtualAddress(0x10000000), // Image base
+         VirtualAddress(0x10008BD0), // Wilco_PushMCPButton (Constraint)
+         VirtualAddress(0x10008C30), // Wilco_PushMCPButton (Waypoint)
+         VirtualAddress(0x10008C90), // Wilco_PushMCPButton (VORD)
+         VirtualAddress(0x10008CF0), // Wilco_PushMCPButton (NDB)
+         VirtualAddress(0x10008D50), // Wilco_PushMCPButton (Airport)
          VirtualAddress(0x1001D560), // Wilco_IsApuAvailable()
          VirtualAddress(0x1001F170), // Wilco_GetFADECMode()
          VirtualAddress(0x100D4A78), // ND Range 
@@ -325,6 +332,16 @@ struct Wilco_ExtendedData
    void* gpu;                             // 0x40, 57 words
 };
 
+/**********************************/
+/* >> Functions from Wilco DLL << */
+/**********************************/
+
+typedef DWORD (__stdcall *Wilco_PushMCPButton)(DWORD num1, DWORD num2);
+
+/******************************/
+/* >> Auxiliary operations << */
+/******************************/
+
 /**
  * Get function F from DLL instance, or throw E if fail. 
  */
@@ -338,31 +355,181 @@ F GetFunctionOrThrow(HINSTANCE inst, const char* func_name)
    return result;
 }
 
-}; // anonymous namespace
+HINSTANCE LoadDLLForAircraft(AircraftType aircraft)
+throw (WilcoCockpit::InitException)
+{
+   auto dll_filename = DLL_INFO[aircraft].name.c_str();
+   HINSTANCE lib = LoadLibrary(dll_filename);
+   if (lib == NULL)
+      LogAndThrow(FAIL, WilcoCockpit::InitException(str(boost::format(
+            "cannot load Wilco Airbus DLL file %s") % dll_filename)));
+   return lib;
+}
 
-class WilcoCockpitImpl : public WilcoCockpit
+void TrackChangesOnMemory(void* mem, size_t len) {
+   static void* buf = nullptr;
+   if (buf)
+   {
+      auto src = (DWORD*) mem;
+      auto dst = (DWORD*) buf;
+      for (unsigned int i = 0; i < len / size_t(4); i++)
+      {
+         if (src[i] != dst[i]) {
+            Log(INFO, str(boost::format(
+                  "word %d (+0x%X) changes from %d to %d") 
+                  % i % i % dst[i] % src[i]));
+         }
+      }
+   }
+   else
+   {
+      Log(INFO, str(boost::format("Tracking %d bytes on 0x%X")
+            % len % mem));
+      buf = new uint8_t[len];
+   }
+   memcpy(buf, mem, len);
+}
+
+BinarySwitch Invert(BinarySwitch value)
+{ return value == SWITCHED_ON ? SWITCHED_OFF : SWITCHED_ON; }
+
+class DllInspector
+{
+public:
+
+   inline DllInspector(const DllInfo& dll_info, HINSTANCE dll_instance) :
+         _dll_info(dll_info), _dll_instance(dll_instance)
+   {}
+
+protected:
+
+   inline void* getActualAddress(VirtualAddress vaddr) const
+   {
+      auto offset = vaddr - _dll_info.virtualAddresses[VADDR_BASE];
+      auto actualAddress = VirtualAddress(_dll_instance) + offset;
+      return (void*)(actualAddress);
+   }
+
+   template <typename DataObject>
+   DataObject getDataObject(VirtualAddressKey vaddr_key) const
+   {
+      auto vaddr = _dll_info.virtualAddresses[vaddr_key];
+      auto data = this->getActualAddress(vaddr);   
+      return *(DataObject*) data;
+   }
+
+   template <typename Function>
+   Function getFunction(VirtualAddressKey vaddr_key) const
+   {
+      auto vaddr = _dll_info.virtualAddresses[vaddr_key];
+      auto addr = this->getActualAddress(vaddr);   
+      return Function(addr);
+   }
+
+   template <typename DataObject>
+   void setDataObject(
+         VirtualAddressKey vaddrKey, const DataObject& new_data)
+   {
+      auto vaddr = _dll_info.virtualAddresses[vaddrKey];
+      auto data = (DataObject*) this->getActualAddress(vaddr);   
+      *data = new_data;
+   }
+
+   template <typename DataObject>
+   void toggleBoolObject(VirtualAddressKey vaddrKey)
+   {
+      auto vaddr = _dll_info.virtualAddresses[vaddrKey];
+      auto data = (DataObject*) this->getActualAddress(vaddr);   
+      *data = !(*data);
+   }
+
+protected:
+
+   inline HINSTANCE getDLLInstance() const
+   { return _dll_instance; }
+
+private:
+
+   const DllInfo& _dll_info;
+   HINSTANCE _dll_instance;
+};
+
+class EFISControlPanelImpl : public EFISControlPanel, public DllInspector
+{
+public:
+
+   EFISControlPanelImpl(const DllInfo& dll_info, HINSTANCE dll_instance) : 
+         DllInspector(dll_info, dll_instance)
+   {}
+
+   virtual BarometricMode getBarometricMode() const 
+   { return BarometricMode(this->getDataObject<DWORD>(VADDR_BARO_STD)); }
+
+   virtual BarometricFormat getBarometricFormat() const
+   { return BarometricFormat(this->getDataObject<DWORD>(VADDR_BARO_FORMAT)); }
+
+   virtual BinarySwitch getILSButton() const
+   { return BinarySwitch(this->getDataObject<DWORD>(VADDR_ILS_SWITCH)); }
+
+   virtual void setILSButton(BinarySwitch value)
+   { this->setDataObject<DWORD>(VADDR_ILS_SWITCH, value); }
+
+   virtual void toggleILSButton()
+   { 
+      this->setDataObject<DWORD>(
+            VADDR_ILS_SWITCH, Invert(this->getILSButton()));
+   }
+
+   virtual BinarySwitch getMCPSwitch(MCPSwitch sw) const
+   {
+      static VirtualAddressKey addresses[] =
+      {
+         VADDR_MCP_CONSTRAINT,
+         VADDR_MCP_WAYPOINT,
+         VADDR_MCP_VORD,
+         VADDR_MCP_NDB,
+         VADDR_MCP_AIRPORT,
+      };
+      return BinarySwitch(this->getDataObject<DWORD>(addresses[sw]));
+   }
+
+   virtual void pushMCPSwitch(MCPSwitch sw)
+   {
+      static VirtualAddressKey addresses[] =
+      {
+         VADDR_FN_PUSH_MCP_CONSTRAINT,
+         VADDR_FN_PUSH_MCP_WAYPOINT,
+         VADDR_FN_PUSH_MCP_VORD,
+         VADDR_FN_PUSH_MCP_NDB,
+         VADDR_FN_PUSH_MCP_AIRPORT,
+      };
+      auto push_btn = this->getFunction<Wilco_PushMCPButton>(addresses[sw]);
+      push_btn(0, 0);
+   }
+
+   virtual NDModeSwitch getNDModeSwitch() const
+   { return NDModeSwitch(this->getDataObject<DWORD>(VADDR_ND_MODE)); }
+
+   virtual NDRangeSwitch getNDRangeSwitch() const
+   { return NDRangeSwitch(this->getDataObject<DWORD>(VADDR_ND_RANGE)); }
+
+   virtual NDNavModeSwitch getNDNav1ModeSwitch() const
+   { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT)); }
+
+   virtual NDNavModeSwitch getNDNav2ModeSwitch() const
+   { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
+};
+
+class WilcoCockpitImpl : public WilcoCockpit, public DllInspector
 {
 public:
 
    WilcoCockpitImpl(AircraftType aircraft) throw (InitException) :
-      _aircraft(aircraft)
+         DllInspector(DLL_INFO[aircraft], LoadDLLForAircraft(aircraft))
    {
-      const DllInfo& dll_info = DLL_INFO[aircraft];
-      auto dll_filename = dll_info.name.c_str();
-      HINSTANCE lib = LoadLibrary(dll_filename);
-      _dllBaseAddress = lib;
-   
-      if (lib == NULL)
-         LogAndThrow(FAIL, InitException(str(boost::format(
-            "cannot load Wilco Airbus DLL file %s") % dll_filename)));
-
-      _getInternalData = 
-         GetFunctionOrThrow<Wilco_GetInternalData, InitException>(
-            lib, GET_INTERNAL_DATA_FUNC_NAME);
-
-      _getExtendedData = 
-         GetFunctionOrThrow<Wilco_GetExtendedData, InitException>(
-            lib, GET_EXTENDED_DATA_FUNC_NAME);
+      _efis_ctrl_panel = std::shared_ptr<EFISControlPanel>(
+            new EFISControlPanelImpl(
+                  DLL_INFO[aircraft], this->getDLLInstance()));
    }
 
    virtual GPUSwitch getGpuSwitch() const
@@ -374,22 +541,6 @@ public:
       if (gpu && gpu->vtable->isGpuAvailable(gpu))
          return GPU_AVAILABLE;
       return GPU_OFF;
-   }
-
-   virtual MCPSwitches getMCPSwitches() const
-   {
-      if (this->getDataObject<DWORD>(VADDR_MCP_CONSTRAINT) == SWITCHED_ON)
-         return MCP_CONSTRAINT;
-      if (this->getDataObject<DWORD>(VADDR_MCP_WAYPOINT) == SWITCHED_ON)
-         return MCP_WAYPOINT;
-      if (this->getDataObject<DWORD>(VADDR_MCP_VORD) == SWITCHED_ON)
-         return MCP_VORD;
-      if (this->getDataObject<DWORD>(VADDR_MCP_NDB) == SWITCHED_ON)
-         return MCP_NDB;
-      if (this->getDataObject<DWORD>(VADDR_MCP_AIRPORT) == SWITCHED_ON)
-         return MCP_AIRPORT;
-
-      return MCP_NONE;
    }
 
    virtual void getAPUSwitches(APUSwitches& sw) const
@@ -443,55 +594,19 @@ public:
       fcu.sel_fpa = wilco_fcu->selected_fpa;
    }
 
-   virtual void getEFISControlPanel(EFISControlPanel& panel) const
-   {
-      panel.baro_mode = (BarometricMode)
-            this->getDataObject<DWORD>(VADDR_BARO_STD);
-      panel.baro_fmt = (BarometricFormat)
-            this->getDataObject<DWORD>(VADDR_BARO_FORMAT);
-      panel.ils = toBinarySwitch(
-            this->getDataObject<DWORD>(VADDR_ILS_SWITCH));
-      panel.nd_mode = (NDModeSwitch)
-            this->getDataObject<DWORD>(VADDR_ND_MODE);
-      panel.nd_range = (NDRangeSwitch)
-            this->getDataObject<DWORD>(VADDR_ND_RANGE);
-      panel.bearing_1 = (NDBearingPointerModeSwitch)
-            this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT);
-      panel.bearing_2 = (NDBearingPointerModeSwitch)
-            this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT);
-   }
+   virtual const EFISControlPanel& getEFISControlPanel() const
+   { return *_efis_ctrl_panel; }
+
+   virtual EFISControlPanel& getEFISControlPanel()
+   { return *_efis_ctrl_panel; }
 
    virtual void debug() const
    {
-      auto data = this->getDataObject<FCU*>(VADDR_FCU);
-      this->trackChanges(data, 0x94);
+      auto data = (DWORD*) this->getActualAddress(0x1012AA40);
+      TrackChangesOnMemory(data, 4*sizeof(DWORD));
    }
 
 private:
-
-	typedef Wilco_InternalData* (*Wilco_GetInternalData)(void);
-	typedef Wilco_ExtendedData* (*Wilco_GetExtendedData)(void);
-
-   AircraftType _aircraft;
-   void* _dllBaseAddress;
-	Wilco_GetInternalData _getInternalData;
-   Wilco_GetExtendedData _getExtendedData;
-
-   inline void* getActualAddress(VirtualAddress virtualAddress) const
-   {
-      auto offset = virtualAddress - 
-         DLL_INFO[_aircraft].virtualAddresses[VADDR_BASE];
-      auto actualAddress = VirtualAddress(_dllBaseAddress) + offset;
-      return (void*)(actualAddress);
-   }
-
-   template <typename DataObject>
-   DataObject getDataObject(VirtualAddressKey vaddrKey) const
-   {
-      auto vaddr = DLL_INFO[_aircraft].virtualAddresses[vaddrKey];
-      auto data = this->getActualAddress(vaddr);   
-      return *(DataObject*) data;
-   }
 
    inline static BinarySwitch toBinarySwitch(bool expr)
    { return expr ? SWITCHED_ON : SWITCHED_OFF; }
@@ -499,39 +614,10 @@ private:
    inline static BinarySwitch toBinarySwitch(DWORD expr)
    { return toBinarySwitch(expr > 0); }
 
-   void trackChanges(void* mem, size_t len) const {
-      static void* buf = nullptr;
-      if (buf)
-      {
-         auto src = (DWORD*) mem;
-         auto dst = (DWORD*) buf;
-         for (unsigned int i = 0; i < len / size_t(4); i++)
-         {
-            if (src[i] != dst[i]) {
-               std::stringstream ss;
-               ss << "word " << i << "(+0x" << (void*) (4*i) << ") changes from " << 
-                  dst[i] << " to " << src[i];
-               Log(INFO, ss.str());
-            }
-         }
-      }
-      else
-      {
-         std::stringstream ss;
-         ss << "Tracking " << len << " bytes on 0x" << mem;
-         Log(INFO, ss.str());
-         buf = new uint8_t[len];
-      }
-      memcpy(buf, mem, len);
-   }
-
-   inline const Wilco_InternalData& getInternalData() const
-   { return *(*_getInternalData)(); }
-
-   inline const Wilco_ExtendedData& getExtendedData() const
-   { return *(*_getExtendedData)(); }
-
+   std::shared_ptr<EFISControlPanel> _efis_ctrl_panel;
 };
+
+}; // anonymous namespace
 
 WilcoCockpit*
 WilcoCockpit::newCockpit(AircraftType aircraft)

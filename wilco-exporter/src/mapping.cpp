@@ -18,6 +18,7 @@
 
 #include <cmath>
 
+#include "logging.h"
 #include "mapping.h"
 
 namespace oac { namespace we {
@@ -31,20 +32,90 @@ inline void ExportModuleState(FSUIPC& fsuipc)
 
 struct EFISControlPanelAndFCU {
 
+   inline static void Import(
+      WilcoCockpit& cockpit,
+      FSUIPC& fsuipc)
+   {
+      EFISControlPanel& efis_ctrl_panel = cockpit.getEFISControlPanel();
+      ImportPushButtons(fsuipc, efis_ctrl_panel);
+   }
+
+   inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
+      FCU fcu;
+      const EFISControlPanel& efis = cockpit.getEFISControlPanel();
+      cockpit.getFCU(fcu);
+
+      ExportButtonLights(fcu, efis, fsuipc);
+      ExportModeButtonsAndSwitches(fcu, efis, fsuipc);
+   }
+
+private:
+
+   inline static void ImportPushButtons(      
+      FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+   {
+      ImportFDButton(fsuipc);
+      ImportILSButton(fsuipc, efis_ctrl_panel);
+      ImportMCPSwitches(fsuipc, efis_ctrl_panel);
+   }
+
+   inline static void ImportFDButton(FSUIPC& fsuipc)
+   {
+      auto push_fd = fsuipc.read<BYTE>(0x5601);
+      if (push_fd)
+      {
+         auto current_fd = fsuipc.read<DWORD>(0x2EE0);
+         fsuipc.write<DWORD>(0x2EE0, !current_fd);
+         fsuipc.write<BYTE>(0x5601, 0);
+      }
+   }
+
+   inline static void ImportILSButton(
+         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+   {
+      auto push_ils = fsuipc.read<BYTE>(0x5602);
+      if (push_ils)
+      {
+         efis_ctrl_panel.toggleILSButton();
+         fsuipc.write<BYTE>(0x5602, 0);
+      }
+   }
+
+   inline static void ImportMCPSwitches(
+         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+   {
+      ImportMCPSwitch<0x5603, MCP_CONSTRAINT>(fsuipc, efis_ctrl_panel);
+      ImportMCPSwitch<0x5604, MCP_WAYPOINT>(fsuipc, efis_ctrl_panel);
+      ImportMCPSwitch<0x5605, MCP_VORD>(fsuipc, efis_ctrl_panel);
+      ImportMCPSwitch<0x5606, MCP_NDB>(fsuipc, efis_ctrl_panel);
+      ImportMCPSwitch<0x5607, MCP_AIRPORT>(fsuipc, efis_ctrl_panel);
+   }
+
+   template <DWORD offset, MCPSwitch sw>
+   inline static void ImportMCPSwitch(
+         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+   {
+      auto push = fsuipc.read<BYTE>(offset);
+      if (push)
+      {
+         efis_ctrl_panel.pushMCPSwitch(sw);
+         fsuipc.write<BYTE>(offset, 0);
+      }
+   }
+
    inline static void ExportButtonLights(
-         const WilcoCockpit::FCU& fcu, 
-         const WilcoCockpit::EFISControlPanel& efis,
-         const WilcoCockpit::MCPSwitches& mcp_sw,
+         const FCU& fcu, 
+         const EFISControlPanel& efis,
          FSUIPC& fsuipc)
    {
       BYTE lights[] = 
       {
-         efis.ils,
-         mcp_sw == WilcoCockpit::MCP_CONSTRAINT,
-         mcp_sw == WilcoCockpit::MCP_WAYPOINT,
-         mcp_sw == WilcoCockpit::MCP_VORD,
-         mcp_sw == WilcoCockpit::MCP_NDB,
-         mcp_sw == WilcoCockpit::MCP_AIRPORT,
+         efis.getILSButton(),
+         efis.getMCPSwitch(MCP_CONSTRAINT),
+         efis.getMCPSwitch(MCP_WAYPOINT),
+         efis.getMCPSwitch(MCP_VORD),
+         efis.getMCPSwitch(MCP_NDB),
+         efis.getMCPSwitch(MCP_AIRPORT),
          fcu.loc,
          fcu.ap1,
          fcu.ap2,
@@ -57,16 +128,16 @@ struct EFISControlPanelAndFCU {
    }
 
    inline static void ExportModeButtonsAndSwitches(
-         const WilcoCockpit::FCU& fcu, 
-         const WilcoCockpit::EFISControlPanel& efis,
+         const FCU& fcu, 
+         const EFISControlPanel& efis,
          FSUIPC& fsuipc)
    {
-      fsuipc.write<BYTE>(0x561C, efis.baro_fmt);
-      fsuipc.write<BYTE>(0x561F, efis.baro_mode);
-      fsuipc.write<BYTE>(0x5623, efis.nd_mode);
-      fsuipc.write<BYTE>(0x5624, efis.nd_range);
-      fsuipc.write<BYTE>(0x5625, efis.bearing_1);
-      fsuipc.write<BYTE>(0x5626, efis.bearing_2);
+      fsuipc.write<BYTE>(0x561C, efis.getBarometricFormat());
+      fsuipc.write<BYTE>(0x561F, efis.getBarometricMode());
+      fsuipc.write<BYTE>(0x5623, efis.getNDModeSwitch());
+      fsuipc.write<BYTE>(0x5624, efis. getNDRangeSwitch());
+      fsuipc.write<BYTE>(0x5625, efis.getNDNav1ModeSwitch());
+      fsuipc.write<BYTE>(0x5626, efis.getNDNav2ModeSwitch());
 
       fsuipc.write<BYTE>(0x562F, fcu.spd_dsp_mod);
       fsuipc.write<BYTE>(0x5630, fcu.lat_ver_dsp_mod);
@@ -85,20 +156,15 @@ struct EFISControlPanelAndFCU {
       fsuipc.write<DWORD>(0x564C, DWORD(fcu.sel_vs));
       fsuipc.write<DWORD>(0x5650, DWORD(floor(0.5 + 100*fcu.sel_fpa)));
    }
-
-   inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
-      WilcoCockpit::FCU fcu;
-      WilcoCockpit::EFISControlPanel efis;
-      auto mcp_sw = cockpit.getMCPSwitches();
-      cockpit.getFCU(fcu);
-      cockpit.getEFISControlPanel(efis);
-
-      ExportButtonLights(fcu, efis, mcp_sw, fsuipc);
-      ExportModeButtonsAndSwitches(fcu, efis, fsuipc);
-   }
 };
 
 }; // anonymous namespace
+
+void
+ImportState(WilcoCockpit& cockpit, FSUIPC& fsuipc)
+{
+   EFISControlPanelAndFCU::Import(cockpit, fsuipc);
+}
 
 void
 ExportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc)

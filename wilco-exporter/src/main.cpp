@@ -27,7 +27,7 @@
 #include "wilco.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\WilcoExporter.log"
-#define AIRCRAFT_TYPE WilcoCockpit::A320_CFM
+#define AIRCRAFT_TYPE A320_CFM
 
 using namespace oac;
 using namespace oac::we;
@@ -59,7 +59,8 @@ void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
       LocalFSUIPC<2048> fsuipc;
       static WilcoCockpit* wilco = InitWilcoCockpit();
 
-      // wilco->debug();
+      wilco->debug();
+      ImportState(*wilco, fsuipc);
       ExportState(*wilco, fsuipc);
       fsuipc.flush();
    } catch (std::exception& ex) {
