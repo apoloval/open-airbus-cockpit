@@ -30,20 +30,20 @@ inline void ExportModuleState(FSUIPC& fsuipc)
    fsuipc.write<BYTE>(0x5600, 1);   
 }
 
-struct EFISControlPanelAndFCU {
+struct EFISControlPanelAndFlightControlUnit {
 
    inline static void Import(
       WilcoCockpit& cockpit,
       FSUIPC& fsuipc)
    {
       EFISControlPanel& efis_ctrl_panel = cockpit.getEFISControlPanel();
-      ImportPushButtons(fsuipc, efis_ctrl_panel);
+      FlightControlUnit& fcu = cockpit.getFlightControlUnit();
+      ImportPushButtons(fsuipc, efis_ctrl_panel, fcu);
    }
 
    inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
-      FCU fcu;
+      const FlightControlUnit& fcu = cockpit.getFlightControlUnit();
       const EFISControlPanel& efis = cockpit.getEFISControlPanel();
-      cockpit.getFCU(fcu);
 
       ExportButtonLights(fcu, efis, fsuipc);
       ExportModeButtonsAndSwitches(fcu, efis, fsuipc);
@@ -52,59 +52,67 @@ struct EFISControlPanelAndFCU {
 private:
 
    inline static void ImportPushButtons(      
-      FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+      FSUIPC& fsuipc, 
+      EFISControlPanel& efis_ctrl_panel,
+      FlightControlUnit& fcu)
    {
-      ImportFDButton(fsuipc);
-      ImportILSButton(fsuipc, efis_ctrl_panel);
-      ImportMCPSwitches(fsuipc, efis_ctrl_panel);
+      ImportBinarySwitch<0x5601>(fsuipc, [&fsuipc] () { 
+               auto current_fd = fsuipc.read<DWORD>(0x2EE0);
+               fsuipc.write<DWORD>(0x2EE0, !current_fd);
+      });
+      ImportBinarySwitch<0x5602>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.toggleILSButton();
+      });
+      ImportBinarySwitch<0x5603>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.pushMCPSwitch(MCP_CONSTRAINT);
+      });
+      ImportBinarySwitch<0x5604>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.pushMCPSwitch(MCP_WAYPOINT);
+      });
+      ImportBinarySwitch<0x5605>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.pushMCPSwitch(MCP_VORD);
+      });
+      ImportBinarySwitch<0x5606>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.pushMCPSwitch(MCP_NDB);
+      });
+      ImportBinarySwitch<0x5607>(fsuipc, [&efis_ctrl_panel] () { 
+               efis_ctrl_panel.pushMCPSwitch(MCP_AIRPORT);
+      });
+      ImportBinarySwitch<0x5608>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_LOC);
+      });
+      ImportBinarySwitch<0x5609>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_AP1);
+      });
+      ImportBinarySwitch<0x560A>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_AP2);
+      });
+      ImportBinarySwitch<0x560B>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_ATHR);
+      });
+      ImportBinarySwitch<0x560C>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_EXPE);
+      });
+      ImportBinarySwitch<0x560D>(fsuipc, [&fcu] () { 
+               fcu.pushSwitch(FlightControlUnit::SWITCH_APPR);
+      });
    }
 
-   inline static void ImportFDButton(FSUIPC& fsuipc)
-   {
-      auto push_fd = fsuipc.read<BYTE>(0x5601);
-      if (push_fd)
-      {
-         auto current_fd = fsuipc.read<DWORD>(0x2EE0);
-         fsuipc.write<DWORD>(0x2EE0, !current_fd);
-         fsuipc.write<BYTE>(0x5601, 0);
-      }
-   }
-
-   inline static void ImportILSButton(
-         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
-   {
-      auto push_ils = fsuipc.read<BYTE>(0x5602);
-      if (push_ils)
-      {
-         efis_ctrl_panel.toggleILSButton();
-         fsuipc.write<BYTE>(0x5602, 0);
-      }
-   }
-
-   inline static void ImportMCPSwitches(
-         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
-   {
-      ImportMCPSwitch<0x5603, MCP_CONSTRAINT>(fsuipc, efis_ctrl_panel);
-      ImportMCPSwitch<0x5604, MCP_WAYPOINT>(fsuipc, efis_ctrl_panel);
-      ImportMCPSwitch<0x5605, MCP_VORD>(fsuipc, efis_ctrl_panel);
-      ImportMCPSwitch<0x5606, MCP_NDB>(fsuipc, efis_ctrl_panel);
-      ImportMCPSwitch<0x5607, MCP_AIRPORT>(fsuipc, efis_ctrl_panel);
-   }
-
-   template <DWORD offset, MCPSwitch sw>
-   inline static void ImportMCPSwitch(
-         FSUIPC& fsuipc, EFISControlPanel& efis_ctrl_panel)
+  template <DWORD offset>
+   inline static void ImportBinarySwitch(
+         FSUIPC& fsuipc,
+         std::function<void(void)> action)
    {
       auto push = fsuipc.read<BYTE>(offset);
       if (push)
       {
-         efis_ctrl_panel.pushMCPSwitch(sw);
+         action();
          fsuipc.write<BYTE>(offset, 0);
       }
    }
 
    inline static void ExportButtonLights(
-         const FCU& fcu, 
+         const FlightControlUnit& fcu, 
          const EFISControlPanel& efis,
          FSUIPC& fsuipc)
    {
@@ -116,19 +124,19 @@ private:
          efis.getMCPSwitch(MCP_VORD),
          efis.getMCPSwitch(MCP_NDB),
          efis.getMCPSwitch(MCP_AIRPORT),
-         fcu.loc,
-         fcu.ap1,
-         fcu.ap2,
-         fcu.athr,
-         fcu.exp,
-         fcu.appr,
+         fcu.getSwitch(FlightControlUnit::SWITCH_LOC),
+         fcu.getSwitch(FlightControlUnit::SWITCH_AP1),
+         fcu.getSwitch(FlightControlUnit::SWITCH_AP2),
+         fcu.getSwitch(FlightControlUnit::SWITCH_ATHR),
+         fcu.getSwitch(FlightControlUnit::SWITCH_EXPE),
+         fcu.getSwitch(FlightControlUnit::SWITCH_APPR),
       };
 
       fsuipc.write<decltype(lights)>(0x560E, lights);
    }
 
    inline static void ExportModeButtonsAndSwitches(
-         const FCU& fcu, 
+         const FlightControlUnit& fcu, 
          const EFISControlPanel& efis,
          FSUIPC& fsuipc)
    {
@@ -139,22 +147,22 @@ private:
       fsuipc.write<BYTE>(0x5625, efis.getNDNav1ModeSwitch());
       fsuipc.write<BYTE>(0x5626, efis.getNDNav2ModeSwitch());
 
-      fsuipc.write<BYTE>(0x562F, fcu.spd_dsp_mod);
-      fsuipc.write<BYTE>(0x5630, fcu.lat_ver_dsp_mod);
-      fsuipc.write<BYTE>(0x5631, fcu.alt_dsp_mod);
-      fsuipc.write<BYTE>(0x5632, fcu.spd_mngt_mod);
-      fsuipc.write<BYTE>(0x5633, fcu.hdg_mngt_mod);
-      fsuipc.write<BYTE>(0x5634, fcu.vs_mngt_mod);
+      fsuipc.write<BYTE>(0x562F, fcu.getSpeedDisplayUnits());
+      fsuipc.write<BYTE>(0x5630, fcu.getGuidanceDisplayMode());
+      fsuipc.write<BYTE>(0x5631, fcu.getAltitudeDisplayUnits());
+      fsuipc.write<BYTE>(0x5632, fcu.getSpeedMode());
+      fsuipc.write<BYTE>(0x5633, fcu.getLateralMode());
+      fsuipc.write<BYTE>(0x5634, fcu.getVerticalMode());
 
       fsuipc.write<DWORD>(0x5638, fsuipc.read<DWORD>(0x07E2));
       fsuipc.write<DWORD>(0x563C, 
          DWORD(floor(0.5 + fsuipc.read<DWORD>(0x07E8) / 655.36f)));
       fsuipc.write<DWORD>(0x5640, 
          DWORD(floor(0.5 + 360.0*fsuipc.read<DWORD>(0x07CC) / 65536.0f)));
-      fsuipc.write<DWORD>(0x5644, DWORD(floor(0.5 + fcu.sel_track)));
-      fsuipc.write<DWORD>(0x5648, DWORD(fcu.sel_alt));
-      fsuipc.write<DWORD>(0x564C, DWORD(fcu.sel_vs));
-      fsuipc.write<DWORD>(0x5650, DWORD(floor(0.5 + 100*fcu.sel_fpa)));
+      fsuipc.write<DWORD>(0x5644, DWORD(floor(0.5 + fcu.getTrackValue())));
+      fsuipc.write<DWORD>(0x5648, DWORD(fcu.getTargetAltitude()));
+      fsuipc.write<DWORD>(0x564C, DWORD(fcu.getVerticalSpeedValue()));
+      fsuipc.write<DWORD>(0x5650, DWORD(floor(0.5 + 100*fcu.getFPAValue())));
    }
 };
 
@@ -163,14 +171,14 @@ private:
 void
 ImportState(WilcoCockpit& cockpit, FSUIPC& fsuipc)
 {
-   EFISControlPanelAndFCU::Import(cockpit, fsuipc);
+   EFISControlPanelAndFlightControlUnit::Import(cockpit, fsuipc);
 }
 
 void
 ExportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc)
 {
    ExportModuleState(fsuipc);
-   EFISControlPanelAndFCU::Export(cockpit, fsuipc);
+   EFISControlPanelAndFlightControlUnit::Export(cockpit, fsuipc);
    fsuipc.write<BYTE>(0x56D3, cockpit.getGpuSwitch());
 }
 

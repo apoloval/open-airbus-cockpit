@@ -520,6 +520,142 @@ public:
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
 };
 
+class FlightControlUnitImpl : public FlightControlUnit, public DllInspector {
+public:
+
+   FlightControlUnitImpl(const DllInfo& dll_info, HINSTANCE dll_instance) : 
+         DllInspector(dll_info, dll_instance)
+   {}
+
+   virtual SpeedUnits getSpeedDisplayUnits() const
+   { return SpeedUnits(this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY)); }
+
+   virtual GuidanceDisplayMode getGuidanceDisplayMode() const 
+   {
+      return this->access<GuidanceDisplayMode>([](const Wilco_FCU& fcu) {
+         return GuidanceDisplayMode(fcu.hdg_track_display_mode &&
+            fcu.vs_fpa_display_mode);
+      });
+   }
+
+   virtual AltitudeUnits getAltitudeDisplayUnits() const
+   {
+      return this->access<AltitudeUnits>([](const Wilco_FCU& fcu) {
+         return AltitudeUnits(fcu.metric_altitude);
+      });
+   }
+
+   virtual BinarySwitch getSwitch(Switch sw) const
+   {
+      return this->access<BinarySwitch>([&sw](const Wilco_FCU& fcu) {
+         switch (sw)
+         {
+            case SWITCH_LOC:
+               return BinarySwitch(fcu.armed_lateral_mode == LAT_MOD_LOC &&
+                    fcu.armed_vertical_mode != VER_MOD_GS);
+            case SWITCH_ATHR:
+               return fcu.auto_thrust > 0 ? SWITCHED_ON : SWITCHED_OFF;
+            case SWITCH_EXPE:
+               return BinarySwitch(fcu.expedite);
+            case SWITCH_APPR:
+                return BinarySwitch(fcu.armed_vertical_mode == VER_MOD_GS);
+            case SWITCH_AP1:
+               return BinarySwitch(fcu.autopilot & AP_1);
+            case SWITCH_AP2:
+               return BinarySwitch(fcu.autopilot & AP_1);
+         }
+      });
+   }
+
+   virtual void pushSwitch(Switch sw)
+   {
+      this->mutate([&sw](Wilco_FCU& fcu) {
+         switch (sw)
+         {
+            case SWITCH_LOC:
+               fcu.armed_lateral_mode = LAT_MOD_LOC; break;
+            case SWITCH_ATHR:
+               fcu.auto_thrust ^= 2; break;
+            case SWITCH_EXPE:
+               fcu.expedite ^= 1; break;
+            case SWITCH_APPR:
+               fcu.armed_lateral_mode = LAT_MOD_LOC; 
+               fcu.armed_vertical_mode = VER_MOD_GS;
+               break;
+            case SWITCH_AP1:
+               fcu.autopilot ^= AP_1; break;
+            case SWITCH_AP2:
+               fcu.autopilot ^= AP_1; break;
+         }
+      });
+   }
+
+   virtual FCUManagementMode getSpeedMode() const
+   {
+      return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
+         return FCUManagementMode(fcu.speed_knob);
+      });
+   }
+
+   virtual FCUManagementMode getLateralMode() const
+   {
+      return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
+         return FCUManagementMode(fcu.heading_knob);
+      });
+   }
+
+   virtual FCUManagementMode getVerticalMode() const
+   {
+      return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
+         return FCUManagementMode(fcu.vertical_speed_knob);    
+      });
+   }
+   
+   virtual Degrees getTrackValue() const
+   {
+      return this->access<Degrees>([](const Wilco_FCU& fcu) {
+         return Degrees(fcu.selected_track);
+      });
+   }
+   
+   virtual Feet getTargetAltitude() const
+   {
+      return this->access<Feet>([](const Wilco_FCU& fcu) {
+         return fcu.target_altitude;
+      });
+   }
+   
+   virtual FeetPerMin getVerticalSpeedValue() const
+   {
+      return this->access<FeetPerMin>([](const Wilco_FCU& fcu) {
+         return fcu.selected_vertical_speed;
+      });
+   }
+   
+   virtual Degrees getFPAValue() const
+   {
+      return this->access<Degrees>([](const Wilco_FCU& fcu) {
+         return fcu.selected_fpa;;
+      });
+   }
+
+private:
+
+   inline void mutate(std::function<void(Wilco_FCU&)> mutator)
+   {
+      auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
+      mutator(*wilco_fcu);
+   }
+
+   template <typename T>
+   inline T access(std::function<T(const Wilco_FCU&)> accessor) const
+   {
+      auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
+      return accessor(*wilco_fcu);
+   }
+};
+
+
 class WilcoCockpitImpl : public WilcoCockpit, public DllInspector
 {
 public:
@@ -529,6 +665,9 @@ public:
    {
       _efis_ctrl_panel = std::shared_ptr<EFISControlPanel>(
             new EFISControlPanelImpl(
+                  DLL_INFO[aircraft], this->getDLLInstance()));
+      _fcu = std::shared_ptr<FlightControlUnit>(
+            new FlightControlUnitImpl(
                   DLL_INFO[aircraft], this->getDLLInstance()));
    }
 
@@ -562,37 +701,11 @@ public:
       return (SDPageButton) pedestal->sd_page_selected;
    }
 
-   virtual void getFCU(FCU& fcu) const
-   {
-      auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
-      
-      fcu.spd_dsp_mod = this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY)
-            ? FCU_MOD_MACH : FCU_MOD_KNOTS;
-      fcu.lat_ver_dsp_mod = (wilco_fcu->hdg_track_display_mode &&
-            wilco_fcu->vs_fpa_display_mode)
-            ? FCU_MOD_TRK_FPA: FCU_MOD_HDG_VS;
-      fcu.alt_dsp_mod = (wilco_fcu->metric_altitude)
-            ? FCU_ALT_METERS : FCU_ALT_FEET;
-      fcu.loc = toBinarySwitch(wilco_fcu->armed_lateral_mode == LAT_MOD_LOC &&
-            wilco_fcu->armed_vertical_mode != VER_MOD_GS);
-      fcu.athr = toBinarySwitch(wilco_fcu->auto_thrust);
-      fcu.exp = toBinarySwitch(wilco_fcu->expedite);
-      fcu.appr = toBinarySwitch(wilco_fcu->armed_vertical_mode == VER_MOD_GS);
-      fcu.ap1 = toBinarySwitch(wilco_fcu->autopilot == AP_1 ||
-            wilco_fcu->autopilot == AP_BOTH);
-      fcu.ap2 = toBinarySwitch(wilco_fcu->autopilot == AP_2 ||
-            wilco_fcu->autopilot == AP_BOTH);
-      fcu.spd_mngt_mod = wilco_fcu->speed_knob
-            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
-      fcu.hdg_mngt_mod = wilco_fcu->heading_knob
-            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
-      fcu.vs_mngt_mod = wilco_fcu->vertical_speed_knob
-            ? FCU_MNGT_MANAGED : FCU_MNGT_SELECTED;
-      fcu.sel_track = Degrees(wilco_fcu->selected_track);
-      fcu.sel_alt = wilco_fcu->target_altitude;
-      fcu.sel_vs = wilco_fcu->selected_vertical_speed;
-      fcu.sel_fpa = wilco_fcu->selected_fpa;
-   }
+   virtual const FlightControlUnit& getFlightControlUnit() const 
+   { return *_fcu; }
+
+   virtual FlightControlUnit& getFlightControlUnit() 
+   { return *_fcu; }
 
    virtual const EFISControlPanel& getEFISControlPanel() const
    { return *_efis_ctrl_panel; }
@@ -615,6 +728,7 @@ private:
    { return toBinarySwitch(expr > 0); }
 
    std::shared_ptr<EFISControlPanel> _efis_ctrl_panel;
+   std::shared_ptr<FlightControlUnit> _fcu;
 };
 
 }; // anonymous namespace

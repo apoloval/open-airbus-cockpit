@@ -237,20 +237,20 @@ enum SDPageButton {
    SD_PAGE_STS,
 };
 
-enum FCUSpeedDisplayMode {
-   FCU_MOD_KNOTS = 0,
-   FCU_MOD_MACH = 1,
+enum SpeedUnits {
+   SPEED_KNOTS = 0,
+   SPEED_MACH = 1,
 };
 
-enum FCULateralVerticalDisplayMode
+enum GuidanceDisplayMode
 {
-   FCU_MOD_HDG_VS = 0,
-   FCU_MOD_TRK_FPA = 1,
+   GUI_MOD_HDG_VS = 0,
+   GUI_MOD_TRK_FPA = 1,
 };
 
-enum FCUAltitudeDisplayMode {
-   FCU_ALT_FEET,
-   FCU_ALT_METERS,
+enum AltitudeUnits {
+   ALT_FEET,
+   ALT_METERS,
 };
 
 enum FCUManagementMode
@@ -265,23 +265,29 @@ typedef FLOAT Degrees;
 typedef UINT32 Feet;
 typedef INT32 FeetPerMin;
 
-struct FCU {
-   FCUSpeedDisplayMode spd_dsp_mod;
-   FCULateralVerticalDisplayMode lat_ver_dsp_mod;
-   FCUAltitudeDisplayMode alt_dsp_mod;
-   BinarySwitch loc;
-   BinarySwitch athr;
-   BinarySwitch exp;
-   BinarySwitch appr;
-   BinarySwitch ap1;
-   BinarySwitch ap2;
-   FCUManagementMode spd_mngt_mod;
-   FCUManagementMode hdg_mngt_mod;
-   FCUManagementMode vs_mngt_mod;
-   Degrees sel_track;
-   Feet sel_alt;
-   FeetPerMin sel_vs;
-   Degrees sel_fpa;
+class FlightControlUnit {
+public:
+   enum Switch {
+      SWITCH_LOC,
+      SWITCH_ATHR,
+      SWITCH_EXPE,
+      SWITCH_APPR,
+      SWITCH_AP1,
+      SWITCH_AP2,      
+   };
+
+   virtual SpeedUnits getSpeedDisplayUnits() const = 0;
+   virtual GuidanceDisplayMode getGuidanceDisplayMode() const = 0;
+   virtual AltitudeUnits getAltitudeDisplayUnits() const = 0;
+   virtual BinarySwitch getSwitch(Switch sw) const = 0;
+   virtual void pushSwitch(Switch sw) = 0;
+   virtual FCUManagementMode getSpeedMode() const = 0;
+   virtual FCUManagementMode getLateralMode() const = 0;
+   virtual FCUManagementMode getVerticalMode() const = 0;
+   virtual Degrees getTrackValue() const = 0;
+   virtual Feet getTargetAltitude() const = 0;
+   virtual FeetPerMin getVerticalSpeedValue() const = 0;
+   virtual Degrees getFPAValue() const = 0;
 };
 
 enum MCPSwitch
@@ -318,8 +324,8 @@ enum NDNavModeSwitch {
 
 enum BarometricMode
 {
-   BARO_SELECTED = 0,
-   BARO_STANDARD = 1,
+   BARO_SELECTED,
+   BARO_STANDARD,
 };
 
 enum BarometricFormat
@@ -360,7 +366,8 @@ public:
 
    virtual SDPageButton getSDPageButton() const = 0;
 
-   virtual void getFCU(FCU& fcu) const = 0;
+   virtual const FlightControlUnit& getFlightControlUnit() const = 0;
+   virtual FlightControlUnit& getFlightControlUnit() = 0;
 
    virtual const EFISControlPanel& getEFISControlPanel() const = 0;
    virtual EFISControlPanel& getEFISControlPanel() = 0;
