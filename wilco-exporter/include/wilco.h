@@ -277,8 +277,11 @@ public:
    };
 
    virtual SpeedUnits getSpeedDisplayUnits() const = 0;
+   virtual void pushSpeedUnitsButton() = 0;
    virtual GuidanceDisplayMode getGuidanceDisplayMode() const = 0;
+   virtual void pushGuidanceModeButton() = 0;
    virtual AltitudeUnits getAltitudeDisplayUnits() const = 0;
+   virtual void pushAltitudeUnitsButton() = 0;
    virtual BinarySwitch getSwitch(Switch sw) const = 0;
    virtual void pushSwitch(Switch sw) = 0;
    virtual FCUManagementMode getSpeedMode() const = 0;
@@ -338,14 +341,17 @@ class EFISControlPanel {
 public:
    inline virtual ~EFISControlPanel() {}
    virtual BarometricMode getBarometricMode() const = 0;
+   virtual void setBarometricMode(BarometricMode mode) = 0;
    virtual BarometricFormat getBarometricFormat() const = 0;
+   virtual void setBarometricFormat(BarometricFormat fmt) = 0;
    virtual BinarySwitch getILSButton() const = 0;
-   virtual void setILSButton(BinarySwitch value) = 0;
-   virtual void toggleILSButton() = 0;
+   virtual void pushILSButton() = 0;
    virtual BinarySwitch getMCPSwitch(MCPSwitch sw) const = 0;
    virtual void pushMCPSwitch(MCPSwitch sw) = 0;
    virtual NDModeSwitch getNDModeSwitch() const = 0;
+   virtual void setNDModeSwitch(NDModeSwitch mode) = 0;
    virtual NDRangeSwitch getNDRangeSwitch() const = 0;
+   virtual void setNDRangeSwitch(NDRangeSwitch range) = 0;
    virtual NDNavModeSwitch getNDNav1ModeSwitch() const = 0;
    virtual NDNavModeSwitch getNDNav2ModeSwitch() const = 0;
 };

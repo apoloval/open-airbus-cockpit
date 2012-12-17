@@ -43,6 +43,7 @@ enum VirtualAddressKey
    VADDR_FN_PUSH_MCP_AIRPORT,
    VADDR_FN_IS_APU_AVAILABLE,
    VADDR_FN_GET_FADEC_MODE,
+   VADDR_FN_SEND_COMMAND,
    VADDR_ND_RANGE,
    VADDR_ND_MODE,
    VADDR_MCP_NAV_LEFT,
@@ -86,6 +87,7 @@ static const DllInfo DLL_INFO[] =
          VirtualAddress(0x10008D50), // Wilco_PushMCPButton (Airport)
          VirtualAddress(0x1001D560), // Wilco_IsApuAvailable()
          VirtualAddress(0x1001F170), // Wilco_GetFADECMode()
+         VirtualAddress(0x1002C920), // Wilco_SendCommand()
          VirtualAddress(0x100D4A78), // ND Range 
          VirtualAddress(0x100D4A7C), // ND Mode
          VirtualAddress(0x100D4A80), // MCP Nav Left
@@ -332,11 +334,20 @@ struct Wilco_ExtendedData
    void* gpu;                             // 0x40, 57 words
 };
 
+enum Wilco_Command {
+   CMD_SET_ND_MODE = 0x5E,
+   CMD_SET_ND_RANGE = 0x5F,
+};
+
 /**********************************/
 /* >> Functions from Wilco DLL << */
 /**********************************/
 
 typedef DWORD (__stdcall *Wilco_PushMCPButton)(DWORD num1, DWORD num2);
+
+typedef void (__cdecl *Wilco_SetNDMode)(DWORD mode);
+
+typedef void (__cdecl *Wilco_SendCommand)(DWORD cmd, void* args);
 
 /******************************/
 /* >> Auxiliary operations << */
@@ -465,16 +476,19 @@ public:
    virtual BarometricMode getBarometricMode() const 
    { return BarometricMode(this->getDataObject<DWORD>(VADDR_BARO_STD)); }
 
+   virtual void setBarometricMode(BarometricMode mode)
+   { this->setDataObject<DWORD>(VADDR_BARO_STD, mode);}
+
    virtual BarometricFormat getBarometricFormat() const
    { return BarometricFormat(this->getDataObject<DWORD>(VADDR_BARO_FORMAT)); }
+
+   virtual void setBarometricFormat(BarometricFormat fmt)
+   { this->setDataObject<DWORD>(VADDR_BARO_FORMAT, fmt); }
 
    virtual BinarySwitch getILSButton() const
    { return BinarySwitch(this->getDataObject<DWORD>(VADDR_ILS_SWITCH)); }
 
-   virtual void setILSButton(BinarySwitch value)
-   { this->setDataObject<DWORD>(VADDR_ILS_SWITCH, value); }
-
-   virtual void toggleILSButton()
+   virtual void pushILSButton()
    { 
       this->setDataObject<DWORD>(
             VADDR_ILS_SWITCH, Invert(this->getILSButton()));
@@ -510,14 +524,29 @@ public:
    virtual NDModeSwitch getNDModeSwitch() const
    { return NDModeSwitch(this->getDataObject<DWORD>(VADDR_ND_MODE)); }
 
+   virtual void setNDModeSwitch(NDModeSwitch mode)
+   { this->sendCommand(CMD_SET_ND_MODE, &mode); }
+
    virtual NDRangeSwitch getNDRangeSwitch() const
    { return NDRangeSwitch(this->getDataObject<DWORD>(VADDR_ND_RANGE)); }
+
+   virtual void setNDRangeSwitch(NDRangeSwitch range)
+   { this->sendCommand(CMD_SET_ND_RANGE, &range); }
 
    virtual NDNavModeSwitch getNDNav1ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT)); }
 
    virtual NDNavModeSwitch getNDNav2ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
+
+private:
+
+   inline void sendCommand(Wilco_Command cmd, void* args)
+   {
+      auto send_cmd = 
+            this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
+      send_cmd(cmd, args);
+   }
 };
 
 class FlightControlUnitImpl : public FlightControlUnit, public DllInspector {
@@ -530,6 +559,12 @@ public:
    virtual SpeedUnits getSpeedDisplayUnits() const
    { return SpeedUnits(this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY)); }
 
+   virtual void pushSpeedUnitsButton()
+   {
+      auto units = this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY);
+      this->setDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY, units ^ 1);
+   }
+
    virtual GuidanceDisplayMode getGuidanceDisplayMode() const 
    {
       return this->access<GuidanceDisplayMode>([](const Wilco_FCU& fcu) {
@@ -538,10 +573,25 @@ public:
       });
    }
 
+   virtual void pushGuidanceModeButton()
+   {
+      this->mutate([](Wilco_FCU& fcu) {
+         fcu.hdg_track_display_mode ^= 1;
+         fcu.vs_fpa_display_mode ^= 1;
+      });
+   }
+
    virtual AltitudeUnits getAltitudeDisplayUnits() const
    {
       return this->access<AltitudeUnits>([](const Wilco_FCU& fcu) {
          return AltitudeUnits(fcu.metric_altitude);
+      });
+   }
+
+   virtual void pushAltitudeUnitsButton() 
+   {
+      this->mutate([](Wilco_FCU& fcu) {
+         fcu.metric_altitude ^= 1;
       });
    }
 

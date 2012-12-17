@@ -59,7 +59,7 @@ void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
       LocalFSUIPC<2048> fsuipc;
       static WilcoCockpit* wilco = InitWilcoCockpit();
 
-      wilco->debug();
+      // wilco->debug();
       ImportState(*wilco, fsuipc);
       ExportState(*wilco, fsuipc);
       fsuipc.flush();

@@ -39,6 +39,7 @@ struct EFISControlPanelAndFlightControlUnit {
       EFISControlPanel& efis_ctrl_panel = cockpit.getEFISControlPanel();
       FlightControlUnit& fcu = cockpit.getFlightControlUnit();
       ImportPushButtons(fsuipc, efis_ctrl_panel, fcu);
+      ImportModeButtonAndSwitches(fsuipc, efis_ctrl_panel, fcu);
    }
 
    inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
@@ -61,7 +62,7 @@ private:
                fsuipc.write<DWORD>(0x2EE0, !current_fd);
       });
       ImportBinarySwitch<0x5602>(fsuipc, [&efis_ctrl_panel] () { 
-               efis_ctrl_panel.toggleILSButton();
+               efis_ctrl_panel.pushILSButton();
       });
       ImportBinarySwitch<0x5603>(fsuipc, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_CONSTRAINT);
@@ -98,7 +99,49 @@ private:
       });
    }
 
-  template <DWORD offset>
+   inline static void ImportModeButtonAndSwitches(
+         FSUIPC& fsuipc, 
+         EFISControlPanel& efis,
+         FlightControlUnit& fcu)
+   {
+      auto prev_baro = efis.getBarometricMode();
+
+      ImportBinarySwitch<0x561A>(fsuipc, [&efis] () { 
+               efis.setBarometricFormat(BARO_FMT_IN_HG);
+      });
+      ImportBinarySwitch<0x561B>(fsuipc, [&efis] () { 
+               efis.setBarometricFormat(BARO_FMT_H_PA);
+      });
+      ImportBinarySwitch<0x561D>(fsuipc, [&efis] () { 
+               efis.setBarometricMode(BARO_SELECTED);
+      });
+      ImportBinarySwitch<0x561E>(fsuipc, [&efis] () { 
+               efis.setBarometricMode(BARO_STANDARD);
+      });
+      if (prev_baro == efis.getBarometricMode())
+         ImportSwitchValue<0x561F>(fsuipc, prev_baro, [&efis] (BYTE new_value) {
+            efis.setBarometricMode(BarometricMode(new_value));
+         });
+      ImportBinarySwitch<0x5620>(fsuipc, [&fcu] () { 
+               fcu.pushSpeedUnitsButton();
+      });      
+      ImportBinarySwitch<0x5621>(fsuipc, [&fcu] () { 
+               fcu.pushGuidanceModeButton();
+      });
+      ImportBinarySwitch<0x5622>(fsuipc, [&fcu] () { 
+               fcu.pushAltitudeUnitsButton();
+      });
+      ImportSwitchValue<0x5623>(fsuipc, efis.getNDModeSwitch(), 
+         [&efis] (BYTE new_value) {
+            efis.setNDModeSwitch(NDModeSwitch(new_value));
+         });
+      ImportSwitchValue<0x5624>(fsuipc, efis.getNDRangeSwitch(), 
+         [&efis] (BYTE new_value) {
+            efis.setNDRangeSwitch(NDRangeSwitch(new_value));
+         });
+   }
+
+   template <DWORD offset>
    inline static void ImportBinarySwitch(
          FSUIPC& fsuipc,
          std::function<void(void)> action)
@@ -109,6 +152,17 @@ private:
          action();
          fsuipc.write<BYTE>(offset, 0);
       }
+   }
+
+   template <DWORD offset>
+   inline static void ImportSwitchValue(
+         FSUIPC& fsuipc,
+         BYTE old_value,
+         std::function<void(BYTE new_value)> action)
+   {
+      auto new_value = fsuipc.read<BYTE>(offset);
+      if (new_value != old_value)
+         action(new_value);
    }
 
    inline static void ExportButtonLights(
