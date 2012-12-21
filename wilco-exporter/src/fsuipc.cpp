@@ -49,8 +49,49 @@ namespace {
    };
 }
 
+void
+FSUIPC::read(void* dst, DWORD offset, DWORD length) const 
+throw (OutOfBoundsException)
+{
+   DWORD error;
+   if (FSUIPC_Read(offset, length, dst, &error))
+      if (FSUIPC_Process(&error))
+         return;
+   throw IOException(IOErrorMessage("reading data", error));
+}
+
+void
+FSUIPC::write(const void* src, DWORD offset, DWORD length) 
+throw (OutOfBoundsException)
+{
+   DWORD error;
+   if (FSUIPC_Write(offset, length, (void*) src, &error))
+      if (FSUIPC_Process(&error))
+         return;
+   throw IOException(IOErrorMessage("writing data", error));
+}
+
+void
+FSUIPC::copy(const Buffer& src, DWORD src_offset, 
+      DWORD dst_offset, DWORD length) 
+throw (OutOfBoundsException)
+{
+   BYTE tmp[1024];
+   auto sos = src_offset;
+   auto dos = dst_offset;
+   while (length)
+   {
+      auto l = length > 1024 ? 1024 : length;
+      src.read(tmp, sos, l);
+      this->write(tmp, dos, l);
+      dos += l;
+      sos += l;
+      length -= l;
+   }
+}
+
 const char*
-GetMessageForFSUIPCResult(DWORD result)
+FSUIPC::GetResultMessage(DWORD result)
 { 
    return (result < sizeof(fsuipc_error_msg) / sizeof(const char*))
          ? fsuipc_error_msg[result] : nullptr;

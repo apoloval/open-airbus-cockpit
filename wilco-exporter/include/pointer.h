@@ -16,38 +16,22 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_WE_MAPPING_H
-#define OAC_WE_MAPPING_H
+#ifndef OAC_POINTER_H
+#define OAC_POINTER_H
 
-#include <Windows.h>
+namespace oac {
 
-#include "buffer.h"
-#include "fsuipc.h"
-#include "pointer.h"
-#include "wilco.h"
-
-namespace oac { namespace we {
-
-class Mapper
+template <typename T>
+class Ptr : public std::shared_ptr<T>
 {
 public:
 
-   Mapper();
-
-   void importState(WilcoCockpit& cockpit, FSUIPC& fsuipc);
-
-   void exportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc);
-
-private:
-
-   Ptr<DoubleBuffer> _buffer;
-
-   void importEFISControlPanel(FSUIPC& fsuipc, WilcoCockpit& cockpit);
-
-   void initBuffer();
-   void syncBuffer(FSUIPC& fsuipc);   
+   inline Ptr() : std::shared_ptr<T>() {}
+   inline Ptr(const Ptr& ptr) : std::shared_ptr<T>(ptr) {}
+   inline Ptr(const shared_ptr<T>& ptr) : std::shared_ptr<T>(ptr) {}
+   inline Ptr(T* t) : std::shared_ptr<T>(std::shared_ptr<T>(t)) {}
 };
 
-}}; // namespace oac::we
+}; // namespace oac
 
 #endif

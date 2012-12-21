@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_WE_FSUIPC_H
-#define OAC_WE_FSUIPC_H
+#ifndef OAC_FSUIPC_H
+#define OAC_FSUIPC_H
 
 #pragma warning( disable : 4290 )
 
@@ -26,15 +26,18 @@
 #include <Boost/format.hpp>
 #include <FSUIPC_User.h>
 
+#include "buffer.h"
 #include "exception.h"
 
 #define FSUIPC_DEFAULT_BUFFER_SIZE 1024
 
 namespace oac {
 
-const char* GetMessageForFSUIPCResult(DWORD result);
-
-class FSUIPC {
+/**
+ * FSUIPC class. This class encapsulates the access to FSUIPC module. It 
+ * implements convenient wrappers to read from and write to FSUIPC offsets.
+ */
+class FSUIPC : public Buffer {
 public:
 
    typedef DWORD Offset;
@@ -42,44 +45,31 @@ public:
    DECL_RUNTIME_ERROR(IOException);
    DECL_RUNTIME_ERROR(StateException);
 
-   template <typename T>
-   T read(Offset offset) const throw (IOException)
-   {
-      DWORD result;
-      T t;
-      if (FSUIPC_Read(offset, sizeof(T), &t, &result))
-         if (FSUIPC_Process(&result))
-            return t;      
-      throw IOException(IOErrorMessage("reading data", result));
-   }
+   virtual DWORD capacity() const
+   { return 0xffff; }
 
-   template <typename T>
-   void write(Offset offset, const T& t) throw (IOException)
-   {
-      DWORD result;
-      if (!FSUIPC_Write(offset, sizeof(T), (void*) &t, &result))
-         throw IOException(IOErrorMessage("writing data", result));
-   }
+   virtual void read(void* dst, DWORD offset, DWORD length) const 
+         throw (OutOfBoundsException);
 
-   inline void flush(void) throw (IOException)
-   {
-      DWORD result;
-      if (!FSUIPC_Process(&result))
-         throw IOException(IOErrorMessage("flushing data", result));
-   }
+   virtual void write(const void* src, DWORD offset, DWORD length) 
+         throw (OutOfBoundsException);
+
+   virtual void copy(const Buffer& src, DWORD src_offset, 
+         DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
 
 protected:
 
    inline FSUIPC() {}
+
+   static const char* GetResultMessage(DWORD result);
 
 private:
 
    static std::string IOErrorMessage(const std::string& action, DWORD result)
    {
       return str(boost::format("IO error while %s: %s") % 
-         action.c_str() % GetMessageForFSUIPCResult(result));
+         action.c_str() % GetResultMessage(result));
    }
-
 };
 
 template <size_t buffer_size = FSUIPC_DEFAULT_BUFFER_SIZE>
@@ -91,7 +81,7 @@ public:
       DWORD result;
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, buffer_size))
          throw StateException(str(boost::format(
-            "cannot open FSUIPC: %s") % GetMessageForFSUIPCResult(result)));      
+            "cannot open FSUIPC: %s") % GetResultMessage(result)));      
    }
 
    inline ~LocalFSUIPC()

@@ -56,13 +56,13 @@ void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
 {
    try 
    {
-      LocalFSUIPC<2048> fsuipc;
       static WilcoCockpit* wilco = InitWilcoCockpit();
+      static Mapper mapper;
+      LocalFSUIPC<1024> fsuipc;
 
       // wilco->debug();
-      ImportState(*wilco, fsuipc);
-      ExportState(*wilco, fsuipc);
-      fsuipc.flush();
+      mapper.importState(*wilco, fsuipc);
+      mapper.exportState(*wilco, fsuipc);
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
    }

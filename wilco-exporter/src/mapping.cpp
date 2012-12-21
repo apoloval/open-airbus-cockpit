@@ -25,117 +25,123 @@ namespace oac { namespace we {
 
 namespace {
 
-inline void ExportModuleState(FSUIPC& fsuipc)
+inline void ExportModuleState(DoubleBuffer& buffer)
 {
-   fsuipc.write<BYTE>(0x5600, 1);   
+   buffer.writeAs<BYTE>(0x5600, 1);
 }
 
 struct EFISControlPanelAndFlightControlUnit {
 
    inline static void Import(
-      WilcoCockpit& cockpit,
-      FSUIPC& fsuipc)
+         FSUIPC& fsuipc,
+         WilcoCockpit& cockpit,
+         DoubleBuffer& buffer)
    {
       EFISControlPanel& efis_ctrl_panel = cockpit.getEFISControlPanel();
       FlightControlUnit& fcu = cockpit.getFlightControlUnit();
-      ImportPushButtons(fsuipc, efis_ctrl_panel, fcu);
-      ImportModeButtonAndSwitches(fsuipc, efis_ctrl_panel, fcu);
+      ImportPushButtons(buffer, fsuipc, efis_ctrl_panel, fcu);
+      ImportModeButtonAndSwitches(buffer, efis_ctrl_panel, fcu);
    }
 
-   inline static void Export(const WilcoCockpit& cockpit, FSUIPC& fsuipc) {
+   inline static void Export(
+         const FSUIPC& fsuipc,
+         const WilcoCockpit& cockpit, 
+         DoubleBuffer& buffer)
+   {
       const FlightControlUnit& fcu = cockpit.getFlightControlUnit();
       const EFISControlPanel& efis = cockpit.getEFISControlPanel();
 
-      ExportButtonLights(fcu, efis, fsuipc);
-      ExportModeButtonsAndSwitches(fcu, efis, fsuipc);
+      ExportButtonLights(fcu, efis, buffer);
+      ExportModeButtonsAndSwitches(fsuipc, fcu, efis, buffer);
    }
 
 private:
 
    inline static void ImportPushButtons(      
-      FSUIPC& fsuipc, 
-      EFISControlPanel& efis_ctrl_panel,
-      FlightControlUnit& fcu)
+         DoubleBuffer& buffer, 
+         FSUIPC& fsuipc,
+         EFISControlPanel& efis_ctrl_panel,
+         FlightControlUnit& fcu)
    {
-      ImportBinarySwitch<0x5601>(fsuipc, [&fsuipc] () { 
-               auto current_fd = fsuipc.read<DWORD>(0x2EE0);
-               fsuipc.write<DWORD>(0x2EE0, !current_fd);
+      ImportBinarySwitch<0x5601>(buffer, [&fsuipc] () { 
+               auto current_fd = fsuipc.readAs<DWORD>(0x2EE0);
+               fsuipc.writeAs<DWORD>(0x2EE0, !current_fd);
       });
-      ImportBinarySwitch<0x5602>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5602>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushILSButton();
       });
-      ImportBinarySwitch<0x5603>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5603>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_CONSTRAINT);
       });
-      ImportBinarySwitch<0x5604>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5604>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_WAYPOINT);
       });
-      ImportBinarySwitch<0x5605>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5605>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_VORD);
       });
-      ImportBinarySwitch<0x5606>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5606>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_NDB);
       });
-      ImportBinarySwitch<0x5607>(fsuipc, [&efis_ctrl_panel] () { 
+      ImportBinarySwitch<0x5607>(buffer, [&efis_ctrl_panel] () { 
                efis_ctrl_panel.pushMCPSwitch(MCP_AIRPORT);
       });
-      ImportBinarySwitch<0x5608>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x5608>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_LOC);
       });
-      ImportBinarySwitch<0x5609>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x5609>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_AP1);
       });
-      ImportBinarySwitch<0x560A>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x560A>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_AP2);
       });
-      ImportBinarySwitch<0x560B>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x560B>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_ATHR);
       });
-      ImportBinarySwitch<0x560C>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x560C>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_EXPE);
       });
-      ImportBinarySwitch<0x560D>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x560D>(buffer, [&fcu] () { 
                fcu.pushSwitch(FlightControlUnit::SWITCH_APPR);
       });
    }
 
    inline static void ImportModeButtonAndSwitches(
-         FSUIPC& fsuipc, 
+         DoubleBuffer& buffer, 
          EFISControlPanel& efis,
          FlightControlUnit& fcu)
    {
       auto prev_baro = efis.getBarometricMode();
 
-      ImportBinarySwitch<0x561A>(fsuipc, [&efis] () { 
+      ImportBinarySwitch<0x561A>(buffer, [&efis] () { 
                efis.setBarometricFormat(BARO_FMT_IN_HG);
       });
-      ImportBinarySwitch<0x561B>(fsuipc, [&efis] () { 
+      ImportBinarySwitch<0x561B>(buffer, [&efis] () { 
                efis.setBarometricFormat(BARO_FMT_H_PA);
       });
-      ImportBinarySwitch<0x561D>(fsuipc, [&efis] () { 
+      ImportBinarySwitch<0x561D>(buffer, [&efis] () { 
                efis.setBarometricMode(BARO_SELECTED);
       });
-      ImportBinarySwitch<0x561E>(fsuipc, [&efis] () { 
+      ImportBinarySwitch<0x561E>(buffer, [&efis] () { 
                efis.setBarometricMode(BARO_STANDARD);
       });
       if (prev_baro == efis.getBarometricMode())
-         ImportSwitchValue<0x561F>(fsuipc, prev_baro, [&efis] (BYTE new_value) {
+         ImportSwitchValue<0x561F>(buffer, prev_baro, [&efis] (BYTE new_value) {
             efis.setBarometricMode(BarometricMode(new_value));
          });
-      ImportBinarySwitch<0x5620>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x5620>(buffer, [&fcu] () { 
                fcu.pushSpeedUnitsButton();
       });      
-      ImportBinarySwitch<0x5621>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x5621>(buffer, [&fcu] () { 
                fcu.pushGuidanceModeButton();
       });
-      ImportBinarySwitch<0x5622>(fsuipc, [&fcu] () { 
+      ImportBinarySwitch<0x5622>(buffer, [&fcu] () { 
                fcu.pushAltitudeUnitsButton();
       });
-      ImportSwitchValue<0x5623>(fsuipc, efis.getNDModeSwitch(), 
+      ImportSwitchValue<0x5623>(buffer, efis.getNDModeSwitch(), 
          [&efis] (BYTE new_value) {
             efis.setNDModeSwitch(NDModeSwitch(new_value));
          });
-      ImportSwitchValue<0x5624>(fsuipc, efis.getNDRangeSwitch(), 
+      ImportSwitchValue<0x5624>(buffer, efis.getNDRangeSwitch(), 
          [&efis] (BYTE new_value) {
             efis.setNDRangeSwitch(NDRangeSwitch(new_value));
          });
@@ -143,32 +149,31 @@ private:
 
    template <DWORD offset>
    inline static void ImportBinarySwitch(
-         FSUIPC& fsuipc,
+         DoubleBuffer& buffer,
          std::function<void(void)> action)
    {
-      auto push = fsuipc.read<BYTE>(offset);
+      auto push = buffer.readAs<BYTE>(offset);
       if (push)
       {
          action();
-         fsuipc.write<BYTE>(offset, 0);
+         buffer.writeAs<BYTE>(offset, 0);
       }
    }
 
    template <DWORD offset>
    inline static void ImportSwitchValue(
-         FSUIPC& fsuipc,
+         DoubleBuffer& buffer,
          BYTE old_value,
          std::function<void(BYTE new_value)> action)
    {
-      auto new_value = fsuipc.read<BYTE>(offset);
-      if (new_value != old_value)
-         action(new_value);
+      if (buffer.isModifiedAs<BYTE>(offset))
+         action(buffer.readAs<BYTE>(offset));
    }
 
    inline static void ExportButtonLights(
          const FlightControlUnit& fcu, 
          const EFISControlPanel& efis,
-         FSUIPC& fsuipc)
+         DoubleBuffer& buffer)
    {
       BYTE lights[] = 
       {
@@ -186,54 +191,83 @@ private:
          fcu.getSwitch(FlightControlUnit::SWITCH_APPR),
       };
 
-      fsuipc.write<decltype(lights)>(0x560E, lights);
+      buffer.writeAs<decltype(lights)>(0x560E, lights);
    }
 
    inline static void ExportModeButtonsAndSwitches(
+         const FSUIPC& fsuipc,
          const FlightControlUnit& fcu, 
          const EFISControlPanel& efis,
-         FSUIPC& fsuipc)
+         DoubleBuffer& buffer)
    {
-      fsuipc.write<BYTE>(0x561C, efis.getBarometricFormat());
-      fsuipc.write<BYTE>(0x561F, efis.getBarometricMode());
-      fsuipc.write<BYTE>(0x5623, efis.getNDModeSwitch());
-      fsuipc.write<BYTE>(0x5624, efis. getNDRangeSwitch());
-      fsuipc.write<BYTE>(0x5625, efis.getNDNav1ModeSwitch());
-      fsuipc.write<BYTE>(0x5626, efis.getNDNav2ModeSwitch());
+      buffer.writeAs<BYTE>(0x561C, efis.getBarometricFormat());
+      buffer.writeAs<BYTE>(0x561F, efis.getBarometricMode());
+      buffer.writeAs<BYTE>(0x5623, efis.getNDModeSwitch());
+      buffer.writeAs<BYTE>(0x5624, efis.getNDRangeSwitch());
+      buffer.writeAs<BYTE>(0x5625, efis.getNDNav1ModeSwitch());
+      buffer.writeAs<BYTE>(0x5626, efis.getNDNav2ModeSwitch());
 
-      fsuipc.write<BYTE>(0x562F, fcu.getSpeedDisplayUnits());
-      fsuipc.write<BYTE>(0x5630, fcu.getGuidanceDisplayMode());
-      fsuipc.write<BYTE>(0x5631, fcu.getAltitudeDisplayUnits());
-      fsuipc.write<BYTE>(0x5632, fcu.getSpeedMode());
-      fsuipc.write<BYTE>(0x5633, fcu.getLateralMode());
-      fsuipc.write<BYTE>(0x5634, fcu.getVerticalMode());
+      buffer.writeAs<BYTE>(0x562F, fcu.getSpeedDisplayUnits());
+      buffer.writeAs<BYTE>(0x5630, fcu.getGuidanceDisplayMode());
+      buffer.writeAs<BYTE>(0x5631, fcu.getAltitudeDisplayUnits());
+      buffer.writeAs<BYTE>(0x5632, fcu.getSpeedMode());
+      buffer.writeAs<BYTE>(0x5633, fcu.getLateralMode());
+      buffer.writeAs<BYTE>(0x5634, fcu.getVerticalMode());
 
-      fsuipc.write<DWORD>(0x5638, fsuipc.read<DWORD>(0x07E2));
-      fsuipc.write<DWORD>(0x563C, 
-         DWORD(floor(0.5 + fsuipc.read<DWORD>(0x07E8) / 655.36f)));
-      fsuipc.write<DWORD>(0x5640, 
-         DWORD(floor(0.5 + 360.0*fsuipc.read<DWORD>(0x07CC) / 65536.0f)));
-      fsuipc.write<DWORD>(0x5644, DWORD(floor(0.5 + fcu.getTrackValue())));
-      fsuipc.write<DWORD>(0x5648, DWORD(fcu.getTargetAltitude()));
-      fsuipc.write<DWORD>(0x564C, DWORD(fcu.getVerticalSpeedValue()));
-      fsuipc.write<DWORD>(0x5650, DWORD(floor(0.5 + 100*fcu.getFPAValue())));
+      buffer.writeAs<DWORD>(0x5638, fsuipc.readAs<DWORD>(0x07E2));
+      buffer.writeAs<DWORD>(0x563C, 
+         DWORD(floor(0.5 + fsuipc.readAs<DWORD>(0x07E8) / 655.36f)));
+      buffer.writeAs<DWORD>(0x5640, 
+         DWORD(floor(0.5 + 360.0*fsuipc.readAs<DWORD>(0x07CC) / 65536.0f)));
+      buffer.writeAs<DWORD>(0x5644, DWORD(floor(0.5 + fcu.getTrackValue())));
+      buffer.writeAs<DWORD>(0x5648, DWORD(fcu.getTargetAltitude()));
+      buffer.writeAs<DWORD>(0x564C, DWORD(fcu.getVerticalSpeedValue()));
+      buffer.writeAs<DWORD>(0x5650, DWORD(floor(0.5 + 100*fcu.getFPAValue())));
    }
 };
 
 }; // anonymous namespace
 
-void
-ImportState(WilcoCockpit& cockpit, FSUIPC& fsuipc)
+Mapper::Mapper()
 {
-   EFISControlPanelAndFlightControlUnit::Import(cockpit, fsuipc);
 }
 
 void
-ExportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc)
+Mapper::importState(WilcoCockpit& cockpit, FSUIPC& fsuipc)
 {
-   ExportModuleState(fsuipc);
-   EFISControlPanelAndFlightControlUnit::Export(cockpit, fsuipc);
-   fsuipc.write<BYTE>(0x56D3, cockpit.getGpuSwitch());
+   this->syncBuffer(fsuipc);
+   EFISControlPanelAndFlightControlUnit::Import(fsuipc, cockpit, *_buffer);
+}
+
+void
+Mapper::exportState(const WilcoCockpit& cockpit, FSUIPC& fsuipc)
+{
+   if (!_buffer)
+      this->initBuffer();
+   ExportModuleState(*_buffer);
+   EFISControlPanelAndFlightControlUnit::Export(fsuipc, cockpit, *_buffer);
+   _buffer->writeAs<BYTE>(0x56D3, cockpit.getGpuSwitch());
+   fsuipc.copy(*_buffer, 0x5600, 0x5600, 512);
+}
+
+void
+Mapper::initBuffer()
+{
+   Ptr<DoubleBuffer::Factory> fact = new DoubleBuffer::Factory(
+         new ShiftedBuffer::Factory(new FixedBuffer::Factory(512), 0x5600));
+   _buffer = fact->createBuffer();
+}
+
+void
+Mapper::syncBuffer(FSUIPC& fsuipc)
+{
+   if (!_buffer)
+   {
+      this->initBuffer();
+      _buffer->copy(fsuipc, 0x5600, 0x5600, 512);
+   }
+   _buffer->swap();
+   _buffer->copy(fsuipc, 0x5600, 0x5600, 512);
 }
 
 }}; // namespace oac::we

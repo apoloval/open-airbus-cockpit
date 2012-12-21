@@ -13,6 +13,7 @@ set(WE_HEADERS
 
 set(WE_SOURCES
    WilcoExporter.def
+   src/buffer.cpp
    src/dllmain.cpp
    src/fsuipc.cpp
    src/logging.cpp
