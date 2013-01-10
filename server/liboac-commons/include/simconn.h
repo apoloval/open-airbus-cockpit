@@ -146,6 +146,167 @@ public:
       DWORD _element_size;
    };
 
+   class ClientEvent
+   {
+   public:
+
+      ClientEvent(const SimConnectClient& cli, const EventName& event_name,
+            SIMCONNECT_CLIENT_EVENT_ID id);
+
+      ClientEvent(const SimConnectClient& cli, SIMCONNECT_CLIENT_EVENT_ID id);
+
+      inline ClientEvent& setObject(SIMCONNECT_OBJECT_ID object)
+      { _object = object; return *this; }
+
+      inline ClientEvent& setGroup(SIMCONNECT_NOTIFICATION_GROUP_ID group)
+      { _group = group; return *this; }
+
+      inline ClientEvent& setFlags(SIMCONNECT_EVENT_FLAG flags)
+      { _flags = flags; return *this; }
+
+      inline SIMCONNECT_CLIENT_EVENT_ID id() const
+      { return _id; }
+
+      void transmit(DWORD value = 0);
+
+   private:
+
+      HANDLE _handle;
+      SIMCONNECT_CLIENT_EVENT_ID _id;
+      SIMCONNECT_OBJECT_ID _object;
+      SIMCONNECT_NOTIFICATION_GROUP_ID _group;
+      SIMCONNECT_EVENT_FLAG _flags;
+   };
+
+   template <typename T>
+   class VariableWatch
+   {
+   public:
+
+      inline VariableWatch() :
+         _client("Variable Watch"), _data_def(_client.newDataDefinition())
+      {
+      }
+
+      inline DataDefinition dataDefinition()
+      { return _data_def; }
+
+      inline T get() const
+      {      
+         bool done = false;
+         T data;
+         _client.registerOnSimObjectDataCallback([&data, &done](
+            SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+         {
+            memcpy(&data, &msg.dwData, sizeof(T));
+            done = true;
+         });
+         _client.newDataPullRequest(_data_def).submit();
+         while (!done)
+            _client.dispatchMessage();
+         return data;
+      }
+
+      inline void set(const T& t)
+      {
+         _client.newDataPushRequest(_data_def)
+               .setElementSize(sizeof(T))
+               .submit((void*) &t);
+      }
+
+   protected:
+
+      mutable SimConnectClient _client;
+      DataDefinition _data_def;
+   };
+
+   class EventTransmitter
+   {
+   public:
+
+      EventTransmitter(const SimConnectClient::EventName& event_name);
+
+      inline void transmit(DWORD value)
+      { _event.transmit(value); }
+
+   private:
+
+      Ptr<SimConnectClient> _client;
+      ClientEvent _event;
+   };
+
+   typedef std::function<void(
+         SimConnectClient& client, 
+         const SIMCONNECT_RECV& msg)> OnNullCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_EXCEPTION& msg)> OnExceptionCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_OPEN& msg)> OnOpenCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV& msg)> OnQuitCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_EVENT& msg)> OnEventCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE& msg)> 
+               OnEventObjectAddRemoveCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_EVENT_FILENAME& msg)> OnEventFilenameCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_EVENT_FRAME& msg)> OnEventFrameCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)> OnSimObjectDataCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& msg)> 
+               OnSimObjectDataByTypeCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_WEATHER_OBSERVATION& msg)> 
+               OnWeatherObservationCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_CLOUD_STATE& msg)> OnCloudStateCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_ASSIGNED_OBJECT_ID& msg)> 
+               OnAssignedObjectIDCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_RESERVED_KEY & msg)> OnReservedKeyCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_CUSTOM_ACTION& msg)> OnCustomActionCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_SYSTEM_STATE& msg)> OnSystemStateCallback;
+
+   typedef std::function<void(
+         SimConnectClient& client,
+         const SIMCONNECT_RECV_CLIENT_DATA& msg)> OnClientDataCallback;
+
    static const EventName SYSTEM_EVENT_1SEC;
    static const EventName SYSTEM_EVENT_4SEC;
    static const EventName SYSTEM_EVENT_6HZ;
@@ -169,69 +330,43 @@ public:
     */
    virtual void onMessage(SIMCONNECT_RECV* msg, DWORD msg_len);
 
-   void registerOnNullCallback(
-         const std::function<void(const SIMCONNECT_RECV& msg)>& callback);
+   void registerOnNullCallback(const OnNullCallback& callback);
 
-   void registerOnExceptionCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_EXCEPTION& msg)>& callback);
+   void registerOnExceptionCallback(const OnExceptionCallback& callback);
 
-   void registerOnOpenCallback(
-         const std::function<void(const SIMCONNECT_RECV_OPEN& msg)>& callback);
+   void registerOnOpenCallback(const OnOpenCallback& callback);
 
-   void registerOnQuitCallback(
-         const std::function<void(const SIMCONNECT_RECV& msg)>& callback);
+   void registerOnQuitCallback(const OnQuitCallback& callback);
 
-   void registerOnEventCallback(
-         const std::function<void(const SIMCONNECT_RECV_EVENT& msg)>& callback);
+   void registerOnEventCallback(const OnEventCallback& callback);
 
    void registerOnEventObjectAddRemoveCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE& msg)>& callback);
+         const OnEventObjectAddRemoveCallback& callback);
 
-   void registerOnEventFilenameCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_EVENT_FILENAME& msg)>& callback);
+   void registerOnEventFilenameCallback(const OnEventFilenameCallback& callback);
 
-   void registerOnEventFrameCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_EVENT_FRAME& msg)>& callback);
+   void registerOnEventFrameCallback(const OnEventFrameCallback& callback);
 
-   void registerOnSimObjectDataCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)>& callback);
+   void registerOnSimObjectDataCallback(const OnSimObjectDataCallback& callback);
 
    void registerOnSimObjectDataByTypeCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& msg)>& callback);
+         const OnSimObjectDataByTypeCallback& callback);
 
    void registerOnWeatherObservationCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_WEATHER_OBSERVATION& msg)>& callback);
+         const OnWeatherObservationCallback& callback);
 
-   void registerOnCloudStateCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_CLOUD_STATE& msg)>& callback);
+   void registerOnCloudStateCallback(const OnCloudStateCallback& callback);
 
    void registerOnAssignedObjectIDCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_ASSIGNED_OBJECT_ID& msg)>& callback);
+         const OnAssignedObjectIDCallback& callback);
 
-   void registerOnReservedKeyCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_RESERVED_KEY & msg)>& callback);
+   void registerOnReservedKeyCallback(const OnReservedKeyCallback& callback);
 
-   void registerOnCustomActionCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_CUSTOM_ACTION& msg)>& callback);
+   void registerOnCustomActionCallback(const OnCustomActionCallback& callback);
 
-   void registerOnSystemStateCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_SYSTEM_STATE& msg)>& callback);
+   void registerOnSystemStateCallback(const OnSystemStateCallback& callback);
 
-   void registerOnClientDataCallback(
-         const std::function<void(
-               const SIMCONNECT_RECV_CLIENT_DATA& msg)>& callback);
+   void registerOnClientDataCallback(const OnClientDataCallback& callback);
 
    void subscribeToSystemEvent(
          const EventName& event_name,
@@ -243,12 +378,15 @@ public:
 
    DataPushRequest newDataPushRequest(const DataDefinition& data_def);
 
+   ClientEvent newClientEvent(const EventName& event_name);
+
 private:
 
    class AbstractMessageReceiver
    {
    public:
-      virtual void sendMessage(SIMCONNECT_RECV* msg) = 0;
+      virtual void sendMessage(
+            SimConnectClient& client, SIMCONNECT_RECV* msg) = 0;
       virtual ~AbstractMessageReceiver() {}
    };
 
@@ -257,23 +395,24 @@ private:
    {
    public:
 
-      inline MessageReceiver(const std::function<void(const Message&)>& callback) :
+      inline MessageReceiver(const std::function<void(
+            SimConnectClient&, const Message&)>& callback) :
          _callback(callback)
       {}
 
-      virtual void sendMessage(SIMCONNECT_RECV* msg)
+      virtual void sendMessage(SimConnectClient& client, SIMCONNECT_RECV* msg)
       {
-         auto narrowed_msg = (Message*)(msg);
-         _callback(*narrowed_msg);
+         auto narrowed_msg = static_cast<Message*>(msg);
+         _callback(client, *narrowed_msg);
       }
 
    private:
-      std::function<void(const Message&)> _callback;
+      std::function<void(SimConnectClient&, const Message&)> _callback;
    };
 
    template <typename Message>
    void registerCallback(
-         const std::function<void(const Message&)>& callback,
+         const std::function<void(SimConnectClient&, const Message&)>& callback,
          SIMCONNECT_RECV_ID message_type)
    {
       if (_msg_receivers.size() <= std::size_t(message_type))

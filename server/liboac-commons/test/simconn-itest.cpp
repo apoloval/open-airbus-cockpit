@@ -30,11 +30,11 @@ template <typename MsgType>
 void ShouldDispatchSystemEvent(
       const SimConnectClient::EventName& event,
       void (SimConnectClient::*registration)(
-            const std::function<void(const MsgType&)>&))
+            const std::function<void(SimConnectClient& client, const MsgType&)>&))
 {
    SimConnectClient cli("Test Client");
    bool cont = true;
-   (cli.*registration)([&cont](const MsgType& msg)
+   (cli.*registration)([&cont](SimConnectClient& client,const MsgType& msg)
    {
       cont = false;
    });
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(ShouldPullRequestDataOnUserObject)
 
    bool cont = true;
    cli.registerOnSimObjectDataCallback([&cont](
-         const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
    {
       struct Data { 
          double qnh; 
@@ -132,7 +132,7 @@ BOOST_AUTO_TEST_CASE(ShouldPushRequestDataOnUserObject)
 
    bool cont = true;
    cli.registerOnSimObjectDataCallback([&cont, &alt](
-         const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
    {
       BOOST_CHECK_CLOSE(alt, *((double*) &msg.dwData), 0.1);
       cont = false;
@@ -144,4 +144,94 @@ BOOST_AUTO_TEST_CASE(ShouldPushRequestDataOnUserObject)
       cli.dispatchMessage();
 
    std::cerr << boost::format("FL%03d, Done!") % int(alt / 100) << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(ShouldTransmitEventOnUserObject)
+{
+   SimConnectClient cli("Test Client");
+   std::cerr << "Should transmit event on user object... ";
+
+   double qnh = 1030.5;
+   auto event = cli.newClientEvent("KOHLSMAN_SET");
+   event.transmit(int(qnh * 16)); // *16 is required by the event representation
+
+   bool cont = true;
+   cli.registerOnSimObjectDataCallback([&cont, &qnh](
+         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+   {
+      BOOST_CHECK_CLOSE(qnh, *((double*) &msg.dwData), 0.1);
+      cont = false;
+   });
+   auto data_def = cli.newDataDefinition()
+         .add("KOHLSMAN SETTING MB", "Millibars");
+   cli.newDataPullRequest(data_def).submit();
+
+   std::cerr << boost::format("QNH %d, Done!") % int(qnh) << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(ShouldWatchSimpleVariable)
+{
+   std::cerr << "Should watch simple variable... ";
+   SimConnectClient::VariableWatch<double> qnh;
+   qnh.dataDefinition().add("KOHLSMAN SETTING MB", "Millibars");
+   std::cerr << boost::format("QNH %d, Done!") % int(qnh.get()) << std::endl;  
+}
+
+BOOST_AUTO_TEST_CASE(ShouldWriteWatchSimpleVariable)
+{
+   std::cerr << "Should write on watch simple variable... ";
+   SimConnectClient::VariableWatch<double> alt;
+   alt.dataDefinition().add("Plane Altitude", "feet");
+
+   double value = 25000.0;
+   alt.set(value);
+
+   BOOST_CHECK_CLOSE(value, alt.get(), 0.1);
+
+   std::cerr << boost::format("Alt %d, Done!") % int(value) << std::endl;  
+}
+
+BOOST_AUTO_TEST_CASE(ShouldWatchTwoSimpleVariables)
+{
+   std::cerr << "Should watch two simple variables... ";
+   SimConnectClient::VariableWatch<double> qnh;
+   qnh.dataDefinition().add("KOHLSMAN SETTING MB", "Millibars");
+   SimConnectClient::VariableWatch<double> alt;
+   alt.dataDefinition().add("Plane Altitude", "feet");
+   std::cerr << boost::format("QNH %d, Alt %d; Done!") 
+      % int(qnh.get()) % int(alt.get()) << std::endl;  
+}
+
+BOOST_AUTO_TEST_CASE(ShouldWatchComplexVariable)
+{
+   struct Complex {
+      double qnh;
+      double alt;
+   };
+
+   std::cerr << "Should watch complex variable... ";
+   SimConnectClient::VariableWatch<Complex> watch;
+   watch.dataDefinition()
+         .add("KOHLSMAN SETTING MB", "Millibars")
+         .add("Plane Altitude", "feet");
+   auto complex = watch.get();
+   std::cerr << boost::format("QNH %d, Alt %d; Done!") 
+      % int(complex.qnh) % int(complex.alt) << std::endl;  
+}
+
+BOOST_AUTO_TEST_CASE(ShouldSetVariableViaEventTransmitter)
+{
+   std::cerr << "Should watch write-by-event variable... ";
+   double qnh = 1013.0;
+   
+   SimConnectClient::EventTransmitter event("KOHLSMAN_SET");
+   event.transmit(int(16*qnh));
+
+   SimConnectClient::VariableWatch<double> watch;
+   watch.dataDefinition()
+         .add("KOHLSMAN SETTING MB", "Millibars");
+   double actual_qnh = watch.get();
+   BOOST_CHECK_CLOSE(qnh, actual_qnh, 0.1);
+   std::cerr << boost::format("QNH %d, Done!") 
+      % int(actual_qnh) << std::endl;  
 }
