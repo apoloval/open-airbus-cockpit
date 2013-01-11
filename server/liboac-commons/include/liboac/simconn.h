@@ -314,6 +314,9 @@ public:
 
    SimConnectClient(const std::string& name) throw (ConnectionException);
 
+   SimConnectClient(const std::string& name,
+         const OnOpenCallback& open_callback) throw (ConnectionException);
+
    virtual ~SimConnectClient();
 
    /**
@@ -417,6 +420,8 @@ private:
    {
       this->receiver(message_type) = new MessageReceiver<Message>(callback);
    }
+
+   void open() throw (ConnectionException);
 
    Ptr<AbstractMessageReceiver>& receiver(SIMCONNECT_RECV_ID message_type);
 

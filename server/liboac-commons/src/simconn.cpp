@@ -37,6 +37,9 @@ void CALLBACK DispatchMessage(
    }
 }
 
+void OnOpenIgnore(SimConnectClient& client, const SIMCONNECT_RECV_OPEN& msg)
+{}
+
 }; // anonymous namespace
 
 SimConnectClient::DataDefinition&
@@ -134,13 +137,18 @@ const SimConnectClient::EventName SimConnectClient::SYSTEM_EVENT_FRAME(
 SimConnectClient::SimConnectClient(const std::string& name)
 throw (ConnectionException) :
    _name(name)
+{ 
+   this->open(); 
+   this->registerOnOpenCallback(OnOpenIgnore);
+}
+
+SimConnectClient::SimConnectClient(const std::string& name,
+         const OnOpenCallback& open_callback) 
+throw (ConnectionException) :
+   _name(name)
 {
-   if (SimConnect_Open(&_handle, name.c_str(), NULL, 0, 0, 0) != S_OK)
-      throw ConnectionException(
-            "cannot connect to SimConnect: connection error");
-   if (SimConnect_CallDispatch(_handle, DispatchMessage, this) != S_OK)
-      throw ConnectionException(
-            "cannot connect to SimConnect: callback register failed");      
+   this->open();
+   this->registerOnOpenCallback(open_callback);
 }
 
 SimConnectClient::~SimConnectClient()
@@ -344,6 +352,18 @@ SimConnectClient::newClientEvent(const EventName& event_name)
 { 
    static SIMCONNECT_CLIENT_EVENT_ID next_id = 0xffff0000;
    return ClientEvent(*this, event_name, next_id++);
+}
+
+void
+SimConnectClient::open()
+throw (ConnectionException)
+{
+   if (SimConnect_Open(&_handle, _name.c_str(), NULL, 0, 0, 0) != S_OK)
+      throw ConnectionException(
+            "cannot connect to SimConnect: connection error");
+   if (SimConnect_CallDispatch(_handle, DispatchMessage, this) != S_OK)
+      throw ConnectionException(
+            "cannot connect to SimConnect: callback register failed");
 }
 
 Ptr<SimConnectClient::AbstractMessageReceiver>&
