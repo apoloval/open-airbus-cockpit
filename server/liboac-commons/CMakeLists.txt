@@ -2,24 +2,15 @@ cmake_minimum_required(VERSION 2.8)
 
 project(liboac-commons)
 
-set(CMAKE_MODULE_PATH 
-   ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/../../cmake/modules/")
-
-set(Boost_USE_STATIC_LIBS ON)
-
-find_package(Boost COMPONENTS unit_test_framework REQUIRED)
-find_package(SimConnect REQUIRED)
-find_package(FSUIPC_Internal REQUIRED)
-
 set(liboac-commons_HEADERS
-   include/buffer.h
-   include/cockpit.h
-   include/cockpit-fsuipc.h
-   include/exception.h
-   include/fsuipc.h
-   include/logging.h
-   include/pointer.h
-   include/simconn.h
+   include/liboac/buffer.h
+   include/liboac/cockpit.h
+   include/liboac/cockpit-fsuipc.h
+   include/liboac/exception.h
+   include/liboac/fsuipc.h
+   include/liboac/logging.h
+   include/liboac/pointer.h
+   include/liboac/simconn.h
 )
 
 set(liboac-commons_SOURCES
@@ -31,14 +22,9 @@ set(liboac-commons_SOURCES
    src/simconn.cpp
 )
 
-add_definitions(-DUNICODE)
-
 include_directories(
-   include
-   ${Boost_INCLUDE_DIR}
-   ${SIM_CONNECT_INCLUDE_DIR}
-   ${FSUIPC_INTERNAL_INCLUDE_DIR}
-   )
+   ${CMAKE_CURRENT_SOURCE_DIR}/include/liboac
+)
 
 link_directories()
 
@@ -53,21 +39,12 @@ set_target_properties(liboac-commons PROPERTIES
 )
 target_link_libraries(liboac-commons
    ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
+   ${FSUIPC_INTERNAL_LIBRARY}   
 )
 
 add_executable(simconn_itest test/simconn-itest.cpp)
 
 target_link_libraries(simconn_itest
-   liboac-commons
-   ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
-   ${Boost_LIBRARIES}
-)
-
-add_executable(RequestData test/RequestData.cpp)
-
-target_link_libraries(RequestData
    liboac-commons
    ${SIM_CONNECT_LIBRARY}
    ${FSUIPC_INTERNAL_LIBRARY}
