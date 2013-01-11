@@ -26,7 +26,8 @@
 
 #include <Windows.h>
 
-#include "exception.h"
+#include <liboac/cockpit.h>
+#include <liboac/exception.h>
 
 namespace oac { namespace we {
 
@@ -72,12 +73,6 @@ enum EngineMode
    ENG_MOD_CRANK = 0,
    ENG_MOD_NORM = 1,
    ENG_MOD_IGNITION_START = 2,
-};
-
-enum BinarySwitch
-{
-   SWITCHED_OFF = 0,
-   SWITCHED_ON = 1,
 };
 
 enum AutoThrust
@@ -237,126 +232,7 @@ enum SDPageButton {
    SD_PAGE_STS,
 };
 
-enum SpeedUnits {
-   SPEED_KNOTS = 0,
-   SPEED_MACH = 1,
-};
-
-enum GuidanceDisplayMode
-{
-   GUI_MOD_HDG_VS = 0,
-   GUI_MOD_TRK_FPA = 1,
-};
-
-enum AltitudeUnits {
-   ALT_FEET,
-   ALT_METERS,
-};
-
-enum FCUManagementMode
-{
-   FCU_MNGT_SELECTED = 0,
-   FCU_MNGT_MANAGED = 1,
-};
-
-typedef UINT32 Knots;
-typedef FLOAT Mach;
-typedef FLOAT Degrees;
-typedef UINT32 Feet;
-typedef INT32 FeetPerMin;
-
-class FlightControlUnit {
-public:
-   enum Switch {
-      SWITCH_LOC,
-      SWITCH_ATHR,
-      SWITCH_EXPE,
-      SWITCH_APPR,
-      SWITCH_AP1,
-      SWITCH_AP2,      
-   };
-
-   virtual SpeedUnits getSpeedDisplayUnits() const = 0;
-   virtual void pushSpeedUnitsButton() = 0;
-   virtual GuidanceDisplayMode getGuidanceDisplayMode() const = 0;
-   virtual void pushGuidanceModeButton() = 0;
-   virtual AltitudeUnits getAltitudeDisplayUnits() const = 0;
-   virtual void pushAltitudeUnitsButton() = 0;
-   virtual BinarySwitch getSwitch(Switch sw) const = 0;
-   virtual void pushSwitch(Switch sw) = 0;
-   virtual FCUManagementMode getSpeedMode() const = 0;
-   virtual FCUManagementMode getLateralMode() const = 0;
-   virtual FCUManagementMode getVerticalMode() const = 0;
-   virtual Degrees getTrackValue() const = 0;
-   virtual Feet getTargetAltitude() const = 0;
-   virtual FeetPerMin getVerticalSpeedValue() const = 0;
-   virtual Degrees getFPAValue() const = 0;
-};
-
-enum MCPSwitch
-{
-   MCP_CONSTRAINT,
-   MCP_WAYPOINT,
-   MCP_VORD,
-   MCP_NDB,
-   MCP_AIRPORT,
-};
-
-enum NDModeSwitch {
-   ND_MOD_ILS,
-   ND_MOD_VOR,
-   ND_MOD_NAV,
-   ND_MOD_ARC,
-   NV_MOD_PLAN,
-};
-
-enum NDRangeSwitch {
-   ND_RNG_10,
-   ND_RNG_20,
-   ND_RNG_40,
-   ND_RNG_80,
-   ND_RNG_160,
-   ND_RNG_320,
-};
-
-enum NDNavModeSwitch {
-   ND_NAV_ADF,
-   ND_NAV_OFF,
-   ND_NAV_VOR,
-};
-
-enum BarometricMode
-{
-   BARO_SELECTED,
-   BARO_STANDARD,
-};
-
-enum BarometricFormat
-{
-   BARO_FMT_IN_HG,
-   BARO_FMT_H_PA,
-};
-
-class EFISControlPanel {
-public:
-   inline virtual ~EFISControlPanel() {}
-   virtual BarometricMode getBarometricMode() const = 0;
-   virtual void setBarometricMode(BarometricMode mode) = 0;
-   virtual BarometricFormat getBarometricFormat() const = 0;
-   virtual void setBarometricFormat(BarometricFormat fmt) = 0;
-   virtual BinarySwitch getILSButton() const = 0;
-   virtual void pushILSButton() = 0;
-   virtual BinarySwitch getMCPSwitch(MCPSwitch sw) const = 0;
-   virtual void pushMCPSwitch(MCPSwitch sw) = 0;
-   virtual NDModeSwitch getNDModeSwitch() const = 0;
-   virtual void setNDModeSwitch(NDModeSwitch mode) = 0;
-   virtual NDRangeSwitch getNDRangeSwitch() const = 0;
-   virtual void setNDRangeSwitch(NDRangeSwitch range) = 0;
-   virtual NDNavModeSwitch getNDNav1ModeSwitch() const = 0;
-   virtual NDNavModeSwitch getNDNav2ModeSwitch() const = 0;
-};
-
-class WilcoCockpit
+class WilcoCockpit : public CockpitFront
 {
 public:
 

@@ -21,9 +21,10 @@
 
 #include <SimConnect.h>
 
-#include "fsuipc.h"
-#include "logging.h"
-#include "mapping.h"
+#include <liboac/cockpit-fsuipc.h>
+#include <liboac/fsuipc.h>
+#include <liboac/logging.h>
+
 #include "wilco.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\WilcoExporter.log"
@@ -57,12 +58,10 @@ void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
    try 
    {
       static WilcoCockpit* wilco = InitWilcoCockpit();
-      static Mapper mapper;
-      LocalFSUIPC<1024> fsuipc;
+      static CockpitBack* back = new FSUIPCCockpitBack(
+            new LocalFSUIPC<1024>::Factory());
 
-      // wilco->debug();
-      mapper.importState(*wilco, fsuipc);
-      mapper.exportState(*wilco, fsuipc);
+      back->map(*wilco);
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
    }

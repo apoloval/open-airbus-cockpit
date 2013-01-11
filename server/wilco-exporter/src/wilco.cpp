@@ -19,9 +19,9 @@
 #include <Windows.h>
 
 #include <Boost/format.hpp>
+#include <liboac/logging.h>
 #include <SimConnect.h>
 
-#include "logging.h"
 #include "wilco.h"
 
 namespace oac { namespace we {
@@ -465,7 +465,9 @@ private:
    HINSTANCE _dll_instance;
 };
 
-class EFISControlPanelImpl : public EFISControlPanel, public DllInspector
+class EFISControlPanelImpl : 
+      public CockpitFront::EFISControlPanel, 
+      public DllInspector
 {
 public:
 
@@ -484,6 +486,17 @@ public:
 
    virtual void setBarometricFormat(BarometricFormat fmt)
    { this->setDataObject<DWORD>(VADDR_BARO_FORMAT, fmt); }
+
+   virtual BinarySwitch getFDButton() const
+   {
+      // TODO: implement it by SimConnect
+      return SWITCHED_OFF;
+   }
+
+   virtual void pushFDButton()
+   {
+      // TODO: implement it by SimConnect
+   }
 
    virtual BinarySwitch getILSButton() const
    { return BinarySwitch(this->getDataObject<DWORD>(VADDR_ILS_SWITCH)); }
@@ -536,8 +549,14 @@ public:
    virtual NDNavModeSwitch getNDNav1ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT)); }
 
+   virtual void setNDNav1ModeSwitch(NDNavModeSwitch value)
+   { this->setDataObject<DWORD>(VADDR_MCP_NAV_LEFT, value); }
+
    virtual NDNavModeSwitch getNDNav2ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
+
+   virtual void setNDNav2ModeSwitch(NDNavModeSwitch value)
+   { this->setDataObject<DWORD>(VADDR_MCP_NAV_RIGHT, value); }
 
 private:
 
@@ -549,7 +568,9 @@ private:
    }
 };
 
-class FlightControlUnitImpl : public FlightControlUnit, public DllInspector {
+class FlightControlUnitImpl : 
+      public CockpitFront::FlightControlUnit, 
+      public DllInspector {
 public:
 
    FlightControlUnitImpl(const DllInfo& dll_info, HINSTANCE dll_instance) : 
@@ -595,46 +616,52 @@ public:
       });
    }
 
-   virtual BinarySwitch getSwitch(Switch sw) const
+   virtual BinarySwitch getSwitch(FCUSwitch sw) const
    {
       return this->access<BinarySwitch>([&sw](const Wilco_FCU& fcu) {
          switch (sw)
          {
-            case SWITCH_LOC:
-               return BinarySwitch(fcu.armed_lateral_mode == LAT_MOD_LOC &&
-                    fcu.armed_vertical_mode != VER_MOD_GS);
-            case SWITCH_ATHR:
+            case FCU_SWITCH_LOC:
+               return BinarySwitch(
+                     (fcu.armed_lateral_mode == LAT_MOD_LOC || 
+                        fcu.active_lateral_mode == LAT_MOD_LOC) &&
+                     (fcu.armed_vertical_mode != VER_MOD_GS && 
+                        fcu.active_vertical_mode != VER_MOD_GS));
+            case FCU_SWITCH_ATHR:
                return fcu.auto_thrust > 0 ? SWITCHED_ON : SWITCHED_OFF;
-            case SWITCH_EXPE:
+            case FCU_SWITCH_EXPE:
                return BinarySwitch(fcu.expedite);
-            case SWITCH_APPR:
-                return BinarySwitch(fcu.armed_vertical_mode == VER_MOD_GS);
-            case SWITCH_AP1:
+            case FCU_SWITCH_APPR:
+                return BinarySwitch(fcu.armed_vertical_mode == VER_MOD_GS ||
+                     fcu.active_vertical_mode == VER_MOD_GS);
+            case FCU_SWITCH_AP1:
                return BinarySwitch(fcu.autopilot & AP_1);
-            case SWITCH_AP2:
+            case FCU_SWITCH_AP2:
                return BinarySwitch(fcu.autopilot & AP_1);
+            default:
+               return SWITCHED_OFF;
          }
       });
    }
 
-   virtual void pushSwitch(Switch sw)
+   virtual void pushSwitch(FCUSwitch sw)
    {
       this->mutate([&sw](Wilco_FCU& fcu) {
          switch (sw)
          {
-            case SWITCH_LOC:
+            case FCU_SWITCH_LOC:
                fcu.armed_lateral_mode = LAT_MOD_LOC; break;
-            case SWITCH_ATHR:
+            case FCU_SWITCH_ATHR:
                fcu.auto_thrust ^= 2; break;
-            case SWITCH_EXPE:
+            case FCU_SWITCH_EXPE:
                fcu.expedite ^= 1; break;
-            case SWITCH_APPR:
+            case FCU_SWITCH_APPR:
                fcu.armed_lateral_mode = LAT_MOD_LOC; 
                fcu.armed_vertical_mode = VER_MOD_GS;
                break;
-            case SWITCH_AP1:
+            case FCU_SWITCH_AP1:
                fcu.autopilot ^= AP_1; break;
-            case SWITCH_AP2:
+            case FCU_SWITCH_AP2:
                fcu.autopilot ^= AP_1; break;
          }
       });
@@ -660,11 +687,48 @@ public:
          return FCUManagementMode(fcu.vertical_speed_knob);    
       });
    }
+
+   virtual Knots getSpeedValue() const
+   {
+      return 0; // TODO: implement this
+   }
+
+   virtual void setSpeedValue(Knots value)
+   {
+      // TODO: implement this
+   }
+
+   virtual Mach100 getMachValue() const
+   {
+      return 0; // TODO: implement this
+   }
+
+   virtual void setMachValue(Mach100 value)
+   {
+      // TODO: implement this
+   }
    
+   virtual Degrees getHeadingValue() const 
+   {
+      return 0; // TODO: implement this
+   }
+
+   virtual void setHeadingValue(Degrees value) 
+   {
+      // TODO: implement this
+   }
+
    virtual Degrees getTrackValue() const
    {
       return this->access<Degrees>([](const Wilco_FCU& fcu) {
          return Degrees(fcu.selected_track);
+      });
+   }
+
+   virtual void setTrackValue(Degrees value)
+   {
+      this->mutate([value](Wilco_FCU& fcu) {
+         fcu.selected_track = value;
       });
    }
    
@@ -674,6 +738,13 @@ public:
          return fcu.target_altitude;
       });
    }
+
+   virtual void setTargetAltitude(Feet value)
+   {
+      this->mutate([value](Wilco_FCU& fcu) {
+         fcu.target_altitude = value;
+      });
+   }
    
    virtual FeetPerMin getVerticalSpeedValue() const
    {
@@ -681,14 +752,38 @@ public:
          return fcu.selected_vertical_speed;
       });
    }
+
+   virtual void setVerticalSpeedValue(FeetPerMin value)
+   {
+      this->mutate([value](Wilco_FCU& fcu) {
+         fcu.selected_vertical_speed = value;
+      });
+   }
    
-   virtual Degrees getFPAValue() const
+   virtual Degrees100 getFPAValue() const
    {
       return this->access<Degrees>([](const Wilco_FCU& fcu) {
-         return fcu.selected_fpa;;
+         return Degrees100(fcu.selected_fpa * 100);
       });
    }
 
+   virtual void setFPAValue(Degrees100 value)
+   {
+      this->mutate([value](Wilco_FCU& fcu) {
+         fcu.selected_fpa = (value / 100.0f);
+      });
+   }
+
+   virtual void pushKnob(FCUKnob knob)
+   {
+      // TODO: implement this
+   }
+
+   virtual void pullKnob(FCUKnob knob)
+   {
+      // TODO: implement this
+   }
+   
 private:
 
    inline void mutate(std::function<void(Wilco_FCU&)> mutator)

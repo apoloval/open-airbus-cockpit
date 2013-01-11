@@ -37,8 +37,9 @@ struct EFISControlPanelAndFlightControlUnit {
          WilcoCockpit& cockpit,
          DoubleBuffer& buffer)
    {
-      EFISControlPanel& efis_ctrl_panel = cockpit.getEFISControlPanel();
-      FlightControlUnit& fcu = cockpit.getFlightControlUnit();
+      CockpitFront::EFISControlPanel& efis_ctrl_panel = 
+            cockpit.getEFISControlPanel();
+      CockpitFront::FlightControlUnit& fcu = cockpit.getFlightControlUnit();
       ImportPushButtons(buffer, fsuipc, efis_ctrl_panel, fcu);
       ImportModeButtonAndSwitches(buffer, efis_ctrl_panel, fcu);
    }
@@ -48,8 +49,10 @@ struct EFISControlPanelAndFlightControlUnit {
          const WilcoCockpit& cockpit, 
          DoubleBuffer& buffer)
    {
-      const FlightControlUnit& fcu = cockpit.getFlightControlUnit();
-      const EFISControlPanel& efis = cockpit.getEFISControlPanel();
+      const CockpitFront::FlightControlUnit& fcu = 
+            cockpit.getFlightControlUnit();
+      const CockpitFront::EFISControlPanel& efis = 
+            cockpit.getEFISControlPanel();
 
       ExportButtonLights(fcu, efis, buffer);
       ExportModeButtonsAndSwitches(fsuipc, fcu, efis, buffer);
@@ -60,8 +63,8 @@ private:
    inline static void ImportPushButtons(      
          DoubleBuffer& buffer, 
          FSUIPC& fsuipc,
-         EFISControlPanel& efis_ctrl_panel,
-         FlightControlUnit& fcu)
+         CockpitFront::EFISControlPanel& efis_ctrl_panel,
+         CockpitFront::FlightControlUnit& fcu)
    {
       ImportBinarySwitch<0x5601>(buffer, [&fsuipc] () { 
                auto current_fd = fsuipc.readAs<DWORD>(0x2EE0);
@@ -86,29 +89,29 @@ private:
                efis_ctrl_panel.pushMCPSwitch(MCP_AIRPORT);
       });
       ImportBinarySwitch<0x5608>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_LOC);
+               fcu.pushSwitch(FCU_SWITCH_LOC);
       });
       ImportBinarySwitch<0x5609>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_AP1);
+               fcu.pushSwitch(FCU_SWITCH_AP1);
       });
       ImportBinarySwitch<0x560A>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_AP2);
+               fcu.pushSwitch(FCU_SWITCH_AP2);
       });
       ImportBinarySwitch<0x560B>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_ATHR);
+               fcu.pushSwitch(FCU_SWITCH_ATHR);
       });
       ImportBinarySwitch<0x560C>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_EXPE);
+               fcu.pushSwitch(FCU_SWITCH_EXPE);
       });
       ImportBinarySwitch<0x560D>(buffer, [&fcu] () { 
-               fcu.pushSwitch(FlightControlUnit::SWITCH_APPR);
+               fcu.pushSwitch(FCU_SWITCH_APPR);
       });
    }
 
    inline static void ImportModeButtonAndSwitches(
          DoubleBuffer& buffer, 
-         EFISControlPanel& efis,
-         FlightControlUnit& fcu)
+         CockpitFront::EFISControlPanel& efis,
+         CockpitFront::FlightControlUnit& fcu)
    {
       auto prev_baro = efis.getBarometricMode();
 
@@ -171,8 +174,8 @@ private:
    }
 
    inline static void ExportButtonLights(
-         const FlightControlUnit& fcu, 
-         const EFISControlPanel& efis,
+         const CockpitFront::FlightControlUnit& fcu, 
+         const CockpitFront::EFISControlPanel& efis,
          DoubleBuffer& buffer)
    {
       BYTE lights[] = 
@@ -183,12 +186,12 @@ private:
          efis.getMCPSwitch(MCP_VORD),
          efis.getMCPSwitch(MCP_NDB),
          efis.getMCPSwitch(MCP_AIRPORT),
-         fcu.getSwitch(FlightControlUnit::SWITCH_LOC),
-         fcu.getSwitch(FlightControlUnit::SWITCH_AP1),
-         fcu.getSwitch(FlightControlUnit::SWITCH_AP2),
-         fcu.getSwitch(FlightControlUnit::SWITCH_ATHR),
-         fcu.getSwitch(FlightControlUnit::SWITCH_EXPE),
-         fcu.getSwitch(FlightControlUnit::SWITCH_APPR),
+         fcu.getSwitch(FCU_SWITCH_LOC),
+         fcu.getSwitch(FCU_SWITCH_AP1),
+         fcu.getSwitch(FCU_SWITCH_AP2),
+         fcu.getSwitch(FCU_SWITCH_ATHR),
+         fcu.getSwitch(FCU_SWITCH_EXPE),
+         fcu.getSwitch(FCU_SWITCH_APPR),
       };
 
       buffer.writeAs<decltype(lights)>(0x560E, lights);
@@ -196,8 +199,8 @@ private:
 
    inline static void ExportModeButtonsAndSwitches(
          const FSUIPC& fsuipc,
-         const FlightControlUnit& fcu, 
-         const EFISControlPanel& efis,
+         const CockpitFront::FlightControlUnit& fcu, 
+         const CockpitFront::EFISControlPanel& efis,
          DoubleBuffer& buffer)
    {
       buffer.writeAs<BYTE>(0x561C, efis.getBarometricFormat());
