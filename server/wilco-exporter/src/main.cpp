@@ -19,11 +19,10 @@
 #include <sstream>
 #include <Windows.h>
 
-#include <SimConnect.h>
-
 #include <liboac/cockpit-fsuipc.h>
 #include <liboac/fsuipc.h>
 #include <liboac/logging.h>
+#include <liboac/simconn.h>
 
 #include "wilco.h"
 
@@ -35,11 +34,6 @@ using namespace oac::we;
 
 namespace {
 
-enum EVENT_ID
-{
-	EVENT_1SEC_ELAPSED,
-};
-
 WilcoCockpit* InitWilcoCockpit()
 {
    Log(INFO, "Initializing Wilco Cockpit module... ");
@@ -48,12 +42,7 @@ WilcoCockpit* InitWilcoCockpit()
    return result;
 }
 
-void Print(const WilcoCockpit& wilco)
-{
-   wilco.debug();
-}
-
-void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
+void OnEvent(SimConnectClient& sc, const SIMCONNECT_RECV_EVENT& msg)
 {
    try 
    {
@@ -67,32 +56,18 @@ void CALLBACK DispatchProc(SIMCONNECT_RECV* pData, DWORD cbData, void* pContext)
    }
 }
 
-HANDLE handleSimConnect;
+Ptr<SimConnectClient> sc_client;
 
 void Connect()
-{
-	HRESULT res;
-
-	res = SimConnect_Open(&handleSimConnect, "WilcoExporter", NULL, 0, 0, 0);
-	if (res != S_OK)
-		Log(FAIL, "Cannot open connection to SimConnect");
-
-	res = SimConnect_CallDispatch(handleSimConnect, DispatchProc, NULL);
-	if (res != S_OK)
-		Log(FAIL, "Cannot register SimConnect callback");
-
-	res = SimConnect_SubscribeToSystemEvent(handleSimConnect, EVENT_1SEC_ELAPSED, "1sec");
-	if (res == S_OK)
-		Log(INFO, "Subscription to SimConnect 1sec system event done successfully");
-	else
-		Log(FAIL, "The callback subscription to SimConnect 1sec system event was failed!!!");
+{   
+   sc_client = new SimConnectClient("Wilco Exporter");
+   sc_client->registerOnEventCallback(OnEvent);
+   sc_client->subscribeToSystemEvent(SimConnectClient::SYSTEM_EVENT_1SEC);
 }
 
 void Disconnect()
 {
-   auto res = SimConnect_Close(handleSimConnect);
-	if (res != S_OK)
-		Log(FAIL, "Cannot close connection to SimConnect");
+   sc_client.reset();
 }
 
 }; // unnamed namespace
