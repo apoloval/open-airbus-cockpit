@@ -161,7 +161,8 @@ SimConnectClient::onMessage(SIMCONNECT_RECV* msg, DWORD msg_len)
    try 
    {
       auto msg_id = msg->dwID;
-      auto callback = _msg_receivers[msg_id];
+
+      auto callback = this->receiver(SIMCONNECT_RECV_ID(msg_id));
       if (callback)
          callback->sendMessage(*this, msg);
       else
@@ -343,6 +344,14 @@ SimConnectClient::newClientEvent(const EventName& event_name)
 { 
    static SIMCONNECT_CLIENT_EVENT_ID next_id = 0xffff0000;
    return ClientEvent(*this, event_name, next_id++);
+}
+
+Ptr<SimConnectClient::AbstractMessageReceiver>&
+SimConnectClient::receiver(SIMCONNECT_RECV_ID message_type)
+{
+   if (_msg_receivers.size() <= std::size_t(message_type))
+         _msg_receivers.resize(message_type + 1);
+   return _msg_receivers[message_type];
 }
 
 }; // namespace oac

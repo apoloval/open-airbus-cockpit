@@ -415,10 +415,10 @@ private:
          const std::function<void(SimConnectClient&, const Message&)>& callback,
          SIMCONNECT_RECV_ID message_type)
    {
-      if (_msg_receivers.size() <= std::size_t(message_type))
-         _msg_receivers.resize(message_type + 1);
-      _msg_receivers[message_type] = new MessageReceiver<Message>(callback);
+      this->receiver(message_type) = new MessageReceiver<Message>(callback);
    }
+
+   Ptr<AbstractMessageReceiver>& receiver(SIMCONNECT_RECV_ID message_type);
 
    std::string _name;
    HANDLE _handle;
