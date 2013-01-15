@@ -24,66 +24,27 @@
 #include <liboac/logging.h>
 #include <liboac/simconn.h>
 
-#include "wilco.h"
+#include "plugin.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\WilcoExporter.log"
-#define AIRCRAFT_TYPE A320_CFM
 
 using namespace oac;
 using namespace oac::we;
 
-namespace {
-
-WilcoCockpit* InitWilcoCockpit()
-{
-   Log(INFO, "Initializing Wilco Cockpit module... ");
-   auto result = WilcoCockpit::newCockpit(AIRCRAFT_TYPE);
-   Log(INFO, "Wilco Cockpit module successfully initialized");
-   return result;
-}
-
-void OnEvent(SimConnectClient& sc, const SIMCONNECT_RECV_EVENT& msg)
-{
-   try 
-   {
-      static WilcoCockpit* wilco = InitWilcoCockpit();
-      static CockpitBack* back = new FSUIPCCockpitBack(
-            new LocalFSUIPC<1024>::Factory());
-
-      back->map(*wilco);
-   } catch (std::exception& ex) {
-      Log(WARN, ex.what());
-   }
-}
-
-Ptr<SimConnectClient> sc_client;
-
-void Connect()
-{   
-   sc_client = new SimConnectClient("Wilco Exporter");
-   sc_client->registerOnEventCallback(OnEvent);
-   sc_client->subscribeToSystemEvent(SimConnectClient::SYSTEM_EVENT_1SEC);
-}
-
-void Disconnect()
-{
-   sc_client.reset();
-}
-
-}; // unnamed namespace
+Ptr<Plugin> plugin;
 
 void __stdcall DLLStart(void)
 {
    InitLogger(LOG_FILE);
 	Log(oac::INFO, "The Wilco Exporter module is starting");
-	Connect();
+	plugin = new Plugin();
 	Log(oac::INFO, "The Wilco Exporter module has been started");
 }
 
 void __stdcall DLLStop(void)
 {
 	Log(oac::INFO, "The Wilco Exporter module is stopping");
-	Disconnect();
+	plugin.reset();
 	Log(oac::INFO, "The Wilco Exporter module has been stopped");
    CloseLogger();
 }

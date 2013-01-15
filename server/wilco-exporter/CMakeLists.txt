@@ -6,6 +6,7 @@ set(wilco-exporter_SOURCES
    WilcoExporter.def
    src/dllmain.cpp
    src/main.cpp
+   src/plugin.cpp
    src/wilco.cpp
 )
 
