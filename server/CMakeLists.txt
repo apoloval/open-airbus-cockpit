@@ -12,9 +12,12 @@ set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 set(Boost_USE_STATIC_LIBS ON)
 
+include(Testing)
 find_package(Boost COMPONENTS unit_test_framework REQUIRED)
 find_package(SimConnect REQUIRED)
 find_package(FSUIPC_Internal REQUIRED)
+
+enable_testing()
 
 include_directories(
     ${Boost_INCLUDE_DIR}
@@ -24,6 +27,7 @@ include_directories(
 )
 
 add_definitions(-DUNICODE)
+
 
 # Add the subdirs
 add_subdirectory(liboac-commons)
