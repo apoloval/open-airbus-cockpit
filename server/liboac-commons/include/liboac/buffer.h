@@ -26,7 +26,7 @@
 #include <Boost/format.hpp>
 
 #include "exception.h"
-#include "pointer.h"
+#include "lang-utils.h"
 
 namespace oac {
 

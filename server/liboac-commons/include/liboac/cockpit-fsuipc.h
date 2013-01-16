@@ -22,7 +22,7 @@
 #include "buffer.h"
 #include "cockpit.h"
 #include "fsuipc.h"
-#include "pointer.h"
+#include "lang-utils.h"
 
 namespace oac {
 

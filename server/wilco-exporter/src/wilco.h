@@ -261,6 +261,14 @@ protected:
    inline WilcoCockpit() {}
 };
 
+class CockpitResolver
+{
+public:
+
+   inline virtual ~CockpitResolver() {}
+
+};
+
 }}; // namespace oac
 
 #endif

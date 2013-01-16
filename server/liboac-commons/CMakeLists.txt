@@ -8,8 +8,8 @@ set(liboac-commons_HEADERS
    include/liboac/cockpit-fsuipc.h
    include/liboac/exception.h
    include/liboac/fsuipc.h
+   include/liboac/lang-utils.h
    include/liboac/logging.h
-   include/liboac/pointer.h
    include/liboac/simconn.h
 )
 
@@ -42,11 +42,14 @@ target_link_libraries(liboac-commons
    ${FSUIPC_INTERNAL_LIBRARY}   
 )
 
-add_executable(simconn_itest test/simconn-itest.cpp)
-
-target_link_libraries(simconn_itest
-   liboac-commons
-   ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
-   ${Boost_LIBRARIES}
+test_link_libraries(
+      liboac-commons
+      ${SIM_CONNECT_LIBRARY}
+      ${FSUIPC_INTERNAL_LIBRARY}
+      ${Boost_LIBRARIES}
 )
+
+add_unit_test(lang-utils-test)
+
+add_integration_test(simconn-itest)
+
