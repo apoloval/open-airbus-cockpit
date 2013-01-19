@@ -19,8 +19,6 @@
 #ifndef OAC_LANG_UTILS_H
 #define OAC_LANG_UTILS_H
 
-#include <boost/optional.hpp>
-
 #include "exception.h"
 
 namespace oac {
@@ -51,6 +49,8 @@ template <typename T>
 class Maybe
 {
 public:
+
+   static const Maybe NOTHING;
 
    /**
     * Create a new maybe object set to 'nothing'.
@@ -101,12 +101,6 @@ public:
    { _value = value; _nothing = false; }
 
    /**
-    * Return true when 'just value'
-    */
-   inline operator bool () const
-   { return this->isJust(); }
-
-   /**
     * Return the value of the maybe, or throw IllegalStateException if 'nothing'
     */
    inline const T& operator * () const throw (IllegalStateException)
@@ -132,11 +126,31 @@ private:
    bool _nothing;
 };
 
+template <typename T>
+const Maybe<T> Maybe<T>::NOTHING;
+
+/**
+ * Bind operator for maybe. This operator works as bind operation of monadic
+ * maybe type. It produces Maybe<T2> from Maybe<T1 >> function<Maybe<T2>(T1)>.
+ */
 template <typename T, typename F>
 auto operator >> (const Maybe<T>& m, const F& f) -> decltype(f(m.get()))
 {
    typedef decltype(f(m.get())) R;
-   return m ? R(f(m.get())) : R();
+   return m.isJust() ? R(f(m.get())) : R();
+}
+
+/**
+ * Convenient operator for binding the maybe value to a variable. It returns
+ * true if maybe is just T, or false if maybe is nothing.
+ */
+template <typename T>
+bool operator >> (const Maybe<T>&m, T& t)
+{
+   auto proceed = m.isJust();
+   if (proceed)
+      t = m.get();
+   return proceed;
 }
 
 } // namespace oac
