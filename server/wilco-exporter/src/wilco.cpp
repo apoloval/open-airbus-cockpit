@@ -18,7 +18,8 @@
 
 #include <Windows.h>
 
-#include <Boost/format.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/format.hpp>
 #include <liboac/logging.h>
 #include <SimConnect.h>
 
@@ -27,6 +28,11 @@
 namespace oac { namespace we {
 
 namespace {
+
+const std::string AIRCRAFT_NAME[] =
+{
+   "Airbus A320 CFM",      // A320_CFM
+};
 
 const char* GET_INTERNAL_DATA_FUNC_NAME = "GetInternalData";
 const char* GET_EXTENDED_DATA_FUNC_NAME = "GetExtendedData";
@@ -367,12 +373,12 @@ F GetFunctionOrThrow(HINSTANCE inst, const char* func_name)
 }
 
 HINSTANCE LoadDLLForAircraft(AircraftType aircraft)
-throw (WilcoCockpit::InitException)
+throw (InvalidInputException)
 {
    auto dll_filename = DLL_INFO[aircraft].name.c_str();
    HINSTANCE lib = LoadLibrary(dll_filename);
    if (lib == NULL)
-      LogAndThrow(FAIL, WilcoCockpit::InitException(str(boost::format(
+      LogAndThrow(FAIL, InvalidInputException(str(boost::format(
             "cannot load Wilco Airbus DLL file %s") % dll_filename)));
    return lib;
 }
@@ -805,8 +811,10 @@ class WilcoCockpitImpl : public WilcoCockpit, public DllInspector
 {
 public:
 
-   WilcoCockpitImpl(AircraftType aircraft) throw (InitException) :
-         DllInspector(DLL_INFO[aircraft], LoadDLLForAircraft(aircraft))
+   WilcoCockpitImpl(AircraftType aircraft)
+   throw (InvalidInputException) :
+         DllInspector(DLL_INFO[aircraft], LoadDLLForAircraft(aircraft)),
+         _aircraft_type(aircraft)
    {
       _efis_ctrl_panel = std::shared_ptr<EFISControlPanel>(
             new EFISControlPanelImpl(
@@ -815,6 +823,9 @@ public:
             new FlightControlUnitImpl(
                   DLL_INFO[aircraft], this->getDLLInstance()));
    }
+
+   virtual AircraftType aircraftType() const
+   { return _aircraft_type; }
 
    virtual GPUSwitch getGpuSwitch() const
    {
@@ -872,16 +883,42 @@ private:
    inline static BinarySwitch toBinarySwitch(DWORD expr)
    { return toBinarySwitch(expr > 0); }
 
+   AircraftType _aircraft_type;
    std::shared_ptr<EFISControlPanel> _efis_ctrl_panel;
    std::shared_ptr<FlightControlUnit> _fcu;
 };
 
 }; // anonymous namespace
 
+AircraftType
+ResolveAircraftTypeFromTitle(const std::string& title)
+throw (InvalidInputException)
+{
+   if (boost::contains(title, "Feelthere"))
+   {
+      if (boost::contains(title, "A320 CFM"))
+         return A320_CFM;
+   }
+   throw InvalidInputException(boost::format(
+         "cannot determine the aircraft type from given title '%s'") % title);
+}
+
+const std::string&
+AircraftTypeToString(AircraftType aircraft)
+{ return AIRCRAFT_NAME[aircraft]; }
+
 WilcoCockpit*
 WilcoCockpit::newCockpit(AircraftType aircraft)
 {
    return new WilcoCockpitImpl(aircraft);
+}
+
+WilcoCockpit*
+WilcoCockpit::newCockpit(const std::string& aircraft_title)
+throw (InvalidInputException)
+{
+   return WilcoCockpit::newCockpit(
+            ResolveAircraftTypeFromTitle(aircraft_title));
 }
 
 }}; // namespace oac::we

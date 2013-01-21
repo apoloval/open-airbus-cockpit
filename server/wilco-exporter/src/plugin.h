@@ -60,7 +60,8 @@ private:
 
    void registerOnAircraftLoadedCallback();
 
-   void initCockpit(AircraftType aircraft);
+   void resetCockpit();
+   void resetCockpit(AircraftType aircraft);
 
    SimConnectClient _sc;
    Ptr<WilcoCockpit> _wilco;

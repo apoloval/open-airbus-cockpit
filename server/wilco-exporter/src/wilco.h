@@ -28,6 +28,7 @@
 
 #include <liboac/cockpit.h>
 #include <liboac/exception.h>
+#include <liboac/lang-utils.h>
 
 namespace oac { namespace we {
 
@@ -35,6 +36,11 @@ enum AircraftType
 {
    A320_CFM,
 };
+
+AircraftType ResolveAircraftTypeFromTitle(
+      const std::string& title) throw (InvalidInputException);
+
+const std::string& AircraftTypeToString(AircraftType aircraft);
 
 enum APUStatus
 {
@@ -236,11 +242,15 @@ class WilcoCockpit : public CockpitFront
 {
 public:
 
-   DECL_RUNTIME_ERROR(InitException);
+   static WilcoCockpit* newCockpit(
+         AircraftType aircraft) throw (InvalidInputException);
 
-   static WilcoCockpit* newCockpit(AircraftType aircraft) throw (InitException);
+   static WilcoCockpit* newCockpit(
+         const std::string& aircraft_title) throw (InvalidInputException);
 
    inline virtual ~WilcoCockpit() {}
+
+   virtual AircraftType aircraftType() const = 0;
 
    virtual GPUSwitch getGpuSwitch() const = 0;
 
@@ -261,13 +271,8 @@ protected:
    inline WilcoCockpit() {}
 };
 
-class CockpitResolver
-{
-public:
-
-   inline virtual ~CockpitResolver() {}
-
-};
+typedef std::function<
+      Maybe<AircraftType>(const std::string&)> CockpitNameResolver;
 
 }}; // namespace oac
 

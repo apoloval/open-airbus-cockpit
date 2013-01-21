@@ -87,7 +87,7 @@ Plugin::onSimConnectEvent(
    switch (msg.uEventID)
    {
       case EVENT_1SEC_ELAPSED:
-         // On1secElapsed();
+         this->on1secElapsed();
          break;
    }
 }
@@ -125,7 +125,16 @@ void Plugin::on1secElapsed()
 void
 Plugin::onNewAircraft(const std::string& title)
 {
-   Log(INFO, boost::format("Aircraft: %s") % title);
+   Log(INFO, boost::format("New aircraft loaded: %s") % title);
+   try
+   {
+      auto aircraft = ResolveAircraftTypeFromTitle(title);
+      this->resetCockpit(aircraft);
+   } catch (InvalidInputException&) {
+      Log(INFO, boost::format(
+             "No Wilco Airbus aircraft resolved for title '%s'") % title);
+      this->resetCockpit();
+   }
 }
 
 void
@@ -145,19 +154,27 @@ Plugin::registerOnAircraftLoadedCallback()
    _sc.subscribeToSystemEvent("AircraftLoaded", EVENT_AIRCRAFT_LOADED);
 }
 
+void
+Plugin::resetCockpit()
+{
+   Log(INFO, "Wilco cockpit reset");
+   _wilco.reset();
+   _fsuipc.reset();
+}
+
 void 
-Plugin::initCockpit(AircraftType aircraft)
+Plugin::resetCockpit(AircraftType aircraft)
 {
    try
    {
-      Log(INFO, "Initializing Wilco Cockpit... ");
+      Log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
+            % AircraftTypeToString(aircraft));
       _wilco = WilcoCockpit::newCockpit(aircraft);
       _fsuipc = new FSUIPCCockpitBack(new LocalFSUIPC<1024>::Factory());
       Log(INFO, "Wilco Cockpit successfully initialized");
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
-      _wilco.reset();
-      _fsuipc.reset();
+      this->resetCockpit();
    }   
 }
 
