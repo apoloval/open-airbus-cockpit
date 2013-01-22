@@ -43,44 +43,33 @@ public:
 
    typedef DWORD Offset;
 
-   DECL_RUNTIME_ERROR(IOException);
-   DECL_RUNTIME_ERROR(StateException);
-
    class Factory 
    {
    public:
 
-      virtual FSUIPC* createFSUIPC() throw (StateException) = 0;
+      virtual FSUIPC* createFSUIPC() throw (IllegalStateException) = 0;
    };
 
    virtual DWORD capacity() const
    { return 0xffff; }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsException, IOException);
 
    virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsException, IOException);
 
-   virtual void copy(const Buffer& src, DWORD src_offset, 
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
+   virtual void copy(
+         const Buffer& src,
+         DWORD src_offset,
+         DWORD dst_offset,
+         DWORD length) throw (OutOfBoundsException, IOException);
 
 protected:
 
    inline FSUIPC() {}
-
-   static const char* GetResultMessage(DWORD result);
-
-private:
-
-   static std::string IOErrorMessage(const std::string& action, DWORD result)
-   {
-      return str(boost::format("IO error while %s: %s") % 
-         action.c_str() % GetResultMessage(result));
-   }
 };
 
-template <size_t buffer_size = FSUIPC_DEFAULT_BUFFER_SIZE>
 class LocalFSUIPC : public FSUIPC
 {
 public:
@@ -89,22 +78,25 @@ public:
    {
    public:
       
-      virtual LocalFSUIPC* createFSUIPC() throw (StateException)
+      virtual LocalFSUIPC* createFSUIPC() throw (IllegalStateException)
       { return new LocalFSUIPC(); }
    };
 
-   inline LocalFSUIPC() throw (StateException)
-   {
-      DWORD result;
-      if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, buffer_size))
-         throw StateException(str(boost::format(
-            "cannot open FSUIPC: %s") % GetResultMessage(result)));      
-   }
+   LocalFSUIPC() throw (IllegalStateException);
 
-   inline ~LocalFSUIPC()
-   { FSUIPC_Close(); }
+   virtual ~LocalFSUIPC();
 
-   BYTE _buffer[buffer_size];
+   virtual void read(void* dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsException, IOException);
+
+   virtual void write(const void* src, DWORD offset, DWORD length)
+         throw (OutOfBoundsException, IOException);
+
+   virtual void copy(
+         const Buffer& src,
+         DWORD src_offset,
+         DWORD dst_offset,
+         DWORD length) throw (OutOfBoundsException, IOException);
 };
 
 }; // namespace oac

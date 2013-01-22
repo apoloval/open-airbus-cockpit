@@ -52,13 +52,16 @@ public:
    virtual DWORD capacity() const = 0;
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsException) = 0;
+         throw (OutOfBoundsException, IOException) = 0;
 
    virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException) = 0;
+         throw (OutOfBoundsException, IOException) = 0;
 
-   virtual void copy(const Buffer& src, DWORD src_offset, 
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsException) = 0;
+   virtual void copy(
+         const Buffer& src,
+         DWORD src_offset,
+         DWORD dst_offset,
+         DWORD length) throw (OutOfBoundsException, IOException) = 0;
 
    template <typename T>
    inline T readAs(DWORD offset) const
@@ -106,7 +109,7 @@ public:
    virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsException);
 
-   virtual void copy(const Buffer& src, DWORD src_offset, 
+   virtual void copy(const Buffer& src, DWORD src_offset,
          DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
 
 private:

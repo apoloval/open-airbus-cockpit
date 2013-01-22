@@ -23,35 +23,91 @@
 #include "FSUIPC.h"
 #include "logging.h"
 
+#ifndef LOCAL_FSUIPC_BUFFER_SIZE
+#define LOCAL_FSUIPC_BUFFER_SIZE (64*1024)
+#endif
+
 namespace oac {
 
 namespace {
 
-   const char* fsuipc_error_msg[] = 
-   {
-      "no error",
-      "attempt to Open when already Open",
-      "cannot link to FSUIPC or WideClient",
-      "failed to register common message with Windows",
-      "failed to create Atom for mapping filename",
-      "failed to create a file mapping object",
-      "failed to open a view to the file map",
-      "incorrect version of FSUIPC, or not FSUIPC",
-      "sim is not version requested",
-      "call cannot execute, link not Open",
-      "call cannot execute, no requests accumulated",
-      "IPC timed out all retries",
-      "IPC sendmessage failed all retries",
-      "IPC request contains bad data",
-      "maybe running on WideClient, but FS not running "
-         "on Server, or wrong FSUIPC",
-      "read or write request cannot be added, memory for Process is full",
-   };
+const char* fsuipc_error_msg[] =
+{
+   "no error",
+   "attempt to Open when already Open",
+   "cannot link to FSUIPC or WideClient",
+   "failed to register common message with Windows",
+   "failed to create Atom for mapping filename",
+   "failed to create a file mapping object",
+   "failed to open a view to the file map",
+   "incorrect version of FSUIPC, or not FSUIPC",
+   "sim is not version requested",
+   "call cannot execute, link not Open",
+   "call cannot execute, no requests accumulated",
+   "IPC timed out all retries",
+   "IPC sendmessage failed all retries",
+   "IPC request contains bad data",
+   "maybe running on WideClient, but FS not running "
+      "on Server, or wrong FSUIPC",
+   "read or write request cannot be added, memory for Process is full",
+};
+
+const char*
+GetResultMessage(DWORD result)
+{
+   return (result < sizeof(fsuipc_error_msg) / sizeof(const char*))
+         ? fsuipc_error_msg[result] : nullptr;
 }
+
+std::string
+IOErrorMessage(const std::string& action, DWORD result)
+{
+   return str(boost::format("IO error while %s: %s") %
+      action.c_str() % GetResultMessage(result));
+}
+
+class LocalFSUIPCHandler
+{
+public:
+
+   inline static void Init()
+   throw (IllegalStateException)
+   {
+      if (!_singleton)
+         _singleton = new LocalFSUIPCHandler();
+   }
+
+   inline static void Reset()
+   {
+      _singleton.reset();
+   }
+
+   inline ~LocalFSUIPCHandler()
+   { FSUIPC_Close(); }
+
+private:
+
+   static Ptr<LocalFSUIPCHandler> _singleton;
+   BYTE _buffer[LOCAL_FSUIPC_BUFFER_SIZE];
+
+   inline LocalFSUIPCHandler()
+   throw (IllegalStateException)
+   {
+      DWORD result;
+      if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
+         throw IllegalStateException(str(boost::format(
+            "cannot open FSUIPC: %s") % GetResultMessage(result)));
+   }
+
+};
+
+Ptr<LocalFSUIPCHandler> LocalFSUIPCHandler::_singleton;
+
+} // anonymous namespace
 
 void
 FSUIPC::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsException)
+throw (OutOfBoundsException, IOException)
 {
    DWORD error;
    if (FSUIPC_Read(offset, length, dst, &error))
@@ -62,7 +118,7 @@ throw (OutOfBoundsException)
 
 void
 FSUIPC::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsException, IOException)
 {
    DWORD error;
    if (FSUIPC_Write(offset, length, (void*) src, &error))
@@ -74,7 +130,7 @@ throw (OutOfBoundsException)
 void
 FSUIPC::copy(const Buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsException, IOException)
 {
    BYTE tmp[1024];
    auto sos = src_offset;
@@ -90,11 +146,55 @@ throw (OutOfBoundsException)
    }
 }
 
-const char*
-FSUIPC::GetResultMessage(DWORD result)
-{ 
-   return (result < sizeof(fsuipc_error_msg) / sizeof(const char*))
-         ? fsuipc_error_msg[result] : nullptr;
+LocalFSUIPC::LocalFSUIPC()
+throw (IllegalStateException)
+{ LocalFSUIPCHandler::Init(); }
+
+LocalFSUIPC::~LocalFSUIPC()
+{}
+
+void
+LocalFSUIPC::read(void* dst, DWORD offset, DWORD length) const
+throw (OutOfBoundsException, IOException)
+{
+   try
+   {
+      this->FSUIPC::read(dst, offset, length);
+   } catch (std::exception&)
+   {
+      LocalFSUIPCHandler::Reset();
+      throw;
+   }
 }
+
+void
+LocalFSUIPC::write(const void* src, DWORD offset, DWORD length)
+throw (OutOfBoundsException, IOException)
+{
+   try
+   {
+      this->FSUIPC::write(src, offset, length);
+   } catch (std::exception&)
+   {
+      LocalFSUIPCHandler::Reset();
+      throw;
+   }
+}
+
+void
+LocalFSUIPC::copy(const Buffer& src, DWORD src_offset,
+                  DWORD dst_offset, DWORD length)
+throw (OutOfBoundsException, IOException)
+{
+   try
+   {
+      this->FSUIPC::copy(src, src_offset, dst_offset, length);
+   } catch (std::exception&)
+   {
+      LocalFSUIPCHandler::Reset();
+      throw;
+   }
+}
+
 
 }; // namespace oac

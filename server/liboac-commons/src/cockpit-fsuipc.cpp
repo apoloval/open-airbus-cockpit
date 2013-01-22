@@ -340,7 +340,7 @@ throw (SyncException)
    {
       _fsuipc = _fsuipc_fact->createFSUIPC();
    }
-   catch (FSUIPC::StateException& e)
+   catch (IllegalStateException& e)
    {
       throw SyncException(str(boost::format(
             "cannot init FSUIPC cockpit back; FSUIPC state error: %s")

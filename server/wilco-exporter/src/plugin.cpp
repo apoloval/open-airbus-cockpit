@@ -170,7 +170,7 @@ Plugin::resetCockpit(AircraftType aircraft)
       Log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
             % AircraftTypeToString(aircraft));
       _wilco = WilcoCockpit::newCockpit(aircraft);
-      _fsuipc = new FSUIPCCockpitBack(new LocalFSUIPC<1024>::Factory());
+      _fsuipc = new FSUIPCCockpitBack(new LocalFSUIPC::Factory());
       Log(INFO, "Wilco Cockpit successfully initialized");
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
