@@ -83,6 +83,8 @@ public:
             *_buffer, events, FCU_SW_PRESSED, FCU_SWITCH_ATHR);
       ImportNullaryEvent<0x560C, BYTE, EventType>(
             *_buffer, events, FCU_SW_PRESSED, FCU_SWITCH_EXPE);
+      ImportNullaryEvent<0x560D, BYTE, EventType>(
+            *_buffer, events, FCU_SW_PRESSED, FCU_SWITCH_APPR);
       ImportNullaryEvent<0x5609, BYTE, EventType>(
             *_buffer, events, FCU_SW_PRESSED, FCU_SWITCH_AP1);
       ImportNullaryEvent<0x560A, BYTE, EventType>(
@@ -174,8 +176,8 @@ public:
    virtual void setVerticalSpeedValue(FeetPerMin value)
    { _buffer->writeAs<DWORD>(0x564C, value); }
    
-   virtual void setFPAValue(Degrees value)
-   { _buffer->writeAs<DWORD>(0x5650, DWORD(value / 100.0f)); }
+   virtual void setFPAValue(Degrees100 value)
+   { _buffer->writeAs<DWORD>(0x5650, value); }
 
 private:
 

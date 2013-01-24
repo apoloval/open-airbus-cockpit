@@ -145,6 +145,9 @@ throw (CockpitBack::SyncException)
    fcu_back.setSpeedMode(fcu_front.getSpeedMode());
    fcu_back.setLateralMode(fcu_front.getLateralMode());
    fcu_back.setVerticalMode(fcu_front.getVerticalMode());
+   fcu_back.setSpeedValue(fcu_front.getSpeedValue());
+   fcu_back.setMachValue(fcu_front.getMachValue());
+   fcu_back.setHeadingValue(fcu_front.getHeadingValue());
    fcu_back.setTrackValue(fcu_front.getTrackValue());
    fcu_back.setTargetAltitude(fcu_front.getTargetAltitude());
    fcu_back.setVerticalSpeedValue(fcu_front.getVerticalSpeedValue());

@@ -16,10 +16,14 @@
 * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <cmath>
+
 #include <Windows.h>
 
 #include <boost/algorithm/string.hpp>
+#include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
+#include <liboac/fsuipc.h>
 #include <liboac/logging.h>
 #include <SimConnect.h>
 
@@ -478,7 +482,7 @@ class EFISControlPanelImpl :
 public:
 
    EFISControlPanelImpl(const DllInfo& dll_info, HINSTANCE dll_instance) : 
-         DllInspector(dll_info, dll_instance)
+      DllInspector(dll_info, dll_instance), _fsuipc(new LocalFSUIPC())
    {}
 
    virtual BarometricMode getBarometricMode() const 
@@ -495,13 +499,12 @@ public:
 
    virtual BinarySwitch getFDButton() const
    {
-      // TODO: implement it by SimConnect
-      return SWITCHED_OFF;
+      return BinarySwitch(_fsuipc->readAs<DWORD>(0x2EE0));
    }
 
    virtual void pushFDButton()
    {
-      // TODO: implement it by SimConnect
+      _fsuipc->writeAs<DWORD>(0x2EE0, Invert(this->getFDButton()));
    }
 
    virtual BinarySwitch getILSButton() const
@@ -572,6 +575,8 @@ private:
             this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
       send_cmd(cmd, args);
    }
+
+   Ptr<FSUIPC> _fsuipc;
 };
 
 class FlightControlUnitImpl : 
@@ -580,7 +585,7 @@ class FlightControlUnitImpl :
 public:
 
    FlightControlUnitImpl(const DllInfo& dll_info, HINSTANCE dll_instance) : 
-         DllInspector(dll_info, dll_instance)
+      DllInspector(dll_info, dll_instance), _fsuipc(new LocalFSUIPC())
    {}
 
    virtual SpeedUnits getSpeedDisplayUnits() const
@@ -643,7 +648,7 @@ public:
             case FCU_SWITCH_AP1:
                return BinarySwitch(fcu.autopilot & AP_1);
             case FCU_SWITCH_AP2:
-               return BinarySwitch(fcu.autopilot & AP_1);
+               return BinarySwitch(fcu.autopilot & AP_2);
             default:
                return SWITCHED_OFF;
          }
@@ -668,7 +673,7 @@ public:
             case FCU_SWITCH_AP1:
                fcu.autopilot ^= AP_1; break;
             case FCU_SWITCH_AP2:
-               fcu.autopilot ^= AP_1; break;
+               fcu.autopilot ^= AP_2; break;
          }
       });
    }
@@ -696,32 +701,36 @@ public:
 
    virtual Knots getSpeedValue() const
    {
-      return 0; // TODO: implement this
+      return _fsuipc->readAs<WORD>(0x07E2);
    }
 
    virtual void setSpeedValue(Knots value)
    {
-      // TODO: implement this
+      _fsuipc->writeAs<WORD>(0x07E2, value);
    }
 
    virtual Mach100 getMachValue() const
    {
-      return 0; // TODO: implement this
+      auto v = _fsuipc->readAs<DWORD>(0x07E8);
+      return boost::math::iround<double>(v / 655.36);
    }
 
    virtual void setMachValue(Mach100 value)
    {
-      // TODO: implement this
+      DWORD v = boost::math::iround(value * 655.36);
+      _fsuipc->writeAs<DWORD>(0x07E8, v);
    }
    
    virtual Degrees getHeadingValue() const 
    {
-      return 0; // TODO: implement this
+      auto v = _fsuipc->readAs<DWORD>(0x07CC);
+      return boost::math::iround<double>(v * 360.0 / 65536.0);
    }
 
    virtual void setHeadingValue(Degrees value) 
    {
-      // TODO: implement this
+      DWORD v = boost::math::iround(value * 65536.0 / 360.0);
+      _fsuipc->writeAs<DWORD>(0x07CC, v);
    }
 
    virtual Degrees getTrackValue() const
@@ -768,8 +777,8 @@ public:
    
    virtual Degrees100 getFPAValue() const
    {
-      return this->access<Degrees>([](const Wilco_FCU& fcu) {
-         return Degrees100(fcu.selected_fpa * 100);
+      return this->access<Degrees100>([](const Wilco_FCU& fcu) {
+         return boost::math::iround(fcu.selected_fpa * 100.0f);
       });
    }
 
@@ -782,12 +791,52 @@ public:
 
    virtual void pushKnob(FCUKnob knob)
    {
-      // TODO: implement this
+      switch (knob)
+      {
+         case FCU_KNOB_SPD:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.speed_knob = 1;
+            });
+            break;
+         case FCU_KNOB_HDG:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.heading_knob = 1;
+            });
+            break;
+         case FCU_KNOB_ALT:
+            // TODO: implement this
+            break;
+         case FCU_KNOB_VS:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.vertical_speed_knob = 1;
+            });
+            break;
+      }
    }
 
    virtual void pullKnob(FCUKnob knob)
    {
-      // TODO: implement this
+      switch (knob)
+      {
+         case FCU_KNOB_SPD:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.speed_knob = 0;
+            });
+            break;
+         case FCU_KNOB_HDG:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.heading_knob = 0;
+            });
+            break;
+         case FCU_KNOB_ALT:
+            // TODO: implement this
+            break;
+         case FCU_KNOB_VS:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.vertical_speed_knob = 0;
+            });
+            break;
+      }
    }
    
 private:
@@ -804,6 +853,8 @@ private:
       auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
       return accessor(*wilco_fcu);
    }
+
+   Ptr<FSUIPC> _fsuipc;
 };
 
 
