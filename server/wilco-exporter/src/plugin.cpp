@@ -38,6 +38,7 @@ enum Event
 {
    EVENT_1SEC_ELAPSED,
    EVENT_AIRCRAFT_LOADED,
+   EVENT_FLIGHT_LOADED,
 };
 
 }; // anonymous namespace
@@ -55,6 +56,8 @@ Plugin::Plugin() : _sc(
          std::bind(&Plugin::onSimConnectSimObjectData, this, _1, _2));
    _sc.subscribeToSystemEvent(
          SimConnectClient::SYSTEM_EVENT_1SEC, EVENT_1SEC_ELAPSED);
+   _sc.subscribeToSystemEvent(
+         SimConnectClient::SYSTEM_EVENT_FLIGHT_LOADED, EVENT_FLIGHT_LOADED);
 }
 
 void
@@ -99,6 +102,11 @@ Plugin::onSimConnectEventFilename(SimConnectClient& client,
    switch (msg.uEventID)
    {
       case EVENT_AIRCRAFT_LOADED:
+         this->requestAircraftTitle();
+         break;
+      case EVENT_FLIGHT_LOADED:
+         Log(INFO, "New flight is loaded, reset and check the new aircraft");
+         this->resetCockpit();
          this->requestAircraftTitle();
          break;
    }
@@ -151,7 +159,9 @@ Plugin::registerOnAircraftLoadedCallback()
 {
    _sc.registerOnEventFilenameCallback(
          std::bind(&Plugin::onSimConnectEventFilename, this, _1, _2));
-   _sc.subscribeToSystemEvent("AircraftLoaded", EVENT_AIRCRAFT_LOADED);
+   _sc.subscribeToSystemEvent(
+            SimConnectClient::SYSTEM_EVENT_AIRCRAFT_LOADED,
+            EVENT_AIRCRAFT_LOADED);
 }
 
 void

@@ -40,6 +40,8 @@ const std::string AIRCRAFT_NAME[] =
 
 const char* GET_INTERNAL_DATA_FUNC_NAME = "GetInternalData";
 const char* GET_EXTENDED_DATA_FUNC_NAME = "GetExtendedData";
+const char* RESET_INTERNAL_DATA_FUNC_NAME = "ResetInternalData";
+const char* RESET_FLIGHT_FUNC_NAME = "ResetFlight";
 
 typedef size_t VirtualAddress;
 
@@ -345,8 +347,102 @@ struct Wilco_ExtendedData
 };
 
 enum Wilco_Command {
-   CMD_SET_ND_MODE = 0x5E,
-   CMD_SET_ND_RANGE = 0x5F,
+   CMD_PEDESTAL_FLOOD_LGT = 0x01,
+   CMD_RESET_FLIGHT = 0x02,
+   CMD_MCDU_PRESS_INIT_BTN = 0x03,
+   CMD_MCDU_PRESS_DIR_BTN = 0x04,
+   CMD_MCDU_PRESS_PERF_BTN = 0x05,
+   CMD_MCDU_PRESS_PROG_BTN = 0x06,
+   CMD_MCDU_PRESS_DATA_BTN = 0x07,
+   CMD_MCDU_PRESS_FPLAN_BTN = 0x08,
+   CMD_MCDU_PRESS_RADNAV_BTN = 0x09,
+   CMD_MCDU_PRESS_FUELPRED_BTN = 0x0A,
+   CMD_MCDU_PRESS_MENU_BTN = 0x0B,
+   CMD_MCDU_PRESS_NEXTPAGE_BTN = 0x0C,
+   CMD_MCDU_PRESS_UP_BTN = 0x0D,
+   CMD_MCDU_PRESS_DOWN_BTN = 0x0E,
+   CMD_EFIS_CTRL_INC_ND_MODE = 0x0F,
+   CMD_EFIS_CTRL_DEC_ND_MODE = 0x10,
+   CMD_EFIS_CTRL_INC_ND_RANGE = 0x11,
+   CMD_EFIS_CTRL_DEC_ND_RANGE = 0x12,
+   CMD_PRESS_MASTER_WARN = 0x13,
+   CMD_PRESS_MASTER_CAUTION = 0x14,
+   CMD_PFD_INC_BRIGHT = 0x15,
+   CMD_PFD_DEC_BRIGHT = 0x16,
+   CMD_LCD_RESET_BRIGHT = 0x17,
+   CMD_FCU_INC1_SPD_KNOB = 0x18,
+   CMD_FCU_DEC1_SPD_KNOB = 0x19,
+   CMD_FCU_INC10_SPD_KNOB = 0x1A,
+   CMD_FCU_DEC10_SPD_KNOB = 0x1B,
+   CMD_FCU_INC1_HDG_KNOB = 0x1C,
+   CMD_FCU_DEC1_HDG_KNOB = 0x1D,
+   CMD_FCU_INC10_HDG_KNOB = 0x1E,
+   CMD_FCU_DEC10_HDG_KNOB = 0x1F,
+   CMD_FCU_INC100_ALT_KNOB = 0x20,
+   CMD_FCU_DEC100_ALT_KNOB = 0x21,
+   CMD_FCU_INC1000_ALT_KNOB = 0x22,
+   CMD_FCU_DEC1000_ALT_KNOB = 0x23,
+   CMD_FCU_INC100_VS_KNOB = 0x24,
+   CMD_FCU_DEC100_VS_KNOB = 0x25,
+   CMD_FCU_INC1000_VS_KNOB = 0x26,
+   CMD_FCU_DEC1000_VS_KNOB = 0x27,
+   CMD_FCU_PUSH_AP1_BTN = 0x28,
+   CMD_FCU_PUSH_AP2_BTN = 0x29,
+   CMD_FCU_PUSH_EXPED_BTN = 0x2A,
+   CMD_FCU_PUSH_LOC_BTN = 0x2B,
+   CMD_FCU_PUSH_APPR_BTN = 0x2C,
+   CMD_EFIS_CTRL_ALT_UNITS_BARO_KNOB = 0x2D,
+   CMD_EFIS_CTRL_SET_INHG_BARO_KNOB = 0x2E,
+   CMD_EFIS_CTRL_SET_HPA_BARO_KNOB = 0x2F,
+   CMD_EFIS_CTRL_PULL_BARO_KNOB = 0x30,
+   CMD_EFIS_CTRL_PUSH_BARO_KNOB = 0x31,
+   CMD_EFIS_CTRL_INC_BARO_KNOB = 0x32,
+   CMD_EFIS_CTRL_DEC_BARO_KNOB = 0x33,
+   CMD_FCU_PULL_SPD_KNOB = 0x34,
+   CMD_FCU_PUSH_SPD_KNOB = 0x35,
+   CMD_FCU_PULL_HDG_KNOB = 0x36,
+   CMD_FCU_PUSH_HDG_KNOB = 0x37,
+   CMD_FCU_PULL_ALT_KNOB = 0x38,
+   CMD_FCU_PUSH_ALT_KNOB = 0x39,
+   CMD_FCU_PULL_VS_KNOB = 0x3A,
+   CMD_FCU_PUSH_VS_KNOB = 0x3B,
+   CMD_FCU_PRESS_SPD_MACH_BTN = 0x3C,
+   CMD_FCU_PRESS_HDG_TRK_BTN = 0x3D,
+   CMD_FCU_PRESS_METRIC_ALT_BTN = 0x3E,
+   CMD_FCU_ALT_SET_HUNDRED = 0x3F,
+   CMD_FCU_ALT_SET_THOUSAND = 0x40,
+   CMD_EFIS_CTRL_PRESS_ARPT_BTN = 0x41,
+   CMD_EFIS_CTRL_PRESS_NDB_BTN = 0x42,
+   CMD_EFIS_CTRL_PRESS_VORD_BTN = 0x43,
+   CMD_EFIS_CTRL_PRESS_WPT_BTN = 0x44,
+   CMD_EFIS_CTRL_PRESS_CSTR_BTN = 0x45,
+   CMD_EFIS_CTRL_LEFT_NAV_SW_ADF = 0x46,
+   CMD_EFIS_CTRL_LEFT_NAV_SW_OFF = 0x47,
+   CMD_EFIS_CTRL_LEFT_NAV_SW_VOR = 0x48,
+   CMD_EFIS_CTRL_RIGHT_NAV_SW_ADF = 0x49,
+   CMD_EFIS_CTRL_RIGHT_NAV_SW_OFF = 0x4A,
+   CMD_EFIS_CTRL_RIGHT_NAV_SW_VOR = 0x4B,
+   CMD_EFIS_CTRL_PRESS_ILS_BTN = 0x4C,
+   CMD_ECAM_CP_PRESS_ENG_BTN = 0x4D,
+   CMD_ECAM_CP_PRESS_BLEED_BTN = 0x4E,
+   CMD_ECAM_CP_PRESS_PRESS_BTN = 0x4F,
+   CMD_ECAM_CP_PRESS_ELEC2_BTN = 0x50,
+   CMD_ECAM_CP_PRESS_ELEC_BTN = 0x51,
+   CMD_ECAM_CP_PRESS_HYD_BTN = 0x52,
+   CMD_ECAM_CP_PRESS_APU_BTN = 0x53,
+   CMD_ECAM_CP_PRESS_COND_BTN = 0x54,
+   CMD_ECAM_CP_PRESS_DOOR_BTN = 0x55,
+   CMD_ECAM_CP_PRESS_WHEEL_BTN = 0x56,
+   CMD_ECAM_CP_PRESS_FCTRL_BTN = 0x57,
+   CMD_ECAM_CP_PRESS_FUEL_BTN = 0x58,
+   CMD_ECAM_CP_PRESS_STS_BTN = 0x59,
+
+   CMD_EFIS_CTRL_SET_ND_MODE = 0x5E,
+   CMD_EFIS_CTRL_SET_ND_RANGE = 0x5F,
+   CMD_FCU_SET_SPD_VALUE = 0x60,
+   CMD_FCU_SET_HDG_VALUE = 0x61,
+   CMD_FCU_SET_ALT_VALUE = 0x62,
+   CMD_FCU_SET_VS_VALUE = 0x63,
 };
 
 /**********************************/
@@ -358,6 +454,10 @@ typedef DWORD (__stdcall *Wilco_PushMCPButton)(DWORD num1, DWORD num2);
 typedef void (__cdecl *Wilco_SetNDMode)(DWORD mode);
 
 typedef void (__cdecl *Wilco_SendCommand)(DWORD cmd, void* args);
+
+typedef void (*Wilco_ResetInternalData)(void);
+
+typedef void (*Wilco_ResetFlight)(void);
 
 /******************************/
 /* >> Auxiliary operations << */
@@ -385,6 +485,12 @@ throw (InvalidInputException)
       LogAndThrow(FAIL, InvalidInputException(str(boost::format(
             "cannot load Wilco Airbus DLL file %s") % dll_filename)));
    return lib;
+}
+
+void FreeDLL(HINSTANCE lib)
+{
+   if (!FreeLibrary(lib))
+      Log(WARN, "cannot free DLL instance");
 }
 
 void TrackChangesOnMemory(void* mem, size_t len) {
@@ -464,7 +570,12 @@ protected:
       *data = !(*data);
    }
 
-protected:
+   inline void sendCommand(Wilco_Command cmd, void* args)
+   {
+      auto send_cmd =
+            this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
+      send_cmd(cmd, args);
+   }
 
    inline HINSTANCE getDLLInstance() const
    { return _dll_instance; }
@@ -489,13 +600,33 @@ public:
    { return BarometricMode(this->getDataObject<DWORD>(VADDR_BARO_STD)); }
 
    virtual void setBarometricMode(BarometricMode mode)
-   { this->setDataObject<DWORD>(VADDR_BARO_STD, mode);}
+   {
+      switch (mode)
+      {
+         case BARO_SELECTED:
+            this->sendCommand(CMD_EFIS_CTRL_PUSH_BARO_KNOB, nullptr);
+            break;
+         case BARO_STANDARD:
+            this->sendCommand(CMD_EFIS_CTRL_PULL_BARO_KNOB, nullptr);
+            break;
+      }
+   }
 
    virtual BarometricFormat getBarometricFormat() const
    { return BarometricFormat(this->getDataObject<DWORD>(VADDR_BARO_FORMAT)); }
 
    virtual void setBarometricFormat(BarometricFormat fmt)
-   { this->setDataObject<DWORD>(VADDR_BARO_FORMAT, fmt); }
+   {
+      switch (fmt)
+      {
+         case BARO_FMT_IN_HG:
+            this->sendCommand(CMD_EFIS_CTRL_SET_INHG_BARO_KNOB, nullptr);
+            break;
+         case BARO_FMT_H_PA:
+            this->sendCommand(CMD_EFIS_CTRL_SET_HPA_BARO_KNOB, nullptr);
+            break;
+      }
+   }
 
    virtual BinarySwitch getFDButton() const
    {
@@ -512,8 +643,7 @@ public:
 
    virtual void pushILSButton()
    { 
-      this->setDataObject<DWORD>(
-            VADDR_ILS_SWITCH, Invert(this->getILSButton()));
+      this->sendCommand(CMD_EFIS_CTRL_PRESS_ILS_BTN, nullptr);
    }
 
    virtual BinarySwitch getMCPSwitch(MCPSwitch sw) const
@@ -531,50 +661,77 @@ public:
 
    virtual void pushMCPSwitch(MCPSwitch sw)
    {
-      static VirtualAddressKey addresses[] =
+      switch (sw)
       {
-         VADDR_FN_PUSH_MCP_CONSTRAINT,
-         VADDR_FN_PUSH_MCP_WAYPOINT,
-         VADDR_FN_PUSH_MCP_VORD,
-         VADDR_FN_PUSH_MCP_NDB,
-         VADDR_FN_PUSH_MCP_AIRPORT,
-      };
-      auto push_btn = this->getFunction<Wilco_PushMCPButton>(addresses[sw]);
-      push_btn(0, 0);
+         case MCP_CONSTRAINT:
+            this->sendCommand(CMD_EFIS_CTRL_PRESS_CSTR_BTN, nullptr);
+            break;
+         case MCP_WAYPOINT:
+            this->sendCommand(CMD_EFIS_CTRL_PRESS_WPT_BTN, nullptr);
+            break;
+         case MCP_VORD:
+            this->sendCommand(CMD_EFIS_CTRL_PRESS_VORD_BTN, nullptr);
+            break;
+         case MCP_NDB:
+            this->sendCommand(CMD_EFIS_CTRL_PRESS_NDB_BTN, nullptr);
+            break;
+         case MCP_AIRPORT:
+            this->sendCommand(CMD_EFIS_CTRL_PRESS_ARPT_BTN, nullptr);
+            break;
+      }
    }
 
    virtual NDModeSwitch getNDModeSwitch() const
    { return NDModeSwitch(this->getDataObject<DWORD>(VADDR_ND_MODE)); }
 
    virtual void setNDModeSwitch(NDModeSwitch mode)
-   { this->sendCommand(CMD_SET_ND_MODE, &mode); }
+   { this->sendCommand(CMD_EFIS_CTRL_SET_ND_MODE, &mode); }
 
    virtual NDRangeSwitch getNDRangeSwitch() const
    { return NDRangeSwitch(this->getDataObject<DWORD>(VADDR_ND_RANGE)); }
 
    virtual void setNDRangeSwitch(NDRangeSwitch range)
-   { this->sendCommand(CMD_SET_ND_RANGE, &range); }
+   { this->sendCommand(CMD_EFIS_CTRL_SET_ND_RANGE, &range); }
 
    virtual NDNavModeSwitch getNDNav1ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT)); }
 
    virtual void setNDNav1ModeSwitch(NDNavModeSwitch value)
-   { this->setDataObject<DWORD>(VADDR_MCP_NAV_LEFT, value); }
+   {
+      switch (value)
+      {
+         case ND_NAV_ADF:
+            this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_ADF, nullptr);
+            break;
+         case ND_NAV_OFF:
+            this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_OFF, nullptr);
+            break;
+         case ND_NAV_VOR:
+            this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_VOR, nullptr);
+            break;
+      }
+   }
 
    virtual NDNavModeSwitch getNDNav2ModeSwitch() const
    { return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
 
    virtual void setNDNav2ModeSwitch(NDNavModeSwitch value)
-   { this->setDataObject<DWORD>(VADDR_MCP_NAV_RIGHT, value); }
+   {
+      switch (value)
+      {
+         case ND_NAV_ADF:
+            this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_ADF, nullptr);
+            break;
+         case ND_NAV_OFF:
+            this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_OFF, nullptr);
+            break;
+         case ND_NAV_VOR:
+            this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_VOR, nullptr);
+            break;
+      }
+   }
 
 private:
-
-   inline void sendCommand(Wilco_Command cmd, void* args)
-   {
-      auto send_cmd = 
-            this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
-      send_cmd(cmd, args);
-   }
 
    Ptr<FSUIPC> _fsuipc;
 };
@@ -607,10 +764,7 @@ public:
 
    virtual void pushGuidanceModeButton()
    {
-      this->mutate([](Wilco_FCU& fcu) {
-         fcu.hdg_track_display_mode ^= 1;
-         fcu.vs_fpa_display_mode ^= 1;
-      });
+      this->sendCommand(CMD_FCU_PRESS_HDG_TRK_BTN, nullptr);
    }
 
    virtual AltitudeUnits getAltitudeDisplayUnits() const
@@ -622,9 +776,7 @@ public:
 
    virtual void pushAltitudeUnitsButton() 
    {
-      this->mutate([](Wilco_FCU& fcu) {
-         fcu.metric_altitude ^= 1;
-      });
+      this->sendCommand(CMD_FCU_PRESS_METRIC_ALT_BTN, nullptr);
    }
 
    virtual BinarySwitch getSwitch(FCUSwitch sw) const
@@ -657,25 +809,29 @@ public:
 
    virtual void pushSwitch(FCUSwitch sw)
    {
-      this->mutate([&sw](Wilco_FCU& fcu) {
-         switch (sw)
-         {
-            case FCU_SWITCH_LOC:
-               fcu.armed_lateral_mode = LAT_MOD_LOC; break;
-            case FCU_SWITCH_ATHR:
-               fcu.auto_thrust ^= 2; break;
-            case FCU_SWITCH_EXPE:
-               fcu.expedite ^= 1; break;
-            case FCU_SWITCH_APPR:
-               fcu.armed_lateral_mode = LAT_MOD_LOC; 
-               fcu.armed_vertical_mode = VER_MOD_GS;
-               break;
-            case FCU_SWITCH_AP1:
-               fcu.autopilot ^= AP_1; break;
-            case FCU_SWITCH_AP2:
-               fcu.autopilot ^= AP_2; break;
-         }
-      });
+      switch (sw)
+      {
+         case FCU_SWITCH_LOC:
+            this->sendCommand(CMD_FCU_PUSH_LOC_BTN, nullptr);
+            break;
+         case FCU_SWITCH_ATHR:
+            this->mutate([](Wilco_FCU& fcu) {
+               fcu.auto_thrust ^= 2;
+            });
+            break;
+         case FCU_SWITCH_EXPE:
+            this->sendCommand(CMD_FCU_PUSH_EXPED_BTN, nullptr);
+            break;
+         case FCU_SWITCH_APPR:
+            this->sendCommand(CMD_FCU_PUSH_APPR_BTN, nullptr);
+            break;
+         case FCU_SWITCH_AP1:
+            this->sendCommand(CMD_FCU_PUSH_AP1_BTN, nullptr);
+            break;
+         case FCU_SWITCH_AP2:
+            this->sendCommand(CMD_FCU_PUSH_AP2_BTN, nullptr);
+            break;
+      }
    }
 
    virtual FCUManagementMode getSpeedMode() const
@@ -706,7 +862,7 @@ public:
 
    virtual void setSpeedValue(Knots value)
    {
-      _fsuipc->writeAs<WORD>(0x07E2, value);
+      this->sendCommand(CMD_FCU_SET_SPD_VALUE, &value);
    }
 
    virtual Mach100 getMachValue() const
@@ -729,8 +885,7 @@ public:
 
    virtual void setHeadingValue(Degrees value) 
    {
-      DWORD v = boost::math::iround(value * 65536.0 / 360.0);
-      _fsuipc->writeAs<DWORD>(0x07CC, v);
+      this->sendCommand(CMD_FCU_SET_HDG_VALUE, &value);
    }
 
    virtual Degrees getTrackValue() const
@@ -756,9 +911,7 @@ public:
 
    virtual void setTargetAltitude(Feet value)
    {
-      this->mutate([value](Wilco_FCU& fcu) {
-         fcu.target_altitude = value;
-      });
+      this->sendCommand(CMD_FCU_SET_ALT_VALUE, &value);
    }
    
    virtual FeetPerMin getVerticalSpeedValue() const
@@ -770,9 +923,8 @@ public:
 
    virtual void setVerticalSpeedValue(FeetPerMin value)
    {
-      this->mutate([value](Wilco_FCU& fcu) {
-         fcu.selected_vertical_speed = value;
-      });
+      auto fvalue = FLOAT(value);
+      this->sendCommand(CMD_FCU_SET_VS_VALUE, &fvalue);
    }
    
    virtual Degrees100 getFPAValue() const
@@ -794,22 +946,16 @@ public:
       switch (knob)
       {
          case FCU_KNOB_SPD:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.speed_knob = 1;
-            });
+            this->sendCommand(CMD_FCU_PUSH_SPD_KNOB, nullptr);
             break;
          case FCU_KNOB_HDG:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.heading_knob = 1;
-            });
+            this->sendCommand(CMD_FCU_PUSH_HDG_KNOB, nullptr);
             break;
          case FCU_KNOB_ALT:
-            // TODO: implement this
+            this->sendCommand(CMD_FCU_PUSH_ALT_KNOB, nullptr);
             break;
          case FCU_KNOB_VS:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.vertical_speed_knob = 1;
-            });
+            this->sendCommand(CMD_FCU_PUSH_VS_KNOB, nullptr);
             break;
       }
    }
@@ -819,22 +965,16 @@ public:
       switch (knob)
       {
          case FCU_KNOB_SPD:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.speed_knob = 0;
-            });
+            this->sendCommand(CMD_FCU_PULL_SPD_KNOB, nullptr);
             break;
          case FCU_KNOB_HDG:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.heading_knob = 0;
-            });
+            this->sendCommand(CMD_FCU_PULL_HDG_KNOB, nullptr);
             break;
          case FCU_KNOB_ALT:
-            // TODO: implement this
+            this->sendCommand(CMD_FCU_PULL_ALT_KNOB, nullptr);
             break;
          case FCU_KNOB_VS:
-            this->mutate([](Wilco_FCU& fcu) {
-               fcu.vertical_speed_knob = 0;
-            });
+            this->sendCommand(CMD_FCU_PULL_VS_KNOB, nullptr);
             break;
       }
    }
@@ -873,6 +1013,11 @@ public:
       _fcu = std::shared_ptr<FlightControlUnit>(
             new FlightControlUnitImpl(
                   DLL_INFO[aircraft], this->getDLLInstance()));
+   }
+
+   virtual ~WilcoCockpitImpl()
+   {
+      FreeDLL(this->getDLLInstance());
    }
 
    virtual AircraftType aircraftType() const
