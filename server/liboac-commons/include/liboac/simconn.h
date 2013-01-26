@@ -311,6 +311,8 @@ public:
    static const EventName SYSTEM_EVENT_4SEC;
    static const EventName SYSTEM_EVENT_6HZ;
    static const EventName SYSTEM_EVENT_FRAME;
+   static const EventName SYSTEM_EVENT_AIRCRAFT_LOADED;
+   static const EventName SYSTEM_EVENT_FLIGHT_LOADED;
 
    SimConnectClient(const std::string& name) throw (ConnectionException);
 

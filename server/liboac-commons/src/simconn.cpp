@@ -125,14 +125,23 @@ SimConnectClient::EventTransmitter::EventTransmitter(
 {}
 
 
-const SimConnectClient::EventName SimConnectClient::SYSTEM_EVENT_1SEC(
-      "1sec");
-const SimConnectClient::EventName SimConnectClient::SYSTEM_EVENT_4SEC(
-      "4sec");
-const SimConnectClient::EventName SimConnectClient::SYSTEM_EVENT_6HZ(
-      "6hz");
-const SimConnectClient::EventName SimConnectClient::SYSTEM_EVENT_FRAME(
-      "frame");
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_1SEC("1sec");
+
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_4SEC("4sec");
+
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_6HZ("6hz");
+
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_FRAME("Frame");
+
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_AIRCRAFT_LOADED("AircraftLoaded");
+
+const SimConnectClient::EventName
+SimConnectClient::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
 
 SimConnectClient::SimConnectClient(const std::string& name)
 throw (ConnectionException) :
