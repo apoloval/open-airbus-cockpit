@@ -8,6 +8,9 @@ set(wilco-exporter_SOURCES
    src/main.cpp
    src/plugin.cpp
    src/wilco.cpp
+   src/wilco-efis.cpp
+   src/wilco-fcu.cpp
+   src/wilco-internal.cpp
 )
 
 include_directories(

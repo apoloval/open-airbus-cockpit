@@ -29,8 +29,8 @@
 #include <liboac/cockpit.h>
 #include <liboac/exception.h>
 #include <liboac/lang-utils.h>
-
 namespace oac { namespace we {
+
 
 enum AircraftType 
 {
