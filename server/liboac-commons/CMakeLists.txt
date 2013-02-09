@@ -53,3 +53,6 @@ add_unit_test(lang-utils-test)
 
 add_integration_test(simconn-itest)
 
+install(TARGETS liboac-commons DESTINATION Libraries/liboac-commons/lib)
+install(FILES ${liboac-commons_HEADERS}
+   DESTINATION Libraries/liboac-commons/include)

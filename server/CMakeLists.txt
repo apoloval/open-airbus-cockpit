@@ -1,14 +1,19 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(oac-server)
+project(oacsd)
+
+set(OACSD_VERSION_MAJOR 0)
+set(OACSD_VERSION_MINOR 1)
+set(OACSD_VERSION_PATH beta-1)
+set(OACSD_VERSION
+   "${OACSD_VERSION_MAJOR}.${OACSD_VERSION_MINOR}.${OACSD_VERSION_PATH}")
 
 # Prepare Qt modules and other stuff
 # find_package(Qt4 REQUIRED)
 # include(${QT_USE_FILE})
 # add_definitions(${QT_DEFINITIONS})
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} 
-   "${CMAKE_SOURCE_DIR}/../cmake/modules/")
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/" ${CMAKE_MODULE_PATH})
 
 set(Boost_USE_STATIC_LIBS ON)
 
@@ -28,7 +33,25 @@ include_directories(
 
 add_definitions(-DUNICODE)
 
+set(CPACK_GENERATOR "NSIS")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "OACSD")
+set(CPACK_PACKAGE_VERSION "${OACSD_VERSION}")
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_SOURCE_DIR}/COPYING")
+
+set(CPACK_NSIS_COMPONENT_INSTALL ON)
+set(CPACK_NSIS_PACKAGE_NAME "Open Airbus Cockpit Software Distribution")
+set(CPACK_NSIS_DISPLAY_NAME "Open Airbus Cockpit Software Distribution")
+set(CPACK_NSIS_CONTACT "apoloval@gmail.com")
+set(CPACK_NSIS_MENU_LINKS
+   "http://open-airbus-cockpit.blogspot.com.es/" "Open Airbus Cockpit Blog"
+   "https://github.com/apoloval/open-airbus-cockpit" "Project in GitHub"
+)
 
 # Add the subdirs
 add_subdirectory(liboac-commons)
 add_subdirectory(wilco-exporter)
+
+include(Packaging)
+add_installer(oacsd-setup ${CMAKE_SOURCE_DIR}/NSIS/oacsd.nsh
+   DEPENDS WilcoExporter)
+

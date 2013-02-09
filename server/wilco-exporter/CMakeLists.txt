@@ -32,3 +32,5 @@ target_link_libraries(WilcoExporter
    ${FSUIPC_INTERNAL_LIBRARY}
    liboac-commons
 )
+
+install(TARGETS WilcoExporter RUNTIME DESTINATION Plugins)
