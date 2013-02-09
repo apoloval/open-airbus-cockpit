@@ -28,6 +28,7 @@ find_program(makensis_BIN
 add_custom_target(nsis)
 
 function(add_installer target_name script_file)
+   set(ARGS1 VERSION)
    set(ARGSM DEPENDS)
    cmake_parse_arguments(
       add_installer "${ARGS0}" "${ARGS1}" "${ARGSM}" ${ARGN})
@@ -39,9 +40,11 @@ function(add_installer target_name script_file)
    add_custom_command(
       OUTPUT ${add_installer_OUTPUT}
       COMMAND ${makensis_BIN}
+         "/O${add_installer_BINARY_DIR}\\NSIS.log"
          /DCMAKE_NSIS_OUTPUT=${add_installer_OUTPUT}
          /DCMAKE_SOURCE_DIR=${add_installer_SOURCE_DIR}
          /DCMAKE_BINARY_DIR=${add_installer_BINARY_DIR}
+         /DCMAKE_PACKAGE_VERSION=${add_installer_VERSION}
          ${script_file}
       DEPENDS ${script_file} ${add_installer_DEPENDS}
       WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

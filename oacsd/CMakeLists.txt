@@ -51,7 +51,10 @@ set(CPACK_NSIS_MENU_LINKS
 add_subdirectory(liboac-commons)
 add_subdirectory(wilco-exporter)
 
-include(Packaging)
-add_installer(oacsd-setup ${CMAKE_SOURCE_DIR}/NSIS/oacsd.nsh
-   DEPENDS WilcoExporter)
+# Packaging with NSIS
+include(NSIS)
+add_installer("oacsd-${OACSD_VERSION}" ${CMAKE_SOURCE_DIR}/NSIS/oacsd.nsh
+   DEPENDS WilcoExporter
+   VERSION ${OACSD_VERSION}
+)
 

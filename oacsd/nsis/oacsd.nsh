@@ -42,6 +42,10 @@ OutFile "${CMAKE_NSIS_OUTPUT}"
 ###
 # Pages
 ###
+!define MUI_WELCOMEPAGE_TITLE_3LINES
+!define MUI_WELCOMEPAGE_TITLE "Welcome to Open Airbus Cockpit Software \
+   Distribution ${CMAKE_PACKAGE_VERSION} Setup"
+!insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "license.txt"
 !insertmacro MUI_PAGE_COMPONENTS
 !insertmacro MUI_PAGE_DIRECTORY
@@ -185,11 +189,11 @@ SectionEnd
 # Descriptions
 ###
 LangString DESC_SecWilcoExporter ${LANG_ENGLISH} \
-   "Wilco Exporter Plugin for FSX, gives access to Wilco Airbus cockpit via\
+   "Wilco Exporter Plugin for FSX, gives access to Wilco Airbus cockpit via \
    FSUIPC offsets"
 LangString DESC_SecLibCommons ${LANG_ENGLISH} \
-      "Open Airbus Cockpit Library - Commons. Header files and static library \
-      providing common basic features used by OACSD components."
+      "Header files and static library providing common basic features \
+      used by OACSD components."
 
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 !insertmacro MUI_DESCRIPTION_TEXT ${SecWilcoExporter} $(DESC_SecWilcoExporter)
