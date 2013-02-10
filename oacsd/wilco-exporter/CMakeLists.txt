@@ -23,14 +23,8 @@ include_directories(
 
 add_library(WilcoExporter SHARED ${wilco-exporter_SOURCES})
 
-set_target_properties(WilcoExporter PROPERTIES
-   COMPILE_FLAGS ""
-   LINK_FLAGS ""
-)
 target_link_libraries(WilcoExporter
    ${SIM_CONNECT_LIBRARY}
    ${FSUIPC_INTERNAL_LIBRARY}
    liboac-commons
 )
-
-install(TARGETS WilcoExporter RUNTIME DESTINATION Plugins)

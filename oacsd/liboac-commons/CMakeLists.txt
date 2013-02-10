@@ -26,21 +26,9 @@ include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}/include/liboac
 )
 
-link_directories()
-
 add_library(liboac-commons STATIC 
    ${liboac-commons_SOURCES} 
    ${liboac-commons_HEADERS})
-
-set_target_properties(liboac-commons PROPERTIES
-   DEFINE_SYMBOL "LIBOAC_COMMONS_BUILD=1"
-   COMPILE_FLAGS ""
-   LINK_FLAGS ""
-)
-target_link_libraries(liboac-commons
-   ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}   
-)
 
 test_link_libraries(
       liboac-commons
@@ -52,7 +40,3 @@ test_link_libraries(
 add_unit_test(lang-utils-test)
 
 add_integration_test(simconn-itest)
-
-install(TARGETS liboac-commons DESTINATION Libraries/liboac-commons/lib)
-install(FILES ${liboac-commons_HEADERS}
-   DESTINATION Libraries/liboac-commons/include)
