@@ -76,7 +76,8 @@ name of the aircraft. If you are loading a modified Wilco aircraft with a
 custom livery, make sure that the name of the aircraft contains the following
 substrings in order to being detected by Wilco Exporter.
 
-* For A320 CFM, the name should contain the **A320 CFM** sub-string in its name. 
+* For A320 CFM, the name should contain both **Feelthere** and **A320 CFM** 
+sub-strings in its name. 
 
 Once a Wilco Airbus aircraft is loaded (or when FSX is initiated and default
 aircraft is a Wilco Airbus), the mapping process starts. You will find that
@@ -93,7 +94,7 @@ to any bug report.
 If you are a programmer and want to, you may use liboac-commons in your
 project as long as you respect the terms of the GPL license. If you are 
 interested on using the library under proprietary software, please contact
-me on apoloval@gmail.com. 
+me on [apoloval@gmail.com](mailto:apoloval@gmail.com). 
 
 ## Error Reporting
 
@@ -102,8 +103,8 @@ we make is not perfect. It is possible that you find issues when using OACSD
 components. If so, the best thing you might do is to report them using the
 [issue tracking system](https://github.com/apoloval/open-airbus-cockpit/issues) 
 of the project. Try to be as much precise as possible, and do not scrimp on
-details. 
-
+details.
+ 
 ## Contact
 
 If you have further questions or comments, please send an email to 
