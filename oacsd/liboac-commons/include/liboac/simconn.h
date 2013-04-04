@@ -36,11 +36,23 @@ class SimConnectClient
 {
 public:
 
-   DECL_RUNTIME_ERROR(ConnectionException);
-
    typedef std::string EventName;
    typedef std::string DataName;
    typedef std::string DataUnits;
+
+   DECL_ERROR(UnknownEventNameError, InvalidInputError);
+   DECL_ERROR_INFO(EventNameInfo, EventName);
+
+   DECL_ERROR(DataDefinitionError, InvalidInputError);
+   DECL_ERROR_INFO(DataNameInfo, DataName);
+   DECL_ERROR_INFO(DataUnitsInfo, DataUnits);
+
+   DECL_ERROR(DataRequestError, IOError);
+   DECL_ERROR_INFO(DataDefinitionInfo, SIMCONNECT_DATA_DEFINITION_ID);
+
+   DECL_ERROR(EventError, IOError);
+   DECL_ERROR_INFO(SimConnectFunctionInfo, std::string);
+
 
    class DataDefinition
    {
@@ -53,7 +65,7 @@ public:
 
       DataDefinition& add(const DataName& name, const DataUnits& units,
                SIMCONNECT_DATATYPE data_type = SIMCONNECT_DATATYPE_FLOAT64)
-            throw (InvalidInputException);
+            throw (DataDefinitionError);
 
       inline SIMCONNECT_DATA_DEFINITION_ID id() const
       { return _id; }
@@ -95,7 +107,7 @@ public:
       inline DataPullRequest& setLimit(DWORD limit)
       { _limit = limit; return *this; }
 
-      void submit() throw (InvalidInputException);
+      void submit() throw (DataRequestError);
 
    private:
 
@@ -134,7 +146,7 @@ public:
       inline DataPushRequest& setElementSize(DWORD element_size)
       { _element_size = element_size; return *this; }
 
-      void submit(void* data);
+      void submit(void* data) throw (DataRequestError);
 
    private:
 
@@ -150,10 +162,12 @@ public:
    {
    public:
 
-      ClientEvent(const SimConnectClient& cli, const EventName& event_name,
-            SIMCONNECT_CLIENT_EVENT_ID id);
+      ClientEvent(const SimConnectClient& cli,
+                  const EventName& event_name,
+                  SIMCONNECT_CLIENT_EVENT_ID id) throw (EventError);
 
-      ClientEvent(const SimConnectClient& cli, SIMCONNECT_CLIENT_EVENT_ID id);
+      ClientEvent(const SimConnectClient& cli,
+                  SIMCONNECT_CLIENT_EVENT_ID id) throw (EventError);
 
       inline ClientEvent& setObject(SIMCONNECT_OBJECT_ID object)
       { _object = object; return *this; }
@@ -314,10 +328,10 @@ public:
    static const EventName SYSTEM_EVENT_AIRCRAFT_LOADED;
    static const EventName SYSTEM_EVENT_FLIGHT_LOADED;
 
-   SimConnectClient(const std::string& name) throw (ConnectionException);
+   SimConnectClient(const std::string& name) throw (ConnectionError);
 
    SimConnectClient(const std::string& name,
-         const OnOpenCallback& open_callback) throw (ConnectionException);
+         const OnOpenCallback& open_callback) throw (ConnectionError);
 
    virtual ~SimConnectClient();
 
@@ -375,7 +389,7 @@ public:
 
    void subscribeToSystemEvent(
          const EventName& event_name,
-         SIMCONNECT_CLIENT_EVENT_ID event_id = 0) throw (InvalidInputException);
+         SIMCONNECT_CLIENT_EVENT_ID event_id = 0) throw (UnknownEventNameError);
 
    DataDefinition newDataDefinition();
 
@@ -423,7 +437,7 @@ private:
       this->receiver(message_type) = new MessageReceiver<Message>(callback);
    }
 
-   void open() throw (ConnectionException);
+   void open() throw (ConnectionError);
 
    Ptr<AbstractMessageReceiver>& receiver(SIMCONNECT_RECV_ID message_type);
 

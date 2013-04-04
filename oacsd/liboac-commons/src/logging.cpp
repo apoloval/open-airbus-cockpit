@@ -68,10 +68,10 @@ Log(LogLevel level, const boost::format& fmt)
 { Log(level, str(fmt)); }
 
 void
-LogAndThrow(LogLevel level, const std::exception& excp)
+LogAndThrow(LogLevel level, const Error& e)
 {
-   Log(level, excp.what());
-   throw excp;
+   Log(level, e.what());
+   THROW_ERROR(e);
 }
 
-}; // namespace oac
+} // namespace oac

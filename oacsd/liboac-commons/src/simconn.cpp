@@ -47,43 +47,42 @@ SimConnectClient::DataDefinition::add(
       const DataName& name, 
       const DataUnits& units, 
       SIMCONNECT_DATATYPE data_type)
-throw (InvalidInputException)
+throw (DataDefinitionError)
 { 
    auto result = SimConnect_AddToDataDefinition(
          _handle, _id, name.c_str(), units.c_str(), data_type); 
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot add data definition for variable %s in %s units")
-            % name % units);
+      THROW_ERROR(DataDefinitionError() <<
+            DataNameInfo(name) << DataUnitsInfo(units));
    return *this;
 }
 
 void
 SimConnectClient::DataPullRequest::submit()
-throw (InvalidInputException)
+throw (DataRequestError)
 {
    auto result = SimConnect_RequestDataOnSimObject(
          _handle, _id, _data_def, _object, _period, 
          _flags, _origin, _interval, _limit);
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot pull-request data definition %d on user object") 
-            % _data_def);
+      THROW_ERROR(DataRequestError() << DataDefinitionInfo(_data_def));
 }
 
 void
 SimConnectClient::DataPushRequest::submit(void* data)
+throw (DataRequestError)
 {
    auto result = SimConnect_SetDataOnSimObject(
          _handle, _data_def, _object, _flags, _count, _element_size, data);
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot push request data definition %d on user object") 
-            % _data_def);
+      THROW_ERROR(DataRequestError() << DataDefinitionInfo(_data_def));
 }
 
-SimConnectClient::ClientEvent::ClientEvent(const SimConnectClient& cli, 
-      const EventName& event_name, SIMCONNECT_CLIENT_EVENT_ID id) :
+SimConnectClient::ClientEvent::ClientEvent(
+      const SimConnectClient& cli,
+      const EventName& event_name,
+      SIMCONNECT_CLIENT_EVENT_ID id)
+throw (EventError) :
    _handle(cli._handle), _id(id), _object(SIMCONNECT_OBJECT_ID_USER),
    _group(SIMCONNECT_GROUP_PRIORITY_HIGHEST), 
    _flags(SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY)
@@ -91,31 +90,34 @@ SimConnectClient::ClientEvent::ClientEvent(const SimConnectClient& cli,
    auto result = SimConnect_MapClientEventToSimEvent(
          _handle, _id, event_name.c_str());
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot create client event from sim event %s")
-            % event_name);
+      THROW_ERROR(EventError() <<
+            SimConnectFunctionInfo("SimConnect_MapClientEventToSimEvent") <<
+            EventNameInfo(event_name));
 }
 
 SimConnectClient::ClientEvent::ClientEvent(
-      const SimConnectClient& cli, SIMCONNECT_CLIENT_EVENT_ID id) :
+      const SimConnectClient& cli,
+      SIMCONNECT_CLIENT_EVENT_ID id)
+throw (EventError) :
    _handle(cli._handle), _id(id), _object(SIMCONNECT_OBJECT_ID_USER),
    _group(SIMCONNECT_GROUP_PRIORITY_HIGHEST), 
    _flags(SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY)
 {
    auto result = SimConnect_MapClientEventToSimEvent(_handle, _id);
    if (result != S_OK)
-      throw InvalidInputException("cannot create private client event");
+      THROW_ERROR(EventError() <<
+            SimConnectFunctionInfo("SimConnect_MapClientEventToSimEvent"));
 }
 
 void 
 SimConnectClient::ClientEvent::transmit(DWORD value)
+throw (EventError)
 {
    auto result = SimConnect_TransmitClientEvent(
          _handle, _object, _id, value, _group, _flags);
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot transmit client event %d; invalid properties?")
-            % _id);
+      THROW_ERROR(EventError() <<
+            SimConnectFunctionInfo("SimConnect_TransmitClientEvent"));
 }
 
 SimConnectClient::EventTransmitter::EventTransmitter(
@@ -144,7 +146,7 @@ const SimConnectClient::EventName
 SimConnectClient::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
 
 SimConnectClient::SimConnectClient(const std::string& name)
-throw (ConnectionException) :
+throw (ConnectionError) :
    _name(name)
 { 
    this->open(); 
@@ -153,7 +155,7 @@ throw (ConnectionException) :
 
 SimConnectClient::SimConnectClient(const std::string& name,
          const OnOpenCallback& open_callback) 
-throw (ConnectionException) :
+throw (ConnectionError) :
    _name(name)
 {
    this->open();
@@ -329,13 +331,12 @@ void
 SimConnectClient::subscribeToSystemEvent(
       const EventName& event_name,
       SIMCONNECT_CLIENT_EVENT_ID event_id)
-throw (InvalidInputException)
+throw (UnknownEventNameError)
 {
    auto result = SimConnect_SubscribeToSystemEvent(
          _handle, event_id, event_name.c_str());
    if (result != S_OK)
-      throw InvalidInputException(boost::format(
-            "cannot subscribe to system event %s") % event_name);
+      THROW_ERROR(UnknownEventNameError() << EventNameInfo(event_name));
 }
 
 SimConnectClient::DataDefinition
@@ -365,14 +366,12 @@ SimConnectClient::newClientEvent(const EventName& event_name)
 
 void
 SimConnectClient::open()
-throw (ConnectionException)
+throw (ConnectionError)
 {
    if (SimConnect_Open(&_handle, _name.c_str(), NULL, 0, 0, 0) != S_OK)
-      throw ConnectionException(
-            "cannot connect to SimConnect: connection error");
+      THROW_ERROR(ConnectionError());
    if (SimConnect_CallDispatch(_handle, DispatchMessage, this) != S_OK)
-      throw ConnectionException(
-            "cannot connect to SimConnect: callback register failed");
+      THROW_ERROR(ConnectionError());
 }
 
 Ptr<SimConnectClient::AbstractMessageReceiver>&

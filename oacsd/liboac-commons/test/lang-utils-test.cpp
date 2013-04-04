@@ -69,8 +69,8 @@ BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToNothing)
    Maybe<int> m;
    BOOST_CHECK(m.isNothing());
    BOOST_CHECK(!m.isJust());
-   BOOST_CHECK_THROW(m.get(), IllegalStateException);
-   BOOST_CHECK_THROW(*m, IllegalStateException);
+   BOOST_CHECK_THROW(m.get(), IllegalStateError);
+   BOOST_CHECK_THROW(*m, IllegalStateError);
 }
 
 BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToJustValue)

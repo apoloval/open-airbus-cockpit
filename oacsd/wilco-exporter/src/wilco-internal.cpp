@@ -71,20 +71,20 @@ FunctionName FunctionNames::RESET_INTERNAL_DATA = "ResetInternalData";
 FunctionName FunctionNames::RESET_FLIGHT = "ResetFlight";
 
 const DllInfo&
-DllInfo::forAircraft(AircraftType aircraft)
+DllInfo::forAircraft(const Aircraft& aircraft)
 {
-   return DLL_INFO[aircraft];
+   return DLL_INFO[aircraft.type];
 }
 
 HINSTANCE
-LoadDLLForAircraft(AircraftType aircraft)
-throw (InvalidInputException)
+LoadDLLForAircraft(const Aircraft& aircraft)
+throw (WilcoCockpit::InvalidAircraftError)
 {
-   auto dll_filename = DLL_INFO[aircraft].name.c_str();
+   auto dll_filename = DllInfo::forAircraft(aircraft).name.c_str();
    HINSTANCE lib = LoadLibrary(dll_filename);
    if (lib == NULL)
-      LogAndThrow(FAIL, InvalidInputException(str(boost::format(
-            "cannot load Wilco Airbus DLL file %s") % dll_filename)));
+      THROW_ERROR(WilcoCockpit::InvalidAircraftError() <<
+                  FileNameInfo(dll_filename));
    return lib;
 }
 

@@ -36,37 +36,38 @@ FixedBuffer::~FixedBuffer()
 
 void
 FixedBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 {
-   this->checkBounds(offset, length, "reading data to buffer");
+   this->checkBounds(offset, length);
    std::memcpy(dst, &(_data[offset]), length);
 }
 
 void
 FixedBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 {
-   this->checkBounds(offset, length, "writing data to buffer");
+   this->checkBounds(offset, length);
    std::memcpy(&(_data[offset]), src, length);
 }
 
 void
 FixedBuffer::copy(const Buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 {
-   this->checkBounds(dst_offset, length, "copying data to buffer");
+   this->checkBounds(dst_offset, length);
    src.read(&(_data[dst_offset]), src_offset, length);
 }
 
 void
-FixedBuffer::checkBounds(DWORD offset, DWORD length, const char* action) const
-throw (Buffer::OutOfBoundsException)
+FixedBuffer::checkBounds(DWORD offset, DWORD length) const
+throw (OutOfBoundsError)
 {
    if (offset + length > _capacity)
-      throw Buffer::OutOfBoundsException(str(boost::format(
-            "error while %s: 0x%X+%d is out of bounds (%d bytes capacity)")
-            % action % offset % length % _capacity));
+      BOOST_THROW_EXCEPTION(OutOfBoundsError() <<
+            LowerBoundInfo(0) <<
+            UpperBoundInfo(_capacity - 1) <<
+            IndexInfo(offset + length));
 }
 
 ShiftedBuffer::ShiftedBuffer(
@@ -79,37 +80,38 @@ ShiftedBuffer::ShiftedBuffer(
 
 void
 ShiftedBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError, ReadError)
 {
-   this->checkBounds(offset, length, "reading data");
+   this->checkBounds(offset, length);
    _backed_buffer->read(dst, shift(offset), length);
 }
 
 void
 ShiftedBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError, WriteError)
 { 
-   this->checkBounds(offset, length, "writing data");
+   this->checkBounds(offset, length);
    _backed_buffer->write(src, shift(offset), length);
 }
 
 void
 ShiftedBuffer::copy(const Buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError, IOError)
 { 
-   this->checkBounds(dst_offset, length, "copying data");
+   this->checkBounds(dst_offset, length);
    _backed_buffer->copy(src, src_offset, shift(dst_offset), length);
 }
 
 void
-ShiftedBuffer::checkBounds(DWORD offset, DWORD length, const char* action) const
-throw (Buffer::OutOfBoundsException)
+ShiftedBuffer::checkBounds(DWORD offset, DWORD length) const
+throw (OutOfBoundsError)
 {
    if (offset < _offset_shift || shift(offset) + length > _backed_capacity)
-      throw Buffer::OutOfBoundsException(str(boost::format(
-            "error while %s: 0x%X+%d is out of bounds (0x%X+%d shift buffer)")
-            % action % offset % length % _offset_shift % _backed_capacity));
+      THROW_ERROR(OutOfBoundsError() <<
+            LowerBoundInfo(0) <<
+            UpperBoundInfo(_backed_capacity - 1) <<
+            IndexInfo(offset + length));
 }
 
 DoubleBuffer::DoubleBuffer(
@@ -123,18 +125,18 @@ DoubleBuffer::DoubleBuffer(
 
 void
 DoubleBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
 void
 DoubleBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 { _backed_buffer[_current_buffer]->write(src, offset, length); }
 
 void
 DoubleBuffer::copy(const Buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length)
-throw (OutOfBoundsException)
+throw (OutOfBoundsError)
 { _backed_buffer[_current_buffer]->copy(src, src_offset, dst_offset, length); }
 
 void

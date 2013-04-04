@@ -274,7 +274,7 @@ private:
 
 void
 FSUIPCCockpitBack::syncUp()
-throw (SyncException) 
+throw (SyncError)
 { 
    if (!_buffer)
       return;
@@ -286,7 +286,7 @@ throw (SyncException)
 
 void
 FSUIPCCockpitBack::syncDown()
-throw (SyncException) 
+throw (SyncError)
 {
    try 
    {
@@ -300,17 +300,16 @@ throw (SyncException)
       _buffer->swap();
       _buffer->copy(*_fsuipc, 0x5600, 0x5600, 512);
    } 
-   catch (std::exception& e) 
+   catch (Error& e)
    {
       _fsuipc.reset();
-      throw SyncException(str(boost::format(
-            "cannot synchonize FSUIPC cockpit back: %s") % e.what()));
+      THROW_ERROR(SyncError() << NestedErrorInfo(e));
    } 
 }
 
 CockpitBack::FlightControlUnit&
 FSUIPCCockpitBack::getFlightControlUnit() 
-throw (SyncException)
+throw (SyncError)
 {
    if (!_fcu)
       this->initFCU();
@@ -319,7 +318,7 @@ throw (SyncException)
 
 CockpitBack::EFISControlPanel& 
 FSUIPCCockpitBack::getEFISControlPanel() 
-throw (SyncException)
+throw (SyncError)
 {
    if (!_efis_ctrl_panel)
       this->initEFISControlPanel();
@@ -336,38 +335,33 @@ FSUIPCCockpitBack::initBuffer()
 
 void
 FSUIPCCockpitBack::initFSUIPC()
-throw (SyncException)
+throw (SyncError)
 {
    try 
    {
       _fsuipc = _fsuipc_fact->createFSUIPC();
    }
-   catch (IllegalStateException& e)
+   catch (IllegalStateError& e)
    {
-      throw SyncException(str(boost::format(
-            "cannot init FSUIPC cockpit back; FSUIPC state error: %s")
-            % e.what()));
+      THROW_ERROR(SyncError() << NestedErrorInfo(e));
    }
 }
 
 void
 FSUIPCCockpitBack::initFCU()
-throw (SyncException)
+throw (SyncError)
 {
    if (!this->isSync())
-      throw SyncException(
-            "cannot init FCU for FSUIPC cockpit back: not synchronized");
+      THROW_ERROR(SyncError());
    _fcu = new FlightControlUnitBack(_buffer);
 }
 
 void
 FSUIPCCockpitBack::initEFISControlPanel()
-throw (SyncException)
+throw (SyncError)
 {
    if (!this->isSync())
-      throw SyncException(
-            "cannot init EFIS control panel for FSUIPC "
-            "cockpit back: not synchronized");
+      THROW_ERROR(SyncError());
    _efis_ctrl_panel = new EFISControlPanelBack(_buffer);
 }
 

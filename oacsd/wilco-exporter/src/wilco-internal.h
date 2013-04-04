@@ -72,10 +72,10 @@ enum VirtualAddressKey
 
 struct DllInfo
 {
-   DllName name;
-   VirtualAddress virtualAddresses[VADDR_NELEMENTS];
+   const DllName name;
+   const VirtualAddress virtualAddresses[VADDR_NELEMENTS];
 
-   static const DllInfo& forAircraft(AircraftType aircraft);
+   static const DllInfo& forAircraft(const Aircraft& aircraft);
 };
 
 struct FunctionNames
@@ -423,16 +423,16 @@ F GetFunctionOrThrow(HINSTANCE inst, const char* func_name)
 {
    auto result = (F) GetProcAddress(inst, func_name);
    if (!result)
-      throw E(str(boost::format(
-         "cannot get function %s() from DLL") % func_name));
+      THROW_ERROR(E() << FunctionNameInfo(func_name));
    return result;
 }
 
 /**
- * Load DLL library for given aircraft. InvalidInputException is thrown if
+ * Load DLL library for given aircraft. InvalidAircraftError is thrown if
  * given aircraft is unknown or DLL cannot be resolved for it.
  */
-HINSTANCE LoadDLLForAircraft(AircraftType aircraft);
+HINSTANCE LoadDLLForAircraft(const Aircraft& aircraft)
+      throw (WilcoCockpit::InvalidAircraftError);
 
 /**
  * Free a DLL instance previously loaded.

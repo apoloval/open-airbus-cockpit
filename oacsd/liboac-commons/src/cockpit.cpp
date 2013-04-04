@@ -24,7 +24,7 @@ namespace {
 
 void
 MapFCUDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    CockpitBack::FlightControlUnit::EventList events;
    auto& fcu = front.getFlightControlUnit();
@@ -78,7 +78,7 @@ throw (CockpitBack::SyncException)
 
 void
 MapEFISControlPanelDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    CockpitBack::EFISControlPanel::EventList events;
    auto& efis = front.getEFISControlPanel();
@@ -120,7 +120,7 @@ throw (CockpitBack::SyncException)
 
 void
 MapDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    MapFCUDown(back, front);
    MapEFISControlPanelDown(back, front);
@@ -128,7 +128,7 @@ throw (CockpitBack::SyncException)
 
 void
 MapFCUUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    auto& fcu_back = back.getFlightControlUnit();
    auto& fcu_front = front.getFlightControlUnit();
@@ -156,7 +156,7 @@ throw (CockpitBack::SyncException)
 
 void
 MapEFISControlPanelUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    auto& panel_back = back.getEFISControlPanel();
    auto& panel_front = front.getEFISControlPanel();
@@ -181,7 +181,7 @@ throw (CockpitBack::SyncException)
 
 void
 MapUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    MapFCUUp(back, front);
    MapEFISControlPanelUp(back, front);
@@ -189,7 +189,7 @@ throw (CockpitBack::SyncException)
 
 void
 Map(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncException)
+throw (CockpitBack::SyncError)
 {
    back.syncDown();
    MapDown(back, front);
@@ -205,7 +205,7 @@ CockpitFront::map(CockpitBack& back)
 
 void
 CockpitBack::map(CockpitFront& front)
-throw (SyncException)
+throw (SyncError)
 { Map(*this, front); }
 
 }; // namespace oac

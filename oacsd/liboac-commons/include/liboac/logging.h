@@ -24,6 +24,8 @@
 
 #include <Boost/format.hpp>
 
+#include "exception.h"
+
 namespace oac { 
 
 enum LogLevel
@@ -57,8 +59,7 @@ void Log(LogLevel level, const boost::format& fmt);
 /**
  * Log a message encapsulated by given exception and throw this latter. 
  */
-void LogAndThrow(
-      LogLevel level, const std::exception& excp);
+void LogAndThrow(LogLevel level, const Error& e);
 
 }; // namespace oac
 

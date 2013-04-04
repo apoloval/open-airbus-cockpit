@@ -45,11 +45,11 @@ class WilcoCockpitImpl : public WilcoCockpit, public DllInspector
 {
 public:
 
-   WilcoCockpitImpl(AircraftType aircraft)
-   throw (InvalidInputException) :
+   WilcoCockpitImpl(const Aircraft& aircraft)
+   throw (InvalidInputError) :
          DllInspector(DllInfo::forAircraft(aircraft),
                       LoadDLLForAircraft(aircraft)),
-         _aircraft_type(aircraft)
+         _aircraft(aircraft)
    {
       auto& dll_info = DllInfo::forAircraft(aircraft);
       auto dll_instance = this->getDLLInstance();
@@ -62,8 +62,8 @@ public:
       FreeDLL(this->getDLLInstance());
    }
 
-   virtual AircraftType aircraftType() const
-   { return _aircraft_type; }
+   virtual const Aircraft& aircraft() const
+   { return _aircraft; }
 
    virtual GPUSwitch getGpuSwitch() const
    {
@@ -121,42 +121,37 @@ private:
    inline static BinarySwitch toBinarySwitch(DWORD expr)
    { return toBinarySwitch(expr > 0); }
 
-   AircraftType _aircraft_type;
+   Aircraft _aircraft;
    Ptr<EFISControlPanel> _efis_ctrl_panel;
    Ptr<FlightControlUnit> _fcu;
 };
 
-}; // anonymous namespace
-
-AircraftType
-ResolveAircraftTypeFromTitle(const std::string& title)
-throw (InvalidInputException)
+Aircraft::Type
+ResolveAircraftTypeFromTitle(const Aircraft::Title& title)
+throw (Aircraft::InvalidTitle)
 {
    if (boost::contains(title, "Feelthere"))
    {
       if (boost::contains(title, "A320 CFM"))
-         return A320_CFM;
+         return Aircraft::A320_CFM;
    }
-   throw InvalidInputException(boost::format(
-         "cannot determine the aircraft type from given title '%s'") % title);
+   THROW_ERROR(Aircraft::InvalidTitle() << Aircraft::TitleInfo(title));
 }
 
-const std::string&
-AircraftTypeToString(AircraftType aircraft)
-{ return AIRCRAFT_NAME[aircraft]; }
+} // anonymous namespace
+
+Aircraft::Aircraft(const Type& type) :
+      type(type), title(AIRCRAFT_NAME[type]) {}
+
+
+Aircraft::Aircraft(const Title& title)
+throw (InvalidTitle) :
+      type(ResolveAircraftTypeFromTitle(title)), title(title) {}
 
 WilcoCockpit*
-WilcoCockpit::newCockpit(AircraftType aircraft)
+WilcoCockpit::newCockpit(const Aircraft& aircraft)
 {
    return new WilcoCockpitImpl(aircraft);
-}
-
-WilcoCockpit*
-WilcoCockpit::newCockpit(const std::string& aircraft_title)
-throw (InvalidInputException)
-{
-   return WilcoCockpit::newCockpit(
-            ResolveAircraftTypeFromTitle(aircraft_title));
 }
 
 }}; // namespace oac::we

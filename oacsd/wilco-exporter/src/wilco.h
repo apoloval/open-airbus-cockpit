@@ -31,17 +31,6 @@
 #include <liboac/lang-utils.h>
 namespace oac { namespace we {
 
-
-enum AircraftType 
-{
-   A320_CFM,
-};
-
-AircraftType ResolveAircraftTypeFromTitle(
-      const std::string& title) throw (InvalidInputException);
-
-const std::string& AircraftTypeToString(AircraftType aircraft);
-
 enum APUStatus
 {
    APU_OFF = 0,
@@ -238,19 +227,40 @@ enum SDPageButton {
    SD_PAGE_STS,
 };
 
+struct Aircraft {
+
+   enum Type
+   {
+      A320_CFM,
+   };
+
+   typedef std::string Title;
+
+   DECL_ERROR(InvalidTitle, InvalidInputError);
+   DECL_ERROR_INFO(TitleInfo, Title);
+
+   const Type type;
+   const Title title;
+
+   Aircraft(const Type& type);
+
+   Aircraft(const std::string& title) throw (InvalidTitle);
+};
+
 class WilcoCockpit : public CockpitFront
 {
 public:
 
-   static WilcoCockpit* newCockpit(
-         AircraftType aircraft) throw (InvalidInputException);
+   DECL_ERROR(InvalidAircraftError, InvalidInputError);
+   DECL_ERROR_INFO(AircraftInfo, Aircraft);
+   DECL_ERROR_INFO(AircraftTitleInfo, std::string);
 
    static WilcoCockpit* newCockpit(
-         const std::string& aircraft_title) throw (InvalidInputException);
+         const Aircraft& aircraft) throw (InvalidAircraftError);
 
    inline virtual ~WilcoCockpit() {}
 
-   virtual AircraftType aircraftType() const = 0;
+   virtual const Aircraft& aircraft() const = 0;
 
    virtual GPUSwitch getGpuSwitch() const = 0;
 
@@ -270,9 +280,6 @@ protected:
 
    inline WilcoCockpit() {}
 };
-
-typedef std::function<
-      Maybe<AircraftType>(const std::string&)> CockpitNameResolver;
 
 }}; // namespace oac
 

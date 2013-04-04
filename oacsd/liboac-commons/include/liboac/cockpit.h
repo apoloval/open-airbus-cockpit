@@ -210,7 +210,7 @@ public:
 class CockpitBack {
 public:
 
-   DECL_RUNTIME_ERROR(SyncException);
+   DECL_RUNTIME_ERROR(SyncError);
 
    template <typename T>
    struct Event
@@ -291,21 +291,21 @@ public:
       virtual void setNDNav2ModeSwitch(NDNavModeSwitch value) = 0;
    };
 
-   void map(CockpitFront& front) throw (SyncException);
+   void map(CockpitFront& front) throw (SyncError);
 
    /**
     * Move the status of this cockpit back to its counterpart. 
     */
-   virtual void syncUp() throw (SyncException) = 0;
+   virtual void syncUp() throw (SyncError) = 0;
 
    /**
     * Move the status of the counterpart to this cockpit back.
     */
-   virtual void syncDown() throw (SyncException) = 0;
+   virtual void syncDown() throw (SyncError) = 0;
 
-   virtual FlightControlUnit& getFlightControlUnit() throw (SyncException) = 0;
+   virtual FlightControlUnit& getFlightControlUnit() throw (SyncError) = 0;
 
-   virtual EFISControlPanel& getEFISControlPanel() throw (SyncException) = 0;
+   virtual EFISControlPanel& getEFISControlPanel() throw (SyncError) = 0;
 };
 
 }; // namespace oac

@@ -52,6 +52,8 @@ public:
 
    static const Maybe NOTHING;
 
+   DECL_ERROR(NothingError, IllegalStateError);
+
    /**
     * Create a new maybe object set to 'nothing'.
     */
@@ -78,9 +80,10 @@ public:
     * Obtain the value of this maybe object. If it evaluates to 'nothing',
     * a IllegalStateException is thrown.
     */
-   inline const T& get() const throw (IllegalStateException)
+   inline const T& get() const throw (NothingError)
    { 
-      this->isJustOrThrow("get value from maybe");
+      if (this->isNothing())
+         THROW_ERROR(NothingError());
       return _value;
    }
 
@@ -88,9 +91,10 @@ public:
     * Obtain the value of this maybe object. If it evaluates to 'nothing',
     * a IllegalStateException is thrown.
     */
-   inline T& get() throw (IllegalStateException)
+   inline T& get() throw (NothingError)
    { 
-      this->isJustOrThrow("get value from maybe");
+      if (this->isNothing())
+         THROW_ERROR(NothingError());
       return _value;
    }
 
@@ -103,24 +107,16 @@ public:
    /**
     * Return the value of the maybe, or throw IllegalStateException if 'nothing'
     */
-   inline const T& operator * () const throw (IllegalStateException)
+   inline const T& operator * () const throw (NothingError)
    { return this->get(); }
 
    /**
     * Return the value of the maybe, or throw IllegalStateException if 'nothing'
     */
-   inline T& operator * () throw (IllegalStateException)
+   inline T& operator * () throw (NothingError)
    { return this->get(); }
 
 private:
-
-   inline void isJustOrThrow(const std::string& action) const
-   throw (IllegalStateException)
-   {
-      if (this->isNothing())
-         throw IllegalStateException(boost::format(
-               "cannot %s: evaluates to nothing") % action);      
-   }
 
    T _value;
    bool _nothing;

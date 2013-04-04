@@ -37,7 +37,9 @@ class Buffer
 {
 public:
 
-   DECL_RUNTIME_ERROR(OutOfBoundsException);
+   DECL_ERROR(OutOfBoundsError, InvalidInputError);
+   DECL_ERROR(ReadError, IOError);
+   DECL_ERROR(WriteError, IOError);
 
    class Factory
    {
@@ -52,19 +54,20 @@ public:
    virtual DWORD capacity() const = 0;
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsException, IOException) = 0;
+         throw (OutOfBoundsError, ReadError) = 0;
 
    virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException, IOException) = 0;
+         throw (OutOfBoundsError, WriteError) = 0;
 
    virtual void copy(
          const Buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsException, IOException) = 0;
+         DWORD length) throw (OutOfBoundsError, IOError) = 0;
 
    template <typename T>
    inline T readAs(DWORD offset) const
+   throw (OutOfBoundsError, ReadError)
    {
       T result;
       this->read(&result, offset, sizeof(T));
@@ -73,6 +76,7 @@ public:
 
    template <typename T>
    inline void writeAs(DWORD offset, const T& t)
+   throw (OutOfBoundsError, WriteError)
    { this->write(&t, offset, sizeof(T)); }
 };
 
@@ -104,21 +108,20 @@ public:
    { return _capacity; }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError);
 
    virtual void copy(const Buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
+         DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
 
 private:
 
    BYTE *_data;
    size_t _capacity;
 
-   void checkBounds(DWORD offset, DWORD length, const char* action) const
-         throw (Buffer::OutOfBoundsException);
+   void checkBounds(DWORD offset, DWORD length) const throw (OutOfBoundsError);
 };
 
 /**
@@ -159,13 +162,13 @@ public:
    { return _backed_buffer->capacity(); }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError, ReadError);
 
    virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset, 
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
+         DWORD dst_offset, DWORD length) throw (OutOfBoundsError, IOError);
 
 private:
 
@@ -173,8 +176,7 @@ private:
    DWORD _backed_capacity;
    DWORD _offset_shift;
 
-   void checkBounds(DWORD offset, DWORD length, const char* action) const
-         throw (Buffer::OutOfBoundsException);
+   void checkBounds(DWORD offset, DWORD length) const throw (OutOfBoundsError);
 
    inline DWORD shift(DWORD offset) const
    { return offset - _offset_shift; }
@@ -216,13 +218,13 @@ public:
    { return _backed_buffer[_current_buffer]->capacity(); }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError, ReadError);
 
    virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException);
+         throw (OutOfBoundsError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset, 
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsException);
+         DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
 
    void swap();
 

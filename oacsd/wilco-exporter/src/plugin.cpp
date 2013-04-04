@@ -131,16 +131,16 @@ void Plugin::on1secElapsed()
 }
 
 void
-Plugin::onNewAircraft(const std::string& title)
+Plugin::onNewAircraft(const Aircraft::Title& title)
 {
    Log(INFO, boost::format("New aircraft loaded: %s") % title);
    try
    {
-      auto aircraft = ResolveAircraftTypeFromTitle(title);
-      this->resetCockpit(aircraft);
-   } catch (InvalidInputException&) {
+      this->resetCockpit(Aircraft(title));
+   } catch (Aircraft::InvalidTitle& e) {
       Log(INFO, boost::format(
-             "No Wilco Airbus aircraft resolved for title '%s'") % title);
+            "No Wilco Airbus aircraft resolved for title '%s'") %
+                  GetErrorInfo<Aircraft::TitleInfo>(e));
       this->resetCockpit();
    }
 }
@@ -173,12 +173,12 @@ Plugin::resetCockpit()
 }
 
 void 
-Plugin::resetCockpit(AircraftType aircraft)
+Plugin::resetCockpit(const Aircraft& aircraft)
 {
    try
    {
       Log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
-            % AircraftTypeToString(aircraft));
+            % aircraft.title);
       _wilco = WilcoCockpit::newCockpit(aircraft);
       _fsuipc = new FSUIPCCockpitBack(new LocalFSUIPC::Factory());
       Log(INFO, "Wilco Cockpit successfully initialized");

@@ -41,29 +41,33 @@ class FSUIPC : public Buffer
 {
 public:
 
+   DECL_ERROR(InitializationError, ConnectionError);
+   DECL_ERROR_INFO(ErrorCodeInfo, DWORD);
+   DECL_ERROR_INFO(ErrorMessageInfo, std::string);
+
    typedef DWORD Offset;
 
    class Factory 
    {
    public:
 
-      virtual FSUIPC* createFSUIPC() throw (IllegalStateException) = 0;
+      virtual FSUIPC* createFSUIPC() throw (InitializationError) = 0;
    };
 
    virtual DWORD capacity() const
    { return 0xffff; }
 
-   virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsException, IOException);
+   virtual void read(void* dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsError, ReadError);
 
-   virtual void write(const void* src, DWORD offset, DWORD length) 
-         throw (OutOfBoundsException, IOException);
+   virtual void write(const void* src, DWORD offset, DWORD length)
+         throw (OutOfBoundsError, WriteError);
 
    virtual void copy(
          const Buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsException, IOException);
+         DWORD length) throw (OutOfBoundsError, IOError);
 
 protected:
 
@@ -78,27 +82,28 @@ public:
    {
    public:
       
-      virtual LocalFSUIPC* createFSUIPC() throw (IllegalStateException)
+      virtual LocalFSUIPC* createFSUIPC() throw (InitializationError)
       { return new LocalFSUIPC(); }
    };
 
-   LocalFSUIPC() throw (IllegalStateException);
+   LocalFSUIPC() throw (IllegalStateError);
 
    virtual ~LocalFSUIPC();
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsException, IOException);
+         throw (OutOfBoundsError, ReadError);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsException, IOException);
+         throw (OutOfBoundsError, WriteError);
 
    virtual void copy(
          const Buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsException, IOException);
+         DWORD length) throw (OutOfBoundsError, IOError);
+
 };
 
-}; // namespace oac
+} // namespace oac
 
 #endif

@@ -54,14 +54,14 @@ private:
 
    void on1secElapsed();
 
-   void onNewAircraft(const std::string& title);
+   void onNewAircraft(const Aircraft::Title& title);
 
    void requestAircraftTitle();
 
    void registerOnAircraftLoadedCallback();
 
    void resetCockpit();
-   void resetCockpit(AircraftType aircraft);
+   void resetCockpit(const Aircraft& aircraft);
 
    SimConnectClient _sc;
    Ptr<WilcoCockpit> _wilco;

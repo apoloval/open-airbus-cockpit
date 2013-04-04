@@ -71,7 +71,7 @@ class LocalFSUIPCHandler
 public:
 
    inline static void Init()
-   throw (IllegalStateException)
+   throw (FSUIPC::InitializationError)
    {
       if (!_singleton)
          _singleton = new LocalFSUIPCHandler();
@@ -91,12 +91,13 @@ private:
    BYTE _buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
    inline LocalFSUIPCHandler()
-   throw (IllegalStateException)
+   throw (FSUIPC::InitializationError)
    {
       DWORD result;
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
-         throw IllegalStateException(str(boost::format(
-            "cannot open FSUIPC: %s") % GetResultMessage(result)));
+         THROW_ERROR(
+                  FSUIPC::InitializationError() <<
+                  MessageInfo(GetResultMessage(result)));
    }
 
 };
@@ -107,30 +108,34 @@ Ptr<LocalFSUIPCHandler> LocalFSUIPCHandler::_singleton;
 
 void
 FSUIPC::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, ReadError)
 {
    DWORD error;
    if (FSUIPC_Read(offset, length, dst, &error))
       if (FSUIPC_Process(&error))
          return;
-   throw IOException(IOErrorMessage("reading data", error));
+   THROW_ERROR(ReadError() <<
+         ErrorCodeInfo(error) <<
+         ErrorMessageInfo(GetResultMessage(error)));
 }
 
 void
 FSUIPC::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, WriteError)
 {
    DWORD error;
    if (FSUIPC_Write(offset, length, (void*) src, &error))
       if (FSUIPC_Process(&error))
          return;
-   throw IOException(IOErrorMessage("writing data", error));
+   THROW_ERROR(WriteError() <<
+         ErrorCodeInfo(error) <<
+         ErrorMessageInfo(GetResultMessage(error)));
 }
 
 void
 FSUIPC::copy(const Buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, IOError)
 {
    BYTE tmp[1024];
    auto sos = src_offset;
@@ -147,7 +152,7 @@ throw (OutOfBoundsException, IOException)
 }
 
 LocalFSUIPC::LocalFSUIPC()
-throw (IllegalStateException)
+throw (IllegalStateError)
 { LocalFSUIPCHandler::Init(); }
 
 LocalFSUIPC::~LocalFSUIPC()
@@ -155,7 +160,7 @@ LocalFSUIPC::~LocalFSUIPC()
 
 void
 LocalFSUIPC::read(void* dst, DWORD offset, DWORD length) const
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, ReadError)
 {
    try
    {
@@ -169,7 +174,7 @@ throw (OutOfBoundsException, IOException)
 
 void
 LocalFSUIPC::write(const void* src, DWORD offset, DWORD length)
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, WriteError)
 {
    try
    {
@@ -184,12 +189,12 @@ throw (OutOfBoundsException, IOException)
 void
 LocalFSUIPC::copy(const Buffer& src, DWORD src_offset,
                   DWORD dst_offset, DWORD length)
-throw (OutOfBoundsException, IOException)
+throw (OutOfBoundsError, IOError)
 {
    try
    {
       this->FSUIPC::copy(src, src_offset, dst_offset, length);
-   } catch (std::exception&)
+   } catch (IOError&)
    {
       LocalFSUIPCHandler::Reset();
       throw;
@@ -197,4 +202,4 @@ throw (OutOfBoundsException, IOException)
 }
 
 
-}; // namespace oac
+} // namespace oac

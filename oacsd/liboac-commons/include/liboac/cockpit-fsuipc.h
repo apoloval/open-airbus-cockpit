@@ -34,10 +34,10 @@ public:
       _fsuipc_fact(fsuipc_fact)
    {}
 
-   virtual void syncUp() throw (SyncException);
-   virtual void syncDown() throw (SyncException);
-   virtual FlightControlUnit& getFlightControlUnit() throw (SyncException);
-   virtual EFISControlPanel& getEFISControlPanel() throw (SyncException);
+   virtual void syncUp() throw (SyncError);
+   virtual void syncDown() throw (SyncError);
+   virtual FlightControlUnit& getFlightControlUnit() throw (SyncError);
+   virtual EFISControlPanel& getEFISControlPanel() throw (SyncError);
 
 private:
 
@@ -48,9 +48,9 @@ private:
    Ptr<EFISControlPanel> _efis_ctrl_panel;
 
    void initBuffer();
-   void initFSUIPC() throw (SyncException);
-   void initFCU() throw (SyncException);
-   void initEFISControlPanel() throw (SyncException);
+   void initFSUIPC() throw (SyncError);
+   void initFCU() throw (SyncError);
+   void initEFISControlPanel() throw (SyncError);
    bool isSync() const;
 };
 

@@ -16,15 +16,41 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_SERVER_EXCEPTION_H
-#define OAC_SERVER_EXCEPTION_H
+#ifndef OAC_EXCEPTION_H
+#define OAC_EXCEPTION_H
 
 #include <exception>
 #include <string>
+#include <utility>
 
-#include <Boost/format.hpp>
+#include <boost/format.hpp>
+#include <boost/exception/all.hpp>
 
 #pragma warning( disable : 4290 )
+
+namespace oac {
+
+struct Error : virtual std::exception, virtual boost::exception
+{
+   virtual const char* what() const throw ()
+   {
+      return boost::diagnostic_information_what(*this);
+   }
+
+   operator boost::exception_ptr() const {
+      return boost::copy_exception(*this);
+   }
+};
+
+
+struct LogicErrorBase : virtual Error {};
+struct RuntimeErrorBase : virtual Error {};
+
+template <typename ErrorInfo, typename E>
+const typename ErrorInfo::error_info::value_type* GetErrorInfo(const E& e)
+{ return boost::get_error_info<ErrorInfo>(e); }
+
+} // namespace oac
 
 #define DECL_STD_ERROR(classname, stdexcept) \
    class classname : public stdexcept { \
@@ -36,21 +62,34 @@
       {} \
    };
 
-#define DECL_LOGIC_ERROR(classname) \
-   DECL_STD_ERROR(classname, std::logic_error)
+#define DECL_LOGIC_ERROR(name) struct name : virtual LogicErrorBase {}
+#define DECL_RUNTIME_ERROR(name) struct name : virtual RuntimeErrorBase {}
+#define DECL_ERROR(name, parent) struct name : virtual parent {}
 
-#define DECL_RUNTIME_ERROR(classname) \
-   DECL_STD_ERROR(classname, std::runtime_error)
+#define DECL_ERROR_INFO(name, type) \
+   typedef boost::error_info<struct name##Tag, type> name
+
+#define THROW_ERROR(error) BOOST_THROW_EXCEPTION(error)
 
 namespace oac {
 
-DECL_LOGIC_ERROR(InvalidInputException);
-DECL_LOGIC_ERROR(NotFoundException);
-DECL_LOGIC_ERROR(NullPointerException);
+DECL_LOGIC_ERROR(ConnectionError);
+DECL_LOGIC_ERROR(InvalidInputError);
+DECL_LOGIC_ERROR(NotFoundError);
+DECL_LOGIC_ERROR(NullPointerError);
 
-DECL_RUNTIME_ERROR(IllegalStateException);
-DECL_RUNTIME_ERROR(IOException);
+DECL_RUNTIME_ERROR(IllegalStateError);
+DECL_RUNTIME_ERROR(IOError);
 
-}; // namespace oac
+DECL_ERROR_INFO(CodeInfo, int);
+DECL_ERROR_INFO(FileNameInfo, std::wstring);
+DECL_ERROR_INFO(FunctionNameInfo, std::string);
+DECL_ERROR_INFO(IndexInfo, int);
+DECL_ERROR_INFO(LowerBoundInfo, int);
+DECL_ERROR_INFO(MessageInfo, std::string);
+DECL_ERROR_INFO(NestedErrorInfo, boost::exception_ptr);
+DECL_ERROR_INFO(UpperBoundInfo, int);
+
+} // namespace oac
 
 #endif
