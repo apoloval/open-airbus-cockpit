@@ -37,6 +37,7 @@ test_link_libraries(
       ${Boost_LIBRARIES}
 )
 
+add_unit_test(buffer-test)
 add_unit_test(lang-utils-test)
 
 add_integration_test(simconn-itest)

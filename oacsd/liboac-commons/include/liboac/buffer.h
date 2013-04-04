@@ -45,8 +45,8 @@ public:
    {
    public:
 
-      virtual Buffer* createBuffer() = 0;
       virtual ~Factory() {}
+      virtual Buffer* createBuffer() const = 0;
    };
 
    virtual ~Buffer() {}
@@ -93,7 +93,7 @@ public:
    public:
 
       inline Factory(size_t capacity) : _capacity(capacity) {}
-      inline virtual FixedBuffer* createBuffer()
+      inline virtual FixedBuffer* createBuffer() const
       { return new FixedBuffer(_capacity); }
 
    private:
@@ -145,7 +145,7 @@ public:
          _shift(shift)
       {}
       
-      inline virtual ShiftedBuffer* createBuffer()
+      inline virtual ShiftedBuffer* createBuffer() const
       { 
          return new ShiftedBuffer(_backed_buffer_fact->createBuffer(), _shift);
       }
@@ -198,7 +198,7 @@ public:
          _backed_buffer_fact(backed_buffer_fact)
       {}
       
-      inline virtual DoubleBuffer* createBuffer()
+      inline virtual DoubleBuffer* createBuffer() const
       { 
          return new DoubleBuffer(
                _backed_buffer_fact->createBuffer(), 
