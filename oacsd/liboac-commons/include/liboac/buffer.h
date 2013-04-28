@@ -27,6 +27,7 @@
 
 #include "exception.h"
 #include "lang-utils.h"
+#include "stream.h"
 
 namespace oac {
 
@@ -56,8 +57,14 @@ public:
    virtual void read(void* dst, DWORD offset, DWORD length) const 
          throw (OutOfBoundsError, ReadError) = 0;
 
-   virtual void write(const void* src, DWORD offset, DWORD length) 
+   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsError, ReadError, OutputStream::WriteError) = 0;
+
+   virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError) = 0;
+
+   virtual void write(InputStream& src, DWORD offset, DWORD length)
+         throw (OutOfBoundsError, InputStream::ReadError, WriteError) = 0;
 
    virtual void copy(
          const Buffer& src,
@@ -110,8 +117,14 @@ public:
    virtual void read(void* dst, DWORD offset, DWORD length) const
          throw (OutOfBoundsError);
 
+   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError);
+         throw (OutOfBoundsError, WriteError);
+
+   virtual void write(InputStream& src, DWORD offset, DWORD length)
+         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset,
          DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
@@ -164,10 +177,16 @@ public:
    virtual void read(void* dst, DWORD offset, DWORD length) const
          throw (OutOfBoundsError, ReadError);
 
-   virtual void write(const void* src, DWORD offset, DWORD length) 
+   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+
+   virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
-   virtual void copy(const Buffer& src, DWORD src_offset, 
+   virtual void write(InputStream& src, DWORD offset, DWORD length)
+         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
+
+   virtual void copy(const Buffer& src, DWORD src_offset,
          DWORD dst_offset, DWORD length) throw (OutOfBoundsError, IOError);
 
 private:
@@ -220,10 +239,16 @@ public:
    virtual void read(void* dst, DWORD offset, DWORD length) const 
          throw (OutOfBoundsError, ReadError);
 
-   virtual void write(const void* src, DWORD offset, DWORD length) 
+   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
+         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+
+   virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
-   virtual void copy(const Buffer& src, DWORD src_offset, 
+   virtual void write(InputStream& src, DWORD offset, DWORD length)
+         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
+
+   virtual void copy(const Buffer& src, DWORD src_offset,
          DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
 
    void swap();
@@ -246,6 +271,45 @@ private:
 
    Ptr<Buffer> _backed_buffer[2];
    BYTE _current_buffer;
+};
+
+class BufferInputStream : public InputStream {
+public:
+
+   inline BufferInputStream(
+         const Ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+
+   virtual DWORD read(void* buffer, DWORD count);
+
+   inline Ptr<Buffer> buffer() const { return _buffer; }
+
+private:
+
+   Ptr<Buffer> _buffer;
+   DWORD _index;
+};
+
+class BufferOutputStream : public OutputStream {
+public:
+
+   DECL_ERROR(CapacityExhaustedError, WriteError);
+
+   DECL_ERROR_INFO(RemainingBytesInfo, DWORD);
+   DECL_ERROR_INFO(RequestedBytesInfo, DWORD);
+
+   inline BufferOutputStream(
+         const Ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+
+   virtual void write(
+         const void* buffer, DWORD count) throw (CapacityExhaustedError);
+
+   inline Ptr<Buffer> buffer() const { return _buffer; }
+
+private:
+
+   Ptr<Buffer> _buffer;
+   DWORD _index;
+
 };
 
 }; // namespace oac

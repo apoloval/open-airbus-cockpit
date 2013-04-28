@@ -120,6 +120,15 @@ throw (OutOfBoundsError, ReadError)
 }
 
 void
+FSUIPC::read(OutputStream& dst, DWORD offset, DWORD length) const
+throw (OutOfBoundsError, ReadError)
+{
+   FixedBuffer tmp(length);
+   tmp.copy(*this, offset, 0, length);
+   tmp.read(dst, 0, length);
+}
+
+void
 FSUIPC::write(const void* src, DWORD offset, DWORD length) 
 throw (OutOfBoundsError, WriteError)
 {
@@ -130,6 +139,15 @@ throw (OutOfBoundsError, WriteError)
    THROW_ERROR(WriteError() <<
          ErrorCodeInfo(error) <<
          ErrorMessageInfo(GetResultMessage(error)));
+}
+
+void
+FSUIPC::write(InputStream& src, DWORD offset, DWORD length)
+throw (OutOfBoundsError, WriteError)
+{
+   FixedBuffer tmp(length);
+   tmp.write(src, 0, length);
+   this->copy(tmp, 0, offset, length);
 }
 
 void

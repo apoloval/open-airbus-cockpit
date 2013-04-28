@@ -29,7 +29,8 @@ void FillBuffer(Buffer& buff, DWORD from_offset)
 {
    for (DWORD i = 0; i < buff.capacity(); i += sizeof(DWORD))
    {
-      buff.writeAs<DWORD>(from_offset + i, i / sizeof(DWORD));
+      if (i + sizeof(DWORD) <= buff.capacity())
+         buff.writeAs<DWORD>(from_offset + i, i / sizeof(DWORD));
    }
 }
 
@@ -94,6 +95,14 @@ void DoubleBufferTest(DWORD* seq, unsigned int seql, bool expect_mod)
       buff.swap();
    }
    BOOST_CHECK(expect_mod == buff.isModified<sizeof(DWORD)>(0));
+}
+
+template <typename BufferType>
+Ptr<BufferType> PrepareBufferStream(DWORD length)
+{
+   auto b = new FixedBuffer(length);
+   FillBuffer(*b, 0);
+   return new BufferType(b);
 }
 
 BOOST_AUTO_TEST_SUITE(FixedBufferTestSuite);
@@ -482,4 +491,55 @@ BOOST_AUTO_TEST_CASE(ShouldNotDetectModificationOnSameLastTwoValues)
    DoubleBufferTest(data, 5, false);
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(BufferStreams)
+
+BOOST_AUTO_TEST_CASE(ShouldReadFromBufferInputStream)
+{
+   auto s = PrepareBufferStream<BufferInputStream>(16);
+   BOOST_CHECK_EQUAL(0, s->readAs<DWORD>());
+   BOOST_CHECK_EQUAL(1, s->readAs<DWORD>());
+   BOOST_CHECK_EQUAL(2, s->readAs<DWORD>());
+   BOOST_CHECK_EQUAL(3, s->readAs<DWORD>());
+}
+
+BOOST_AUTO_TEST_CASE(ShouldReadAndDetectNoMoreBytesAvailable)
+{
+   auto s = PrepareBufferStream<BufferInputStream>(2);
+   BYTE buf[4];
+   BOOST_CHECK_EQUAL(2, s->read(buf, 4));
+   BOOST_CHECK_EQUAL(0, s->read(buf, 4));
+}
+
+
+BOOST_AUTO_TEST_CASE(ShouldFailOnReadAsWhenNoEnoughBytes)
+{
+   auto s = PrepareBufferStream<BufferInputStream>(2);
+   BOOST_CHECK_THROW(s->readAs<DWORD>(), InputStream::EndOfFileError);
+}
+
+BOOST_AUTO_TEST_CASE(ShouldWriteToBufferOutputStream)
+{
+   auto s = PrepareBufferStream<BufferOutputStream>(16);
+   s->writeAs<DWORD>(100);
+   s->writeAs<DWORD>(101);
+   s->writeAs<DWORD>(102);
+   s->writeAs<DWORD>(103);
+   auto b = s->buffer();
+   BOOST_CHECK_EQUAL(100, b->readAs<DWORD>(0));
+   BOOST_CHECK_EQUAL(101, b->readAs<DWORD>(4));
+   BOOST_CHECK_EQUAL(102, b->readAs<DWORD>(8));
+   BOOST_CHECK_EQUAL(103, b->readAs<DWORD>(12));
+}
+
+BOOST_AUTO_TEST_CASE(ShouldFailOnWriteWhenNoEnoughCapacity)
+{
+   auto s = PrepareBufferStream<BufferOutputStream>(2);
+   BOOST_CHECK_THROW(s->writeAs<DWORD>(100),
+                     BufferOutputStream::CapacityExhaustedError);
+}
+
+BOOST_AUTO_TEST_SUITE_END()

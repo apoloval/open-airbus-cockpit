@@ -11,6 +11,7 @@ set(liboac-commons_HEADERS
    include/liboac/lang-utils.h
    include/liboac/logging.h
    include/liboac/simconn.h
+   include/liboac/stream.h
 )
 
 set(liboac-commons_SOURCES
@@ -20,6 +21,7 @@ set(liboac-commons_SOURCES
    src/fsuipc.cpp
    src/logging.cpp
    src/simconn.cpp
+   src/stream.cpp
 )
 
 include_directories(
