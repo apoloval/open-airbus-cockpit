@@ -7,6 +7,7 @@ set(liboac-commons_HEADERS
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
    include/liboac/exception.h
+   include/liboac/filesystem.h
    include/liboac/fsuipc.h
    include/liboac/lang-utils.h
    include/liboac/logging.h
@@ -18,6 +19,7 @@ set(liboac-commons_SOURCES
    src/buffer.cpp
    src/cockpit.cpp
    src/cockpit-fsuipc.cpp
+   src/filesystem.cpp
    src/fsuipc.cpp
    src/logging.cpp
    src/simconn.cpp
@@ -40,6 +42,7 @@ test_link_libraries(
 )
 
 add_unit_test(buffer-test)
+add_unit_test(filesystem-test)
 add_unit_test(lang-utils-test)
 
 add_integration_test(simconn-itest)

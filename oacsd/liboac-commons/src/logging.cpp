@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <cstdio>
 #include <ctime>
-#include <stdio.h>
 
 #include "logging.h"
 
