@@ -19,12 +19,12 @@
 #ifndef OAC_LOGGING_H
 #define OAC_LOGGING_H
 
-#include <exception>
 #include <string>
 
 #include <Boost/format.hpp>
 
 #include "exception.h"
+#include "stream.h"
 
 namespace oac { 
 
@@ -35,31 +35,43 @@ enum LogLevel
 	FAIL,
 };
 
-/**
- * Initialize the logger to output at given filename. 
- */
-void InitLogger(const std::string& output_filename);
+class Logger
+{
+public:
+
+   inline static void setMain(const Ptr<Logger>& logger)
+   { _main = logger; }
+
+   inline static Ptr<Logger> main()
+   { return _main; }
+
+   inline Logger(const LogLevel& level, const Ptr<OutputStream>& output)
+      : _output(output), _level(level) {}
+
+   /**
+    * Log a message to indicated log level.
+    */
+   void log(LogLevel level, const std::string& msg);
+
+private:
+
+   Ptr<OutputStream> _output;
+   LogLevel _level;
+
+   static Ptr<Logger> _main;
+};
 
 /**
- * Close current logger if any.
- */
-void CloseLogger();
-
-/**
- * Log a message to indicated log level. If logger was not initialized,
- * nothing is done.
+ * Log a message to indicated log level in main logger. If no main logger
+ * was registered, nothing is done.
  */
 void Log(LogLevel level, const std::string& msg);
 
 /**
- * Convenient function for logging Boost format objects. 
+ * Convenient function for logging Boost format objects in main logger.
+ * If no main logger was registered, nothing is done.
  */
 void Log(LogLevel level, const boost::format& fmt);
-
-/**
- * Log a message encapsulated by given exception and throw this latter. 
- */
-void LogAndThrow(LogLevel level, const Error& e);
 
 }; // namespace oac
 

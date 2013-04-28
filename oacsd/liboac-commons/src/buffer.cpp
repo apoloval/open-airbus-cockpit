@@ -58,12 +58,12 @@ throw (OutOfBoundsError)
    std::memcpy(&(_data[offset]), src, length);
 }
 
-void
+DWORD
 FixedBuffer::write(InputStream& src, DWORD offset, DWORD length)
 throw (OutOfBoundsError, InputStream::ReadError, WriteError)
 {
    this->checkBounds(offset, length);
-   src.read(&(_data[offset]), length);
+   return src.read(&(_data[offset]), length);
 }
 
 void
@@ -118,12 +118,12 @@ throw (OutOfBoundsError, WriteError)
    _backed_buffer->write(src, shift(offset), length);
 }
 
-void
+DWORD
 ShiftedBuffer::write(InputStream& src, DWORD offset, DWORD length)
 throw (OutOfBoundsError, InputStream::ReadError, WriteError)
 {
    this->checkBounds(offset, length);
-   _backed_buffer->write(src, shift(offset), length);
+   return _backed_buffer->write(src, shift(offset), length);
 }
 
 void
@@ -170,10 +170,10 @@ DoubleBuffer::write(const void* src, DWORD offset, DWORD length)
 throw (OutOfBoundsError)
 { _backed_buffer[_current_buffer]->write(src, offset, length); }
 
-void
+DWORD
 DoubleBuffer::write(InputStream& src, DWORD offset, DWORD length)
 throw (OutOfBoundsError)
-{ _backed_buffer[_current_buffer]->write(src, offset, length); }
+{ return _backed_buffer[_current_buffer]->write(src, offset, length); }
 
 void
 DoubleBuffer::copy(const Buffer& src, DWORD src_offset, 
@@ -206,6 +206,12 @@ throw (CapacityExhaustedError)
                   RemainingBytesInfo(remain) << RequestedBytesInfo(count));
    _buffer->write(buffer, _index, count);
    _index += count;
+}
+
+void
+BufferOutputStream::flush()
+{
+   // Well, it's a buffer. Nothing to be done here.
 }
 
 } // namespace oac

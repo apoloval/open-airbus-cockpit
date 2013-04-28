@@ -23,55 +23,51 @@
 
 namespace oac {
 
-static FILE* LOGGER_OUTPUT = nullptr;
+namespace {
 
-static const char* LEVEL_STR[] = 
+const char* LEVEL_STR[] =
 {
    "INFO", "WARN", "FAIL"
 };
 
-void
-InitLogger(const std::string& logFile)
+std::string GetTime()
 {
-   CloseLogger();
-	LOGGER_OUTPUT = _fsopen(logFile.c_str(), "a", _SH_DENYWR);
+   auto t = time(nullptr);
+   char time_buf[26];
+   struct tm lt;
+   localtime_s(&lt, &t);
+   asctime_s(time_buf, &lt);
+   time_buf[24] = '\0';
+   return time_buf;
 }
 
-void CloseLogger()
+} // anonymous namespace
+
+
+Ptr<Logger> Logger::_main;
+
+void
+Logger::log(LogLevel level, const std::string& msg)
 {
-   if (LOGGER_OUTPUT)
+   if (level >= _level)
    {
-      fclose(LOGGER_OUTPUT);
-      LOGGER_OUTPUT = nullptr;
+      auto line = str(boost::format("[%s] %s : %s\n") %
+                      LEVEL_STR[level] % GetTime() % msg);
+      _output->writeAs<std::string>(line);
+      _output->flush();
    }
 }
 
 void
 Log(LogLevel level, const std::string& msg)
 {
-   if (LOGGER_OUTPUT)
-   {
-      auto t = time(nullptr);
-      char time_buf[26];
-      struct tm lt;
-      localtime_s(&lt, &t);
-      asctime_s(time_buf, &lt);
-      time_buf[24] = '\0';
-		fprintf(LOGGER_OUTPUT, "[%s] %s : %s\n", 
-            LEVEL_STR[level], time_buf, msg.c_str());
-      fflush(LOGGER_OUTPUT);
-   }
+   auto main = Logger::main();
+   if (main)
+      main->log(level, msg);
 }
 
 void
 Log(LogLevel level, const boost::format& fmt)
 { Log(level, str(fmt)); }
-
-void
-LogAndThrow(LogLevel level, const Error& e)
-{
-   Log(level, e.what());
-   THROW_ERROR(e);
-}
 
 } // namespace oac

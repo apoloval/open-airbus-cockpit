@@ -72,11 +72,17 @@ public:
    }
 
    inline virtual ~FileOutputStream()
-   { fclose(_fd); }
+   {
+      fflush(_fd);
+      fclose(_fd);
+   }
 
    virtual void write(const void* buffer, DWORD count)
    throw (WriteError)
    { fwrite(buffer, 1, count, _fd); }
+
+   virtual void flush()
+   { fflush(_fd); }
 
 private:
 

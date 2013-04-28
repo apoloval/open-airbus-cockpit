@@ -20,6 +20,7 @@
 #include <Windows.h>
 
 #include <liboac/cockpit-fsuipc.h>
+#include <liboac/filesystem.h>
 #include <liboac/fsuipc.h>
 #include <liboac/logging.h>
 #include <liboac/simconn.h>
@@ -35,7 +36,8 @@ Ptr<Plugin> plugin;
 
 void __stdcall DLLStart(void)
 {
-   InitLogger(LOG_FILE);
+   File log_file(LOG_FILE);
+   Logger::setMain(new Logger(LogLevel::INFO, log_file.append()));
 	Log(oac::INFO, "The Wilco Exporter module is starting");
 	plugin = new Plugin();
 	Log(oac::INFO, "The Wilco Exporter module has been started");
@@ -46,5 +48,5 @@ void __stdcall DLLStop(void)
 	Log(oac::INFO, "The Wilco Exporter module is stopping");
 	plugin.reset();
 	Log(oac::INFO, "The Wilco Exporter module has been stopped");
-   CloseLogger();
+   Logger::setMain(nullptr); // close the main logger
 }

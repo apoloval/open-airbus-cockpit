@@ -26,6 +26,8 @@
 
 namespace oac {
 
+class Buffer;
+
 /**
  * Pure abstract class for a stream of data which may be read from.
  *
@@ -42,15 +44,17 @@ public:
 
    /**
     * Read count bytes from the stream and store them in given buffer.
-    * This is a synchronous operation. If there are not enough bytes in
-    * the stream to satisfy the count, the caller may be blocked until
-    * remaining bytes are available, or the stream is closed (which means
-    * that return value is less than count).
+    * This is a synchronous operation. If there are still no bytes in
+    * the stream, the caller may be blocked until new data arrive. Then,
+    * it's possible that there wasn't enough bytes to satisfy the requested
+    * count, so the return value of the function would be less than count.
+    * When stream closes, it shall return 0.
     *
     * @param buffer the buffer where store the read elements. It must
     *               have at least count allocated bytes
     * @param count the count of bytes to read
-    * @return the number of bytes actually read
+    * @return the number of bytes actually read (might be less than count, or
+    *         0 when the stream is closed)
     */
    virtual DWORD read(void* buffer, DWORD count) throw (ReadError) = 0;
 
@@ -89,11 +93,31 @@ public:
     */
    virtual void write(const void* buffer, DWORD count) throw (WriteError) = 0;
 
+   /**
+    * Flush the bytes pending to be sent.
+    */
+   virtual void flush() = 0;
+
    template <typename T>
    inline void writeAs(const T& t) throw (WriteError)
-   {
-      write(&t, sizeof(T));
-   }
+   { write(&t, sizeof(T)); }
+
+   template <>
+   inline void writeAs<std::string>(const std::string& str) throw (WriteError)
+   { write(str.c_str(), str.length()); }
+};
+
+class Reader
+{
+public:
+
+   Reader(const Ptr<InputStream>& input);
+
+   std::string readLine();
+
+private:
+
+   Ptr<InputStream> _input;
 };
 
 } // namespace oac

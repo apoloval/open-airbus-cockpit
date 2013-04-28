@@ -141,13 +141,14 @@ throw (OutOfBoundsError, WriteError)
          ErrorMessageInfo(GetResultMessage(error)));
 }
 
-void
+DWORD
 FSUIPC::write(InputStream& src, DWORD offset, DWORD length)
 throw (OutOfBoundsError, WriteError)
 {
    FixedBuffer tmp(length);
-   tmp.write(src, 0, length);
+   auto nbytes = tmp.write(src, 0, length);
    this->copy(tmp, 0, offset, length);
+   return nbytes;
 }
 
 void

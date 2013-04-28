@@ -66,7 +66,7 @@ public:
    virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
          throw (OutOfBoundsError, ReadError);
 
-   virtual void write(InputStream& src, DWORD offset, DWORD length)
+   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
    virtual void copy(

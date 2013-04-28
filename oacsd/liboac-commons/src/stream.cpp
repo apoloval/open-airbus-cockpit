@@ -16,8 +16,28 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include "buffer.h"
+
 #include "stream.h"
 
 namespace oac {
+
+Reader::Reader(const Ptr<InputStream>& input)
+   : _input(input) {}
+
+std::string
+Reader::readLine()
+{
+   static const unsigned CHUNK_SIZE = 64;
+   CHAR buff[CHUNK_SIZE];
+   unsigned int i = 0;
+
+   for (i = 0; i < CHUNK_SIZE; i++)
+   {
+      if (!_input->read(&(buff[i]), 1) || buff[i] == '\n')
+         return std::string(buff, i);
+   }
+   return std::string(buff, CHUNK_SIZE) + readLine();
+}
 
 } // namespace oac

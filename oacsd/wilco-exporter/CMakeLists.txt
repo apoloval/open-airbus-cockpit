@@ -24,6 +24,7 @@ include_directories(
 add_library(WilcoExporter SHARED ${wilco-exporter_SOURCES})
 
 target_link_libraries(WilcoExporter
+   ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
    ${FSUIPC_INTERNAL_LIBRARY}
    liboac-commons

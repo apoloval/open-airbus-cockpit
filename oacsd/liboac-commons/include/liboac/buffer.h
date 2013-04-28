@@ -63,7 +63,7 @@ public:
    virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError) = 0;
 
-   virtual void write(InputStream& src, DWORD offset, DWORD length)
+   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, InputStream::ReadError, WriteError) = 0;
 
    virtual void copy(
@@ -123,7 +123,7 @@ public:
    virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
-   virtual void write(InputStream& src, DWORD offset, DWORD length)
+   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, InputStream::ReadError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset,
@@ -183,7 +183,7 @@ public:
    virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
-   virtual void write(InputStream& src, DWORD offset, DWORD length)
+   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, InputStream::ReadError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset,
@@ -245,7 +245,7 @@ public:
    virtual void write(const void* src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, WriteError);
 
-   virtual void write(InputStream& src, DWORD offset, DWORD length)
+   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
          throw (OutOfBoundsError, InputStream::ReadError, WriteError);
 
    virtual void copy(const Buffer& src, DWORD src_offset,
@@ -302,6 +302,8 @@ public:
 
    virtual void write(
          const void* buffer, DWORD count) throw (CapacityExhaustedError);
+
+   virtual void flush();
 
    inline Ptr<Buffer> buffer() const { return _buffer; }
 

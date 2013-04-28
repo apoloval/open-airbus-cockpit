@@ -44,5 +44,7 @@ test_link_libraries(
 add_unit_test(buffer-test)
 add_unit_test(filesystem-test)
 add_unit_test(lang-utils-test)
+add_unit_test(stream-test)
 
 add_integration_test(simconn-itest)
+add_integration_test(logging-itest)
