@@ -37,7 +37,6 @@ add_library(liboac-commons STATIC
 test_link_libraries(
       liboac-commons
       ${SIM_CONNECT_LIBRARY}
-      ${FSUIPC_INTERNAL_LIBRARY}
       ${Boost_LIBRARIES}
 )
 

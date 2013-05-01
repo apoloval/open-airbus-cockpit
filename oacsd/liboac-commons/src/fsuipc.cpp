@@ -24,7 +24,7 @@
 #include "logging.h"
 
 #ifndef LOCAL_FSUIPC_BUFFER_SIZE
-#define LOCAL_FSUIPC_BUFFER_SIZE (64*1024)
+#define LOCAL_FSUIPC_BUFFER_SIZE (65*1024) // 1KB more for headers
 #endif
 
 namespace oac {

@@ -49,7 +49,7 @@ Ptr<Logger> Logger::_main;
 void
 Logger::log(LogLevel level, const std::string& msg)
 {
-   if (level >= _level)
+   if (_level <= level)
    {
       auto line = str(boost::format("[%s] %s : %s\n") %
                       LEVEL_STR[level] % GetTime() % msg);

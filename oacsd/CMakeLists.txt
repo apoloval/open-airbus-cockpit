@@ -50,6 +50,7 @@ set(CPACK_NSIS_MENU_LINKS
 # Add the subdirs
 add_subdirectory(liboac-commons)
 add_subdirectory(wilco-exporter)
+add_subdirectory(flightvars)
 
 # Packaging with NSIS
 include(NSIS)

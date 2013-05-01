@@ -84,7 +84,7 @@ public:
             const DataDefinition& data_def,
             SIMCONNECT_DATA_REQUEST_ID id) :
          _data_def(data_def.id()),_handle(cli._handle), _id(id), 
-         _object(SIMCONNECT_OBJECT_ID_USER), _period(SIMCONNECT_PERIOD_ONCE), 
+         _object(SIMCONNECT_OBJECT_ID_USER), _period(SIMCONNECT_PERIOD_ONCE),
          _flags(SIMCONNECT_DATA_REQUEST_FLAG_DEFAULT), _origin(0), 
          _interval(0), _limit(0)
       {}

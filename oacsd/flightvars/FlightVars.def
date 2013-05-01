@@ -1,0 +1,4 @@
+LIBRARY "FlightVars"
+EXPORTS
+DLLStart
+DLLStop
