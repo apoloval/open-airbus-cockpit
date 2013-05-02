@@ -43,129 +43,129 @@ enum Event
 
 }; // anonymous namespace
 
-Plugin::Plugin() : _sc(
-   "Wilco Exporter Plugin", std::bind(&Plugin::onSimConnectOpen, this, _1, _2))
+plugin::plugin() : _sc(
+   "Wilco Exporter Plugin", std::bind(&plugin::on_simconnect_open, this, _1, _2))
 {
-   _sc.registerOnQuitCallback(
-         std::bind(&Plugin::onSimConnectQuit, this, _1, _2));
-   _sc.registerOnExceptionCallback(
-         std::bind(&Plugin::onSimConnectException, this, _1, _2));
-   _sc.registerOnEventCallback(
-         std::bind(&Plugin::onSimConnectEvent, this, _1, _2));
-   _sc.registerOnSimObjectDataCallback(
-         std::bind(&Plugin::onSimConnectSimObjectData, this, _1, _2));
-   _sc.subscribeToSystemEvent(
-         SimConnectClient::SYSTEM_EVENT_1SEC, EVENT_1SEC_ELAPSED);
-   _sc.subscribeToSystemEvent(
-         SimConnectClient::SYSTEM_EVENT_FLIGHT_LOADED, EVENT_FLIGHT_LOADED);
+   _sc.register_on_quit_callback(
+         std::bind(&plugin::on_simconnect_quit, this, _1, _2));
+   _sc.register_on_exception_callback(
+         std::bind(&plugin::on_simconnect_exception, this, _1, _2));
+   _sc.register_on_event_callback(
+         std::bind(&plugin::on_simconnect_event, this, _1, _2));
+   _sc.register_on_simobject_data_callback(
+         std::bind(&plugin::on_simconnect_simobject_data, this, _1, _2));
+   _sc.subscribe_to_system_event(
+         simconnect_client::SYSTEM_EVENT_1SEC, EVENT_1SEC_ELAPSED);
+   _sc.subscribe_to_system_event(
+         simconnect_client::SYSTEM_EVENT_FLIGHT_LOADED, EVENT_FLIGHT_LOADED);
 }
 
 void
-Plugin::onSimConnectOpen(
-      SimConnectClient& client, const SIMCONNECT_RECV_OPEN& msg)
+plugin::on_simconnect_open(
+      simconnect_client& client, const SIMCONNECT_RECV_OPEN& msg)
 {
    Log(INFO, "Connection to SimConnect successfully open.");
-   this->requestAircraftTitle();
-   this->registerOnAircraftLoadedCallback();
+   this->request_aircraft_title();
+   this->request_on_aircraft_loaded_callback();
 }
 
 void
-Plugin::onSimConnectQuit(SimConnectClient& client, const SIMCONNECT_RECV& msg)
+plugin::on_simconnect_quit(simconnect_client& client, const SIMCONNECT_RECV& msg)
 {
    Log(INFO, "Connection to SimConnect closed.");
 }
 
 void
-Plugin::onSimConnectException(
-      SimConnectClient& client, const SIMCONNECT_RECV_EXCEPTION& msg)
+plugin::on_simconnect_exception(
+      simconnect_client& client, const SIMCONNECT_RECV_EXCEPTION& msg)
 {
    Log(WARN, boost::format("unexpected exception raised: code %d")
          % msg.dwException);
 }
 
 void
-Plugin::onSimConnectEvent(
-      SimConnectClient& client, const SIMCONNECT_RECV_EVENT& msg)
+plugin::on_simconnect_event(
+      simconnect_client& client, const SIMCONNECT_RECV_EVENT& msg)
 {
    switch (msg.uEventID)
    {
       case EVENT_1SEC_ELAPSED:
-         this->on1secElapsed();
+         this->on_1sec_elapsed();
          break;
    }
 }
 
 void
-Plugin::onSimConnectEventFilename(SimConnectClient& client,
+plugin::on_simconnect_event_filename(simconnect_client& client,
       const SIMCONNECT_RECV_EVENT_FILENAME& msg)
 {
    switch (msg.uEventID)
    {
       case EVENT_AIRCRAFT_LOADED:
-         this->requestAircraftTitle();
+         this->request_aircraft_title();
          break;
       case EVENT_FLIGHT_LOADED:
          Log(INFO, "New flight is loaded, reset and check the new aircraft");
-         this->resetCockpit();
-         this->requestAircraftTitle();
+         this->reset_cockpit();
+         this->request_aircraft_title();
          break;
    }
 }
 
 void
-Plugin::onSimConnectSimObjectData(SimConnectClient& client,
+plugin::on_simconnect_simobject_data(simconnect_client& client,
       const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
 {
    switch (msg.dwRequestID)
    {
       case DATA_REQ_TITLE:
-         this->onNewAircraft((char*) &msg.dwData);
+         this->on_new_aircraft((char*) &msg.dwData);
          break;
    }
 }
 
-void Plugin::on1secElapsed()
+void plugin::on_1sec_elapsed()
 {
    if (_wilco && _fsuipc)
       _fsuipc->map(*_wilco);
 }
 
 void
-Plugin::onNewAircraft(const Aircraft::Title& title)
+plugin::on_new_aircraft(const aircraft_title& title)
 {
    Log(INFO, boost::format("New aircraft loaded: %s") % title);
    try
    {
-      this->resetCockpit(Aircraft(title));
-   } catch (Aircraft::InvalidTitle& e) {
+      this->reset_cockpit(aircraft(title));
+   } catch (aircraft::invalid_title& e) {
       Log(INFO, boost::format(
             "No Wilco Airbus aircraft resolved for title '%s'") %
-                  GetErrorInfo<Aircraft::TitleInfo>(e));
-      this->resetCockpit();
+                  GetErrorInfo<aircraft::title_info>(e));
+      this->reset_cockpit();
    }
 }
 
 void
-Plugin::requestAircraftTitle()
+plugin::request_aircraft_title()
 {
-   auto data = _sc.newDataDefinition()
+   auto data = _sc.new_data_definition()
          .add("TITLE", "", SIMCONNECT_DATATYPE_STRING256);
-   SimConnectClient::DataPullRequest(_sc, data, DATA_REQ_TITLE)
+   simconnect_client::data_pull_request(_sc, data, DATA_REQ_TITLE)
          .submit();
 }
 
 void
-Plugin::registerOnAircraftLoadedCallback()
+plugin::request_on_aircraft_loaded_callback()
 {
-   _sc.registerOnEventFilenameCallback(
-         std::bind(&Plugin::onSimConnectEventFilename, this, _1, _2));
-   _sc.subscribeToSystemEvent(
-            SimConnectClient::SYSTEM_EVENT_AIRCRAFT_LOADED,
+   _sc.register_on_event_filename_callback(
+         std::bind(&plugin::on_simconnect_event_filename, this, _1, _2));
+   _sc.subscribe_to_system_event(
+            simconnect_client::SYSTEM_EVENT_AIRCRAFT_LOADED,
             EVENT_AIRCRAFT_LOADED);
 }
 
 void
-Plugin::resetCockpit()
+plugin::reset_cockpit()
 {
    Log(INFO, "Wilco cockpit reset");
    _wilco.reset();
@@ -173,18 +173,18 @@ Plugin::resetCockpit()
 }
 
 void 
-Plugin::resetCockpit(const Aircraft& aircraft)
+plugin::reset_cockpit(const aircraft& aircraft)
 {
    try
    {
       Log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
             % aircraft.title);
-      _wilco = WilcoCockpit::newCockpit(aircraft);
-      _fsuipc = new FSUIPCCockpitBack(new LocalFSUIPC::Factory());
+      _wilco = wilco_cockpit::new_cockpit(aircraft);
+      _fsuipc = new fsuipc_cockpit_back(new local_fsuipc::factory());
       Log(INFO, "Wilco Cockpit successfully initialized");
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
-      this->resetCockpit();
+      this->reset_cockpit();
    }   
 }
 

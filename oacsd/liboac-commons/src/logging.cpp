@@ -44,7 +44,7 @@ std::string GetTime()
 } // anonymous namespace
 
 
-Ptr<Logger> Logger::_main;
+ptr<Logger> Logger::_main;
 
 void
 Logger::log(LogLevel level, const std::string& msg)
@@ -53,7 +53,7 @@ Logger::log(LogLevel level, const std::string& msg)
    {
       auto line = str(boost::format("[%s] %s : %s\n") %
                       LEVEL_STR[level] % GetTime() % msg);
-      _output->writeAs<std::string>(line);
+      _output->write_as<std::string>(line);
       _output->flush();
    }
 }

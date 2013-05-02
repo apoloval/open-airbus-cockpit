@@ -20,38 +20,38 @@
 
 namespace oac { namespace fv {
 
-Ptr<FlightVarsCore>
-FlightVarsCore::instance()
+ptr<flight_vars_core>
+flight_vars_core::instance()
 {
-   static Ptr<FlightVarsCore> core(nullptr);
+   static ptr<flight_vars_core> core(nullptr);
    if (!core)
-      core = new FlightVarsCore();
+      core = new flight_vars_core();
    return core;
 }
 
 void
-FlightVarsCore::subscribe(
-      const VariableGroup& grp,
-      const VariableName& name,
-      const Subscription& subs)
-throw (UnknownVariableError)
+flight_vars_core::subscribe(
+      const variable_group& grp,
+      const variable_name& name,
+      const subscription& subs)
+throw (unknown_variable_error)
 {
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
-      THROW_ERROR(UnknownVariableGroupError() << VariableGroupInfo(grp));
+      BOOST_THROW_EXCEPTION(unknown_variable_group_error() << variable_group_info(grp));
    entry->second->subscribe(grp, name, subs);
 }
 
 void
-FlightVarsCore::registerGroupMaster(
-      const VariableGroup& grp,
-      const Ptr<FlightVars>& master)
-throw (GroupMasterAlreadyRegisteredError)
+flight_vars_core::register_group_master(
+      const variable_group& grp,
+      const ptr<flight_vars>& master)
+throw (master_already_registered)
 {
    auto entry = _group_masters.find(grp);
    if (entry != _group_masters.end())
-      THROW_ERROR(GroupMasterAlreadyRegisteredError() <<
-                  VariableGroupInfo(grp));
+      BOOST_THROW_EXCEPTION(master_already_registered() <<
+                  variable_group_info(grp));
    _group_masters[grp] = master;
 }
 

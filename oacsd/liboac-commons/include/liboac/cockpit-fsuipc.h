@@ -26,32 +26,32 @@
 
 namespace oac {
 
-class FSUIPCCockpitBack : public CockpitBack
+class fsuipc_cockpit_back : public cockpit_back
 {
 public:
 
-   inline FSUIPCCockpitBack(const Ptr<FSUIPC::Factory>& fsuipc_fact) :
+   inline fsuipc_cockpit_back(const ptr<fsuipc::factory>& fsuipc_fact) :
       _fsuipc_fact(fsuipc_fact)
    {}
 
-   virtual void syncUp() throw (SyncError);
-   virtual void syncDown() throw (SyncError);
-   virtual FlightControlUnit& getFlightControlUnit() throw (SyncError);
-   virtual EFISControlPanel& getEFISControlPanel() throw (SyncError);
+   virtual void sync_up() throw (sync_error);
+   virtual void sync_down() throw (sync_error);
+   virtual flight_control_unit& get_flight_control_unit() throw (sync_error);
+   virtual efis_control_panel& get_efis_control_panel() throw (sync_error);
 
 private:
 
-   Ptr<DoubleBuffer> _buffer;
-   Ptr<FSUIPC::Factory> _fsuipc_fact;
-   Ptr<FSUIPC> _fsuipc;
-   Ptr<FlightControlUnit> _fcu;
-   Ptr<EFISControlPanel> _efis_ctrl_panel;
+   ptr<double_buffer> _buffer;
+   ptr<fsuipc::factory> _fsuipc_fact;
+   ptr<fsuipc> _fsuipc;
+   ptr<flight_control_unit> _fcu;
+   ptr<efis_control_panel> _efis_ctrl_panel;
 
-   void initBuffer();
-   void initFSUIPC() throw (SyncError);
-   void initFCU() throw (SyncError);
-   void initEFISControlPanel() throw (SyncError);
-   bool isSync() const;
+   void init_buffer();
+   void init_fsuipc() throw (sync_error);
+   void init_fcu() throw (sync_error);
+   void init_efis_control_panel() throw (sync_error);
+   bool is_sync() const;
 };
 
 }; // namespace oac

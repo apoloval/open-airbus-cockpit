@@ -23,189 +23,189 @@ namespace oac {
 namespace {
 
 void
-MapFCUDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+MapFCUDown(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
-   CockpitBack::FlightControlUnit::EventList events;
-   auto& fcu = front.getFlightControlUnit();
-   back.getFlightControlUnit().pollEvents(events);
+   cockpit_back::flight_control_unit::event_list events;
+   auto& fcu = front.get_flight_control_unit();
+   back.get_flight_control_unit().poll_events(events);
    for (auto ev : events)
    {
       switch (ev.type)
       {
-         case CockpitBack::FlightControlUnit::FCU_SPD_BTN_PRESSED:
-            fcu.pushSpeedUnitsButton();
+         case cockpit_back::flight_control_unit::FCU_SPD_BTN_PRESSED:
+            fcu.push_speed_units_button();
             break;
-         case CockpitBack::FlightControlUnit::FCU_GUI_MODE_BTN_PRESSED:
-            fcu.pushGuidanceModeButton();
+         case cockpit_back::flight_control_unit::FCU_GUI_MODE_BTN_PRESSED:
+            fcu.push_guidance_display_mode();
             break;
-         case CockpitBack::FlightControlUnit::FCU_ALT_UNITS_BTN_PRESSED:
-            fcu.pushAltitudeUnitsButton();
+         case cockpit_back::flight_control_unit::FCU_ALT_UNITS_BTN_PRESSED:
+            fcu.push_altitude_units_button();
             break;
-         case CockpitBack::FlightControlUnit::FCU_SW_PRESSED:
-            fcu.pushSwitch(FCUSwitch(ev.value));
+         case cockpit_back::flight_control_unit::FCU_SW_PRESSED:
+            fcu.push_switch(fcu_switch(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_KNOB_PRESSED:
-            fcu.pushKnob(FCUKnob(ev.value));
+         case cockpit_back::flight_control_unit::FCU_KNOB_PRESSED:
+            fcu.push_knob(fcu_knob(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_KNOB_PULLED:
-            fcu.pullKnob(FCUKnob(ev.value));
+         case cockpit_back::flight_control_unit::FCU_KNOB_PULLED:
+            fcu.pull_knob(fcu_knob(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_SPD_VALUE_CHANGED:
-            fcu.setSpeedValue(Knots(ev.value));
+         case cockpit_back::flight_control_unit::FCU_SPD_VALUE_CHANGED:
+            fcu.set_speed_value(knots(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_MACH_VALUE_CHANGED:
-            fcu.setMachValue(Mach100(ev.value));
+         case cockpit_back::flight_control_unit::FCU_MACH_VALUE_CHANGED:
+            fcu.set_mach_value(mach100(ev.value));
             break;            
-         case CockpitBack::FlightControlUnit::FCU_HDG_VALUE_CHANGED:
-            fcu.setHeadingValue(Degrees(ev.value));
+         case cockpit_back::flight_control_unit::FCU_HDG_VALUE_CHANGED:
+            fcu.set_heading_value(degrees(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_TRACK_VALUE_CHANGED:
-            fcu.setTrackValue(Degrees(ev.value));
+         case cockpit_back::flight_control_unit::FCU_TRACK_VALUE_CHANGED:
+            fcu.set_track_value(degrees(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_ALT_VALUE_CHANGED:
-            fcu.setTargetAltitude(Feet(ev.value));
+         case cockpit_back::flight_control_unit::FCU_ALT_VALUE_CHANGED:
+            fcu.set_target_altitude(feet(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_VS_VALUE_CHANGED:
-            fcu.setVerticalSpeedValue(FeetPerMin(ev.value));
+         case cockpit_back::flight_control_unit::FCU_VS_VALUE_CHANGED:
+            fcu.set_vertical_speed_value(feet_per_min(ev.value));
             break;
-         case CockpitBack::FlightControlUnit::FCU_FPA_VALUE_CHANGED:
-            fcu.setFPAValue(Degrees100(ev.value));
+         case cockpit_back::flight_control_unit::FCU_FPA_VALUE_CHANGED:
+            fcu.set_fpa_value(degrees100(ev.value));
             break;
       }
    }
 }
 
 void
-MapEFISControlPanelDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+Mapefis_control_panelDown(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
-   CockpitBack::EFISControlPanel::EventList events;
-   auto& efis = front.getEFISControlPanel();
-   back.getEFISControlPanel().pollEvents(events);
+   cockpit_back::efis_control_panel::event_list events;
+   auto& efis = front.get_efis_control_panel();
+   back.get_efis_control_panel().poll_events(events);
    for (auto ev : events)
    {
       switch (ev.type)
       {
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_FD_BTN_PRESSED:
-            efis.pushFDButton(); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_FD_BTN_PRESSED:
+            efis.push_fd_button(); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_ILS_BTN_PRESSED:
-            efis.pushILSButton(); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_ILS_BTN_PRESSED:
+            efis.push_ils_button(); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_MCP_SW_PRESSED:
-            efis.pushMCPSwitch(MCPSwitch(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_MCP_SW_PRESSED:
+            efis.push_mcp_switch(mcp_switch(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_BARO_MODE_SELECTED:
-            efis.setBarometricMode(BarometricMode(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_BARO_MODE_SELECTED:
+            efis.set_barometric_mode(barometric_mode(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_BARO_FMT_SELECTED:
-            efis.setBarometricFormat(BarometricFormat(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_BARO_FMT_SELECTED:
+            efis.set_barometric_format(barometric_format(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_ND_MODE_SELECTED:
-            efis.setNDModeSwitch(NDModeSwitch(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_ND_MODE_SELECTED:
+            efis.set_nd_mode_switch(nd_mode_switch(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_ND_RANGE_SELECTED:
-            efis.setNDRangeSwitch(NDRangeSwitch(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_ND_RANGE_SELECTED:
+            efis.set_nd_range_switch(nd_range_switch(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_ND_NAV1_MODE_SELECTED:
-            efis.setNDNav1ModeSwitch(NDNavModeSwitch(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_ND_NAV1_MODE_SELECTED:
+            efis.set_nd_nav1_mode_switch(nd_nav_mode_switch(ev.value)); 
             break;
-         case CockpitBack::EFISControlPanel::EFIS_CTRL_ND_NAV2_MODE_SELECTED:
-            efis.setNDNav2ModeSwitch(NDNavModeSwitch(ev.value)); 
+         case cockpit_back::efis_control_panel::EFIS_CTRL_ND_NAV2_MODE_SELECTED:
+            efis.set_nd_nav2_mode_switch(nd_nav_mode_switch(ev.value)); 
             break;
       }
    }
 }
 
 void
-MapDown(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+MapDown(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
    MapFCUDown(back, front);
-   MapEFISControlPanelDown(back, front);
+   Mapefis_control_panelDown(back, front);
 }
 
 void
-MapFCUUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+MapFCUUp(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
-   auto& fcu_back = back.getFlightControlUnit();
-   auto& fcu_front = front.getFlightControlUnit();
+   auto& fcu_back = back.get_flight_control_unit();
+   auto& fcu_front = front.get_flight_control_unit();
 
-   fcu_back.setSpeedDisplayUnits(fcu_front.getSpeedDisplayUnits());
-   fcu_back.setGuidanceDisplayMode(fcu_front.getGuidanceDisplayMode());
-   fcu_back.setAltitudeDisplayUnits(fcu_front.getAltitudeDisplayUnits());
-   fcu_back.setSwitch(FCU_SWITCH_LOC, fcu_front.getSwitch(FCU_SWITCH_LOC));
-   fcu_back.setSwitch(FCU_SWITCH_ATHR, fcu_front.getSwitch(FCU_SWITCH_ATHR));
-   fcu_back.setSwitch(FCU_SWITCH_EXPE, fcu_front.getSwitch(FCU_SWITCH_EXPE));
-   fcu_back.setSwitch(FCU_SWITCH_APPR, fcu_front.getSwitch(FCU_SWITCH_APPR));
-   fcu_back.setSwitch(FCU_SWITCH_AP1, fcu_front.getSwitch(FCU_SWITCH_AP1));
-   fcu_back.setSwitch(FCU_SWITCH_AP2, fcu_front.getSwitch(FCU_SWITCH_AP2));
-   fcu_back.setSpeedMode(fcu_front.getSpeedMode());
-   fcu_back.setLateralMode(fcu_front.getLateralMode());
-   fcu_back.setVerticalMode(fcu_front.getVerticalMode());
-   fcu_back.setSpeedValue(fcu_front.getSpeedValue());
-   fcu_back.setMachValue(fcu_front.getMachValue());
-   fcu_back.setHeadingValue(fcu_front.getHeadingValue());
-   fcu_back.setTrackValue(fcu_front.getTrackValue());
-   fcu_back.setTargetAltitude(fcu_front.getTargetAltitude());
-   fcu_back.setVerticalSpeedValue(fcu_front.getVerticalSpeedValue());
-   fcu_back.setFPAValue(fcu_front.getFPAValue());
+   fcu_back.set_speed_display_units(fcu_front.get_speed_display_units());
+   fcu_back.set_guidance_display_mode(fcu_front.get_guidance_display_mode());
+   fcu_back.set_altitude_display_units(fcu_front.get_altitude_display_units());
+   fcu_back.set_switch(FCU_SWITCH_LOC, fcu_front.get_switch(FCU_SWITCH_LOC));
+   fcu_back.set_switch(FCU_SWITCH_ATHR, fcu_front.get_switch(FCU_SWITCH_ATHR));
+   fcu_back.set_switch(FCU_SWITCH_EXPE, fcu_front.get_switch(FCU_SWITCH_EXPE));
+   fcu_back.set_switch(FCU_SWITCH_APPR, fcu_front.get_switch(FCU_SWITCH_APPR));
+   fcu_back.set_switch(FCU_SWITCH_AP1, fcu_front.get_switch(FCU_SWITCH_AP1));
+   fcu_back.set_switch(FCU_SWITCH_AP2, fcu_front.get_switch(FCU_SWITCH_AP2));
+   fcu_back.set_speed_mode(fcu_front.get_speed_mode());
+   fcu_back.set_lateral_mode(fcu_front.get_lateral_mode());
+   fcu_back.set_vertical_mode(fcu_front.get_vertical_mode());
+   fcu_back.set_speed_value(fcu_front.get_speed_value());
+   fcu_back.set_mach_value(fcu_front.get_mach_value());
+   fcu_back.set_heading_value(fcu_front.get_heading_value());
+   fcu_back.set_track_value(fcu_front.get_track_value());
+   fcu_back.set_target_altitude(fcu_front.get_target_altitude());
+   fcu_back.set_vertical_speed_value(fcu_front.get_vertical_speed_value());
+   fcu_back.set_fpa_value(fcu_front.get_fpa_value());
 }
 
 void
-MapEFISControlPanelUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+Mapefis_control_panelUp(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
-   auto& panel_back = back.getEFISControlPanel();
-   auto& panel_front = front.getEFISControlPanel();
-   panel_back.setBarometricMode(panel_front.getBarometricMode());
-   panel_back.setBarometricFormat(panel_front.getBarometricFormat());
-   panel_back.setILSButton(panel_front.getILSButton());
-   panel_back.setMCPSwitch(MCP_CONSTRAINT, 
-         panel_front.getMCPSwitch(MCP_CONSTRAINT));
-   panel_back.setMCPSwitch(MCP_WAYPOINT, 
-         panel_front.getMCPSwitch(MCP_WAYPOINT));
-   panel_back.setMCPSwitch(MCP_VORD, 
-         panel_front.getMCPSwitch(MCP_VORD));
-   panel_back.setMCPSwitch(MCP_NDB, 
-         panel_front.getMCPSwitch(MCP_NDB));
-   panel_back.setMCPSwitch(MCP_AIRPORT, 
-         panel_front.getMCPSwitch(MCP_AIRPORT));
-   panel_back.setNDModeSwitch(panel_front.getNDModeSwitch());
-   panel_back.setNDRangeSwitch(panel_front.getNDRangeSwitch());
-   panel_back.setNDNav1ModeSwitch(panel_front.getNDNav1ModeSwitch());
-   panel_back.setNDNav2ModeSwitch(panel_front.getNDNav2ModeSwitch());
+   auto& panel_back = back.get_efis_control_panel();
+   auto& panel_front = front.get_efis_control_panel();
+   panel_back.set_barometric_mode(panel_front.get_barometric_mode());
+   panel_back.set_barometric_format(panel_front.get_barometric_format());
+   panel_back.set_ils_button(panel_front.get_ils_button());
+   panel_back.set_mcp_switch(MCP_CONSTRAINT, 
+         panel_front.get_mcp_switch(MCP_CONSTRAINT));
+   panel_back.set_mcp_switch(MCP_WAYPOINT, 
+         panel_front.get_mcp_switch(MCP_WAYPOINT));
+   panel_back.set_mcp_switch(MCP_VORD, 
+         panel_front.get_mcp_switch(MCP_VORD));
+   panel_back.set_mcp_switch(MCP_NDB, 
+         panel_front.get_mcp_switch(MCP_NDB));
+   panel_back.set_mcp_switch(MCP_AIRPORT, 
+         panel_front.get_mcp_switch(MCP_AIRPORT));
+   panel_back.set_nd_mode_switch(panel_front.get_nd_mode_switch());
+   panel_back.set_nd_range_switch(panel_front.get_nd_range_switch());
+   panel_back.set_nd_nav1_mode_switch(panel_front.get_nd_nav1_mode_switch());
+   panel_back.set_nd_nav2_mode_switch(panel_front.get_nd_nav2_mode_switch());
 }
 
 void
-MapUp(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+MapUp(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
    MapFCUUp(back, front);
-   MapEFISControlPanelUp(back, front);
+   Mapefis_control_panelUp(back, front);
 }
 
 void
-Map(CockpitBack& back, CockpitFront& front)
-throw (CockpitBack::SyncError)
+Map(cockpit_back& back, cockpit_front& front)
+throw (cockpit_back::sync_error)
 {
-   back.syncDown();
+   back.sync_down();
    MapDown(back, front);
    MapUp(back, front);
-   back.syncUp();
+   back.sync_up();
 }
 
 }; // anonymous namespace
 
 void
-CockpitFront::map(CockpitBack& back) 
+cockpit_front::map(cockpit_back& back) 
 { Map(back, *this); }
 
 void
-CockpitBack::map(CockpitFront& front)
-throw (SyncError)
+cockpit_back::map(cockpit_front& front)
+throw (sync_error)
 { Map(*this, front); }
 
 }; // namespace oac

@@ -24,43 +24,43 @@
 using namespace oac;
 using namespace oac::fv;
 
-BOOST_AUTO_TEST_SUITE(VariableGroupTest)
+BOOST_AUTO_TEST_SUITE(variable_groupTest)
 
 BOOST_AUTO_TEST_CASE(ShouldCreateGroupAsLowerCase)
 {
-   VariableGroup grp("MY_GROUP/FooBar");
-   BOOST_CHECK_EQUAL("my_group/foobar", grp.tag());
+   variable_group grp("MY_GROUP/FooBar");
+   BOOST_CHECK_EQUAL("my_group/foobar", grp.get_tag());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_AUTO_TEST_SUITE(VariableNameTest)
+BOOST_AUTO_TEST_SUITE(variable_nameTest)
 
 BOOST_AUTO_TEST_CASE(ShouldCreateNameAsLowerCase)
 {
-   VariableName name("MY_VAR/Millibars");
-   BOOST_CHECK_EQUAL("my_var/millibars", name.tag());
+   variable_name name("MY_VAR/Millibars");
+   BOOST_CHECK_EQUAL("my_var/millibars", name.get_tag());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_AUTO_TEST_SUITE(VariableValueTest)
+BOOST_AUTO_TEST_SUITE(variable_valueTest)
 
 BOOST_AUTO_TEST_CASE(ShouldMatchCreationAndExtractionType)
 {
-   auto val = VariableValue::fromDWord(1200);
-   BOOST_CHECK_EQUAL(VAR_DWORD, val.type());
-   BOOST_CHECK_EQUAL(1200, val.asDWord());
+   auto val = variable_value::from_dword(1200);
+   BOOST_CHECK_EQUAL(VAR_DWORD, val.get_type());
+   BOOST_CHECK_EQUAL(1200, val.as_dword());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnExtractionOfWrongType)
 {
-   auto val = VariableValue::fromDWord(1200);
-   BOOST_CHECK_THROW(val.asBool(), VariableValue::InvalidTypeError);
+   auto val = variable_value::from_dword(1200);
+   BOOST_CHECK_THROW(val.as_bool(), variable_value::invalid_type_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

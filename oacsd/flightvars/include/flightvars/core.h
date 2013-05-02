@@ -34,45 +34,45 @@ namespace oac { namespace fv {
  * running in the simulator is able to interact with the core object in
  * order to register a new variable group master.
  */
-class FlightVarsCore : public FlightVars
+class flight_vars_core : public flight_vars
 {
 public:
 
    /**
     * Obtain the singleton instance of Flight Vars core object.
     */
-   static Ptr<FlightVarsCore> instance();
+   static ptr<flight_vars_core> instance();
 
    /**
     * Thrown in a group master registering attempt when there is already
     * a master registered for that group. It's complemented with:
     *
-    *  - VariableGroupInfo, indicating the variable group which master
+    *  - variable_group_info, indicating the variable group which master
     *    is already present.
     */
-   DECL_ERROR(GroupMasterAlreadyRegisteredError, InvalidInputError);
+   OAC_DECL_ERROR(master_already_registered, invalid_input_error);
 
    virtual void subscribe(
-         const VariableGroup& grp,
-         const VariableName& name,
-         const Subscription& subs) throw (UnknownVariableError);
+         const variable_group& grp,
+         const variable_name& name,
+         const subscription& subs) throw (unknown_variable_error);
 
    /**
     * Register a master for given variable group. If there is already a
-    * master for given group, a GroupMasterAlreadyRegisteredError is thrown.
+    * master for given group, a master_already_registered is thrown.
     */
-   void registerGroupMaster(
-         const VariableGroup& grp,
-         const Ptr<FlightVars>& master)
-   throw (GroupMasterAlreadyRegisteredError);
+   void register_group_master(
+         const variable_group& grp,
+         const ptr<flight_vars>& master)
+   throw (master_already_registered);
 
 private:
 
-   typedef std::map<VariableGroup::Tag, Ptr<FlightVars>> GroupMasterDict;
+   typedef std::map<variable_group::tag, ptr<flight_vars>> group_master_dict;
 
-   GroupMasterDict _group_masters;
+   group_master_dict _group_masters;
 
-   inline FlightVarsCore() {}
+   inline flight_vars_core() {}
 
 };
 

@@ -30,14 +30,14 @@ namespace oac {
  * the STL type.
  */
 template <typename T>
-class Ptr : public std::shared_ptr<T>
+class ptr : public std::shared_ptr<T>
 {
 public:
 
-   inline Ptr() : std::shared_ptr<T>() {}
-   inline Ptr(const Ptr& ptr) : std::shared_ptr<T>(ptr) {}
-   inline Ptr(const shared_ptr<T>& ptr) : std::shared_ptr<T>(ptr) {}
-   inline Ptr(T* t) : std::shared_ptr<T>(std::shared_ptr<T>(t)) {}
+   inline ptr() : std::shared_ptr<T>() {}
+   inline ptr(const ptr& ptr) : std::shared_ptr<T>(ptr) {}
+   inline ptr(const shared_ptr<T>& ptr) : std::shared_ptr<T>(ptr) {}
+   inline ptr(T* t) : std::shared_ptr<T>(std::shared_ptr<T>(t)) {}
 };
 
 /**
@@ -46,34 +46,34 @@ public:
  * space of the type passed as argument with 'nothing'.
  */
 template <typename T>
-class Maybe
+class maybe
 {
 public:
 
-   static const Maybe NOTHING;
+   static const maybe NOTHING;
 
-   DECL_ERROR(NothingError, IllegalStateError);
+   OAC_DECL_ERROR(NothingError, illegal_state_error);
 
    /**
     * Create a new maybe object set to 'nothing'.
     */
-   inline Maybe() : _nothing(true) {}
+   inline maybe() : _nothing(true) {}
 
    /**
     * Create a new maybe object set to 'just value'
     */
-   inline Maybe(const T& value) : _value(value), _nothing(false) {}
+   inline maybe(const T& value) : _value(value), _nothing(false) {}
 
    /**
     * Return true if this maybe evaluates to 'nothing'.
     */
-   inline bool isNothing() const
+   inline bool is_nothing() const
    { return _nothing; }
 
    /**
     * Return true if this maybe evaluates to 'just value'.
     */
-   inline bool isJust() const
+   inline bool is_just() const
    { return !_nothing; }
 
    /**
@@ -82,8 +82,8 @@ public:
     */
    inline const T& get() const throw (NothingError)
    { 
-      if (this->isNothing())
-         THROW_ERROR(NothingError());
+      if (this->is_nothing())
+         BOOST_THROW_EXCEPTION(NothingError());
       return _value;
    }
 
@@ -93,8 +93,8 @@ public:
     */
    inline T& get() throw (NothingError)
    { 
-      if (this->isNothing())
-         THROW_ERROR(NothingError());
+      if (this->is_nothing())
+         BOOST_THROW_EXCEPTION(NothingError());
       return _value;
    }
 
@@ -123,17 +123,17 @@ private:
 };
 
 template <typename T>
-const Maybe<T> Maybe<T>::NOTHING;
+const maybe<T> maybe<T>::NOTHING;
 
 /**
  * Bind operator for maybe. This operator works as bind operation of monadic
  * maybe type. It produces Maybe<T2> from Maybe<T1 >> function<Maybe<T2>(T1)>.
  */
 template <typename T, typename F>
-auto operator >> (const Maybe<T>& m, const F& f) -> decltype(f(m.get()))
+auto operator >> (const maybe<T>& m, const F& f) -> decltype(f(m.get()))
 {
    typedef decltype(f(m.get())) R;
-   return m.isJust() ? R(f(m.get())) : R();
+   return m.is_just() ? R(f(m.get())) : R();
 }
 
 /**
@@ -141,9 +141,9 @@ auto operator >> (const Maybe<T>& m, const F& f) -> decltype(f(m.get()))
  * true if maybe is just T, or false if maybe is nothing.
  */
 template <typename T>
-bool operator >> (const Maybe<T>&m, T& t)
+bool operator >> (const maybe<T>&m, T& t)
 {
-   auto proceed = m.isJust();
+   auto proceed = m.is_just();
    if (proceed)
       t = m.get();
    return proceed;

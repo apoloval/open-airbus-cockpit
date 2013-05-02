@@ -24,26 +24,26 @@ namespace oac {
 
 namespace {
 
-class FileInputStream : public InputStream {
+class file_input_stream : public input_stream {
 public:
 
-   typedef std::string Mode;
+   typedef std::string mode;
 
-   static Mode OPEN_READ;
+   static mode OPEN_READ;
 
-   DECL_ERROR(OpenError, IOError);
+   OAC_DECL_ERROR(open_error, io_error);
 
-   FileInputStream(const Path& path, const Mode& mode)
+   file_input_stream(const Path& path, const mode& mode)
       : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
    {
       if (!_fd)
-         THROW_ERROR(OpenError());
+         BOOST_THROW_EXCEPTION(open_error());
    }
 
-   inline virtual ~FileInputStream()
+   inline virtual ~file_input_stream()
    { fclose(_fd); }
 
-   virtual DWORD read(void* buffer, DWORD count) throw (ReadError)
+   virtual DWORD read(void* buffer, DWORD count) throw (read_error)
    { return fread(buffer, 1, count, _fd); }
 
 private:
@@ -51,34 +51,34 @@ private:
    FILE* _fd;
 };
 
-FileInputStream::Mode FileInputStream::OPEN_READ("r");
+file_input_stream::mode file_input_stream::OPEN_READ("r");
 
-class FileOutputStream : public OutputStream {
+class file_output_stream : public output_stream {
 public:
 
-   typedef std::string Mode;
+   typedef std::string mode;
 
-   DECL_ERROR(OpenError, IOError);
+   OAC_DECL_ERROR(open_error, io_error);
 
-   static Mode OPEN_APPEND;
-   static Mode OPEN_WRITE;
+   static mode OPEN_APPEND;
+   static mode OPEN_WRITE;
 
 
-   FileOutputStream(const Path& path, const Mode& mode)
+   file_output_stream(const Path& path, const mode& mode)
       : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
    {
       if (!_fd)
-         THROW_ERROR(OpenError());
+         BOOST_THROW_EXCEPTION(open_error());
    }
 
-   inline virtual ~FileOutputStream()
+   inline virtual ~file_output_stream()
    {
       fflush(_fd);
       fclose(_fd);
    }
 
    virtual void write(const void* buffer, DWORD count)
-   throw (WriteError)
+   throw (write_error)
    { fwrite(buffer, 1, count, _fd); }
 
    virtual void flush()
@@ -89,38 +89,38 @@ private:
    FILE* _fd;
 };
 
-FileOutputStream::Mode FileOutputStream::OPEN_APPEND("a");
-FileOutputStream::Mode FileOutputStream::OPEN_WRITE("w");
+file_output_stream::mode file_output_stream::OPEN_APPEND("a");
+file_output_stream::mode file_output_stream::OPEN_WRITE("w");
 
 
 } // anonymous namespace
 
-File
-File::makeTemp()
-{ return File(boost::filesystem::unique_path()); }
+file
+file::makeTemp()
+{ return file(boost::filesystem::unique_path()); }
 
 bool
-File::exists() const
+file::exists() const
 { return boost::filesystem::exists(_path); }
 
 bool
-File::isRegularFile() const
+file::is_regular_file() const
 { return boost::filesystem::is_regular_file(_path); }
 
 bool
-File::isDirectory() const
+file::is_directory() const
 { return boost::filesystem::is_directory(_path); }
 
-Ptr<InputStream>
-File::read() const
-{ return new FileInputStream(_path, FileInputStream::OPEN_READ); }
+ptr<input_stream>
+file::read() const
+{ return new file_input_stream(_path, file_input_stream::OPEN_READ); }
 
-Ptr<OutputStream>
-File::append() const
-{ return new FileOutputStream(_path, FileOutputStream::OPEN_APPEND); }
+ptr<output_stream>
+file::append() const
+{ return new file_output_stream(_path, file_output_stream::OPEN_APPEND); }
 
-Ptr<OutputStream>
-File::write() const
-{ return new FileOutputStream(_path, FileOutputStream::OPEN_WRITE); }
+ptr<output_stream>
+file::write() const
+{ return new file_output_stream(_path, file_output_stream::OPEN_WRITE); }
 
 } // namespace oac

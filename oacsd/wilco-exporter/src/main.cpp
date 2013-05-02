@@ -32,21 +32,21 @@
 using namespace oac;
 using namespace oac::we;
 
-Ptr<Plugin> plugin;
+ptr<plugin> plug;
 
 void __stdcall DLLStart(void)
 {
-   File log_file(LOG_FILE);
+   file log_file(LOG_FILE);
    Logger::setMain(new Logger(LogLevel::INFO, log_file.append()));
 	Log(oac::INFO, "The Wilco Exporter module is starting");
-	plugin = new Plugin();
+   plug = new plugin();
 	Log(oac::INFO, "The Wilco Exporter module has been started");
 }
 
 void __stdcall DLLStop(void)
 {
 	Log(oac::INFO, "The Wilco Exporter module is stopping");
-	plugin.reset();
+   plug.reset();
 	Log(oac::INFO, "The Wilco Exporter module has been stopped");
    Logger::setMain(nullptr); // close the main logger
 }

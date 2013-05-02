@@ -24,79 +24,79 @@ namespace oac { namespace we {
 
 namespace {
 
-const DllInfo DLL_INFO[] =
+const dll_info DLL_INFO[] =
 {
    { TEXT("A320CFM_FeelThere.DLL"),
       {
-         VirtualAddress(0x10000000), // Image base
-         VirtualAddress(0x10008BD0), // Wilco_PushMCPButton (Constraint)
-         VirtualAddress(0x10008C30), // Wilco_PushMCPButton (Waypoint)
-         VirtualAddress(0x10008C90), // Wilco_PushMCPButton (VORD)
-         VirtualAddress(0x10008CF0), // Wilco_PushMCPButton (NDB)
-         VirtualAddress(0x10008D50), // Wilco_PushMCPButton (Airport)
-         VirtualAddress(0x1001D560), // Wilco_IsApuAvailable()
-         VirtualAddress(0x1001F170), // Wilco_GetFADECMode()
-         VirtualAddress(0x1002C920), // Wilco_SendCommand()
-         VirtualAddress(0x100D4A78), // ND Range
-         VirtualAddress(0x100D4A7C), // ND Mode
-         VirtualAddress(0x100D4A80), // MCP Nav Left
-         VirtualAddress(0x100D4A84), // MCP Nav Right
-         VirtualAddress(0x1012A940), // FADEC data
-         VirtualAddress(0x1012A95C), // Baro format
-         VirtualAddress(0x1012A960), // Baro STD
-         VirtualAddress(0x1012A964), // FCU Speed display
-         VirtualAddress(0x1012A9AC), // MCP Constraint
-         VirtualAddress(0x1012A9B0), // MCP Waypoint
-         VirtualAddress(0x1012A9B4), // MCP VORD
-         VirtualAddress(0x1012A9B8), // MCP NDB
-         VirtualAddress(0x1012A9BC), // MCP Airport
-         VirtualAddress(0x1012A9C0), // ILS Switch
-         VirtualAddress(0x1012AA08), // FMGC data
-         VirtualAddress(0x1012AA10), // FCU data
-         VirtualAddress(0x1012AA14), // FBW data
-         VirtualAddress(0x1012AA18), // Head panel data
-         VirtualAddress(0x1012AA1C), // GPWS data
-         VirtualAddress(0x1012AA20), // Pedestal data
-         VirtualAddress(0x1012AA28), // APU data
-         VirtualAddress(0x1012AA38), // GPU data
+         virtual_address(0x10000000), // Image base
+         virtual_address(0x10008BD0), // wilco_push_mcp_button (Constraint)
+         virtual_address(0x10008C30), // wilco_push_mcp_button (Waypoint)
+         virtual_address(0x10008C90), // wilco_push_mcp_button (VORD)
+         virtual_address(0x10008CF0), // wilco_push_mcp_button (NDB)
+         virtual_address(0x10008D50), // wilco_push_mcp_button (Airport)
+         virtual_address(0x1001D560), // wilco_is_apu_available()
+         virtual_address(0x1001F170), // Wilco_GetFADECMode()
+         virtual_address(0x1002C920), // wilco_send_command()
+         virtual_address(0x100D4A78), // ND Range
+         virtual_address(0x100D4A7C), // ND Mode
+         virtual_address(0x100D4A80), // MCP Nav Left
+         virtual_address(0x100D4A84), // MCP Nav Right
+         virtual_address(0x1012A940), // FADEC data
+         virtual_address(0x1012A95C), // Baro format
+         virtual_address(0x1012A960), // Baro STD
+         virtual_address(0x1012A964), // FCU Speed display
+         virtual_address(0x1012A9AC), // MCP Constraint
+         virtual_address(0x1012A9B0), // MCP Waypoint
+         virtual_address(0x1012A9B4), // MCP VORD
+         virtual_address(0x1012A9B8), // MCP NDB
+         virtual_address(0x1012A9BC), // MCP Airport
+         virtual_address(0x1012A9C0), // ILS Switch
+         virtual_address(0x1012AA08), // FMGC data
+         virtual_address(0x1012AA10), // FCU data
+         virtual_address(0x1012AA14), // FBW data
+         virtual_address(0x1012AA18), // Head panel data
+         virtual_address(0x1012AA1C), // GPWS data
+         virtual_address(0x1012AA20), // Pedestal data
+         virtual_address(0x1012AA28), // APU data
+         virtual_address(0x1012AA38), // GPU data
       },
    },
 };
 
 } // anonymous namespace
 
-FunctionName FunctionNames::GET_INTERNAL_DATA = "GetInternalData";
-FunctionName FunctionNames::GET_EXTENDED_DATA = "GetExtendedData";
-FunctionName FunctionNames::RESET_INTERNAL_DATA = "ResetInternalData";
-FunctionName FunctionNames::RESET_FLIGHT = "ResetFlight";
+function_name function_names::GET_INTERNAL_DATA = "GetInternalData";
+function_name function_names::GET_EXTENDED_DATA = "GetExtendedData";
+function_name function_names::RESET_INTERNAL_DATA = "ResetInternalData";
+function_name function_names::RESET_FLIGHT = "ResetFlight";
 
-const DllInfo&
-DllInfo::forAircraft(const Aircraft& aircraft)
+const dll_info&
+dll_info::for_aircraft(const aircraft& aircraft)
 {
    return DLL_INFO[aircraft.type];
 }
 
 HINSTANCE
-LoadDLLForAircraft(const Aircraft& aircraft)
-throw (WilcoCockpit::InvalidAircraftError)
+load_dll_for_aircraft(const aircraft& aircraft)
+throw (wilco_cockpit::invalid_aircraft_error)
 {
-   auto dll_filename = DllInfo::forAircraft(aircraft).name.c_str();
+   auto dll_filename = dll_info::for_aircraft(aircraft).name.c_str();
    HINSTANCE lib = LoadLibrary(dll_filename);
    if (lib == NULL)
-      THROW_ERROR(WilcoCockpit::InvalidAircraftError() <<
-                  FileNameInfo(dll_filename));
+      BOOST_THROW_EXCEPTION(wilco_cockpit::invalid_aircraft_error() <<
+                  file_name_info(dll_filename));
    return lib;
 }
 
 void
-FreeDLL(HINSTANCE lib)
+free_dll(HINSTANCE lib)
 {
    if (!FreeLibrary(lib))
       Log(WARN, "cannot free DLL instance");
 }
 
 void
-TrackChangesOnMemory(void* mem, size_t len) {
+track_changes_on_memory(void* mem, size_t len) {
    static void* buf = nullptr;
    if (buf)
    {

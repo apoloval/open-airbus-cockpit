@@ -25,67 +25,67 @@
 using namespace oac;
 
 template <typename MsgType>
-void ShouldDispatchSystemEvent(
-      const SimConnectClient::EventName& event,
-      void (SimConnectClient::*registration)(
-            const std::function<void(SimConnectClient&, const MsgType&)>&))
+void should_dispatch_system_event(
+      const simconnect_client::event_name& event,
+      void (simconnect_client::*registration)(
+            const std::function<void(simconnect_client&, const MsgType&)>&))
 {
-   SimConnectClient cli("Test Client");
+   simconnect_client cli("Test Client");
    bool cont = true;
-   (cli.*registration)([&cont](SimConnectClient& client,const MsgType& msg)
+   (cli.*registration)([&cont](simconnect_client& client,const MsgType& msg)
    {
       cont = false;
    });
    BOOST_TEST_MESSAGE("Should dispatch system event '" << event << "'... ");
-   cli.subscribeToSystemEvent(event);
+   cli.subscribe_to_system_event(event);
    while (cont) 
    {
-      cli.dispatchMessage();
+      cli.dispatch_message();
    }
    BOOST_TEST_MESSAGE("Done!");
 }
 
 BOOST_AUTO_TEST_CASE(ShouldConnect)
 {
-   SimConnectClient("Test Client");
+   simconnect_client("Test Client");
 }
 
 BOOST_AUTO_TEST_CASE(ShouldRegisterOnFrameCallback)
 {
-   ShouldDispatchSystemEvent<SIMCONNECT_RECV_EVENT_FRAME>(
-         SimConnectClient::SYSTEM_EVENT_FRAME,
-         &SimConnectClient::registerOnEventFrameCallback);
+   should_dispatch_system_event<SIMCONNECT_RECV_EVENT_FRAME>(
+         simconnect_client::SYSTEM_EVENT_FRAME,
+         &simconnect_client::register_on_event_frame_callback);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldRegisterOn1secCallback)
 {
-   ShouldDispatchSystemEvent<SIMCONNECT_RECV_EVENT>(
-         SimConnectClient::SYSTEM_EVENT_1SEC,
-         &SimConnectClient::registerOnEventCallback);
+   should_dispatch_system_event<SIMCONNECT_RECV_EVENT>(
+         simconnect_client::SYSTEM_EVENT_1SEC,
+         &simconnect_client::register_on_event_callback);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldRegisterOn4secCallback)
 {
-   ShouldDispatchSystemEvent<SIMCONNECT_RECV_EVENT>(
-         SimConnectClient::SYSTEM_EVENT_4SEC,
-         &SimConnectClient::registerOnEventCallback);
+   should_dispatch_system_event<SIMCONNECT_RECV_EVENT>(
+         simconnect_client::SYSTEM_EVENT_4SEC,
+         &simconnect_client::register_on_event_callback);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldRegisterOn6hzCallback)
 {
-   ShouldDispatchSystemEvent<SIMCONNECT_RECV_EVENT>(
-         SimConnectClient::SYSTEM_EVENT_6HZ,
-         &SimConnectClient::registerOnEventCallback);
+   should_dispatch_system_event<SIMCONNECT_RECV_EVENT>(
+         simconnect_client::SYSTEM_EVENT_6HZ,
+         &simconnect_client::register_on_event_callback);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldPullRequestDataOnUserObject)
 {
-   SimConnectClient cli("Test Client");
+   simconnect_client cli("Test Client");
    BOOST_TEST_MESSAGE("Should pull-request data on user object... ");
 
    bool cont = true;
-   cli.registerOnSimObjectDataCallback([&cont](
-         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+   cli.register_on_simobject_data_callback([&cont](
+         simconnect_client& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
    {
       struct Data { 
          double qnh; 
@@ -101,45 +101,45 @@ BOOST_AUTO_TEST_CASE(ShouldPullRequestDataOnUserObject)
       cont = false;
    });
 
-   auto data_def = cli.newDataDefinition()
+   auto data_def = cli.new_data_definition()
          .add("KOHLSMAN SETTING MB", "Millibars")
-         .add("Plane Altitude", "Feet")
-         .add("Plane Latitude", "Degrees")
-         .add("Plane Longitude", "Degrees");
-   cli.newDataPullRequest(data_def)
-         .setPeriod(SIMCONNECT_PERIOD_SECOND)
+         .add("Plane Altitude", "feet")
+         .add("Plane Latitude", "degrees")
+         .add("Plane Longitude", "degrees");
+   cli.new_data_pull_request(data_def)
+         .set_period(SIMCONNECT_PERIOD_SECOND)
          .submit();
 
    while (cont)
-      cli.dispatchMessage();
+      cli.dispatch_message();
 
    BOOST_TEST_MESSAGE("Done!");
 }
 
 BOOST_AUTO_TEST_CASE(ShouldPushRequestDataOnUserObject)
 {
-   SimConnectClient cli("Test Client");
+   simconnect_client cli("Test Client");
    BOOST_TEST_MESSAGE("Should push-request data on user object... ");
 
    double alt = 30000.0;
-   auto data_def = cli.newDataDefinition()
+   auto data_def = cli.new_data_definition()
          .add("Plane Altitude", "feet");
-   cli.newDataPushRequest(data_def)
-         .setElementSize(sizeof(double))
+   cli.new_data_push_request(data_def)
+         .set_element_size(sizeof(double))
          .submit(&alt);
 
    bool cont = true;
-   cli.registerOnSimObjectDataCallback([&cont, &alt](
-         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+   cli.register_on_simobject_data_callback([&cont, &alt](
+         simconnect_client& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
    {
       BOOST_CHECK_CLOSE(alt, *((double*) &msg.dwData), 0.1);
       cont = false;
    });
 
-   cli.newDataPullRequest(data_def).submit();
+   cli.new_data_pull_request(data_def).submit();
 
    while (cont)
-      cli.dispatchMessage();
+      cli.dispatch_message();
 
    BOOST_TEST_MESSAGE(boost::format("FL%03d, Done!")
                       % int(alt / 100));
@@ -147,23 +147,23 @@ BOOST_AUTO_TEST_CASE(ShouldPushRequestDataOnUserObject)
 
 BOOST_AUTO_TEST_CASE(ShouldTransmitEventOnUserObject)
 {
-   SimConnectClient cli("Test Client");
+   simconnect_client cli("Test Client");
    BOOST_TEST_MESSAGE("Should transmit event on user object... ");
 
    double qnh = 1030.5;
-   auto event = cli.newClientEvent("KOHLSMAN_SET");
+   auto event = cli.new_client_event("KOHLSMAN_SET");
    event.transmit(int(qnh * 16)); // *16 is required by the event representation
 
    bool cont = true;
-   cli.registerOnSimObjectDataCallback([&cont, &qnh](
-         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+   cli.register_on_simobject_data_callback([&cont, &qnh](
+         simconnect_client& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
    {
       BOOST_CHECK_CLOSE(qnh, *((double*) &msg.dwData), 0.1);
       cont = false;
    });
-   auto data_def = cli.newDataDefinition()
+   auto data_def = cli.new_data_definition()
          .add("KOHLSMAN SETTING MB", "Millibars");
-   cli.newDataPullRequest(data_def).submit();
+   cli.new_data_pull_request(data_def).submit();
 
    BOOST_TEST_MESSAGE(boost::format("QNH %d, Done!") % int(qnh));
 }
@@ -171,8 +171,8 @@ BOOST_AUTO_TEST_CASE(ShouldTransmitEventOnUserObject)
 BOOST_AUTO_TEST_CASE(ShouldWatchSimpleVariable)
 {
    BOOST_TEST_MESSAGE("Should watch simple variable... ");
-   SimConnectClient::VariableWatch<double> qnh;
-   qnh.dataDefinition().add("KOHLSMAN SETTING MB", "Millibars");
+   simconnect_client::variable_watch<double> qnh;
+   qnh.get_data_definition().add("KOHLSMAN SETTING MB", "Millibars");
    BOOST_TEST_MESSAGE(boost::format("QNH %d, Done!")
                       % int(qnh.get()));
 }
@@ -180,8 +180,8 @@ BOOST_AUTO_TEST_CASE(ShouldWatchSimpleVariable)
 BOOST_AUTO_TEST_CASE(ShouldWriteWatchSimpleVariable)
 {
    BOOST_TEST_MESSAGE("Should write on watch simple variable... ");
-   SimConnectClient::VariableWatch<double> alt;
-   alt.dataDefinition().add("Plane Altitude", "feet");
+   simconnect_client::variable_watch<double> alt;
+   alt.get_data_definition().add("Plane Altitude", "feet");
 
    double value = 25000.0;
    alt.set(value);
@@ -194,10 +194,10 @@ BOOST_AUTO_TEST_CASE(ShouldWriteWatchSimpleVariable)
 BOOST_AUTO_TEST_CASE(ShouldWatchTwoSimpleVariables)
 {
    BOOST_TEST_MESSAGE("Should watch two simple variables... ");
-   SimConnectClient::VariableWatch<double> qnh;
-   qnh.dataDefinition().add("KOHLSMAN SETTING MB", "Millibars");
-   SimConnectClient::VariableWatch<double> alt;
-   alt.dataDefinition().add("Plane Altitude", "feet");
+   simconnect_client::variable_watch<double> qnh;
+   qnh.get_data_definition().add("KOHLSMAN SETTING MB", "Millibars");
+   simconnect_client::variable_watch<double> alt;
+   alt.get_data_definition().add("Plane Altitude", "feet");
    BOOST_TEST_MESSAGE(boost::format("QNH %d, Alt %d; Done!")
       % int(qnh.get()) % int(alt.get()));
 }
@@ -210,8 +210,8 @@ BOOST_AUTO_TEST_CASE(ShouldWatchComplexVariable)
    };
 
    BOOST_TEST_MESSAGE("Should watch complex variable... ");
-   SimConnectClient::VariableWatch<Complex> watch;
-   watch.dataDefinition()
+   simconnect_client::variable_watch<Complex> watch;
+   watch.get_data_definition()
          .add("KOHLSMAN SETTING MB", "Millibars")
          .add("Plane Altitude", "feet");
    auto complex = watch.get();
@@ -224,11 +224,11 @@ BOOST_AUTO_TEST_CASE(ShouldSetVariableViaEventTransmitter)
    BOOST_TEST_MESSAGE("Should watch write-by-event variable... ");
    double qnh = 1013.0;
    
-   SimConnectClient::EventTransmitter event("KOHLSMAN_SET");
+   simconnect_client::event_transmitter event("KOHLSMAN_SET");
    event.transmit(int(16*qnh));
 
-   SimConnectClient::VariableWatch<double> watch;
-   watch.dataDefinition()
+   simconnect_client::variable_watch<double> watch;
+   watch.get_data_definition()
          .add("KOHLSMAN SETTING MB", "Millibars");
    double actual_qnh = watch.get();
    BOOST_CHECK_CLOSE(qnh, actual_qnh, 0.1);

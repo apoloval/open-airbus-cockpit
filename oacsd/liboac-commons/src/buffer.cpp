@@ -25,69 +25,69 @@ namespace {
 
 }; // anonymous namespace
 
-FixedBuffer::FixedBuffer(size_t capacity) : _capacity(capacity)
+fixed_buffer::fixed_buffer(size_t capacity) : _capacity(capacity)
 {
    _data = new BYTE[_capacity];
    std::memset(_data, 0, _capacity);
 }
 
-FixedBuffer::~FixedBuffer()
+fixed_buffer::~fixed_buffer()
 { delete _data; }
 
 void
-FixedBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsError)
+fixed_buffer::read(void* dst, DWORD offset, DWORD length) const 
+throw (out_of_bounds_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    std::memcpy(dst, &(_data[offset]), length);
 }
 
 void
-FixedBuffer::read(OutputStream& dst, DWORD offset, DWORD length) const
-throw (OutOfBoundsError, ReadError, OutputStream::WriteError)
+fixed_buffer::read(output_stream& dst, DWORD offset, DWORD length) const
+throw (out_of_bounds_error, read_error, output_stream::write_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    dst.write(&(_data[offset]), length);
 }
 
 void
-FixedBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsError)
+fixed_buffer::write(const void* src, DWORD offset, DWORD length) 
+throw (out_of_bounds_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    std::memcpy(&(_data[offset]), src, length);
 }
 
 DWORD
-FixedBuffer::write(InputStream& src, DWORD offset, DWORD length)
-throw (OutOfBoundsError, InputStream::ReadError, WriteError)
+fixed_buffer::write(input_stream& src, DWORD offset, DWORD length)
+throw (out_of_bounds_error, input_stream::read_error, write_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    return src.read(&(_data[offset]), length);
 }
 
 void
-FixedBuffer::copy(const Buffer& src, DWORD src_offset, 
+fixed_buffer::copy(const buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsError)
+throw (out_of_bounds_error)
 {
-   this->checkBounds(dst_offset, length);
+   this->check_bounds(dst_offset, length);
    src.read(&(_data[dst_offset]), src_offset, length);
 }
 
 void
-FixedBuffer::checkBounds(DWORD offset, DWORD length) const
-throw (OutOfBoundsError)
+fixed_buffer::check_bounds(DWORD offset, DWORD length) const
+throw (out_of_bounds_error)
 {
    if (offset + length > _capacity)
-      BOOST_THROW_EXCEPTION(OutOfBoundsError() <<
-            LowerBoundInfo(0) <<
-            UpperBoundInfo(_capacity - 1) <<
-            IndexInfo(offset + length));
+      BOOST_THROW_EXCEPTION(out_of_bounds_error() <<
+            lower_bound_info(0) <<
+            upper_bound_info(_capacity - 1) <<
+            index_info(offset + length));
 }
 
-ShiftedBuffer::ShiftedBuffer(
-      const Ptr<Buffer>& backed_buffer,
+shifted_buffer::shifted_buffer(
+      const ptr<buffer>& backed_buffer,
       DWORD offset_shift) :
    _backed_buffer(backed_buffer),
    _backed_capacity(backed_buffer->capacity()),
@@ -95,98 +95,98 @@ ShiftedBuffer::ShiftedBuffer(
 {}
 
 void
-ShiftedBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsError, ReadError)
+shifted_buffer::read(void* dst, DWORD offset, DWORD length) const 
+throw (out_of_bounds_error, read_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    _backed_buffer->read(dst, shift(offset), length);
 }
 
 void
-ShiftedBuffer::read(OutputStream& dst, DWORD offset, DWORD length) const
-throw (OutOfBoundsError, ReadError, OutputStream::WriteError)
+shifted_buffer::read(output_stream& dst, DWORD offset, DWORD length) const
+throw (out_of_bounds_error, read_error, output_stream::write_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    _backed_buffer->read(dst, shift(offset), length);
 }
 
 void
-ShiftedBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsError, WriteError)
+shifted_buffer::write(const void* src, DWORD offset, DWORD length) 
+throw (out_of_bounds_error, write_error)
 { 
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    _backed_buffer->write(src, shift(offset), length);
 }
 
 DWORD
-ShiftedBuffer::write(InputStream& src, DWORD offset, DWORD length)
-throw (OutOfBoundsError, InputStream::ReadError, WriteError)
+shifted_buffer::write(input_stream& src, DWORD offset, DWORD length)
+throw (out_of_bounds_error, input_stream::read_error, write_error)
 {
-   this->checkBounds(offset, length);
+   this->check_bounds(offset, length);
    return _backed_buffer->write(src, shift(offset), length);
 }
 
 void
-ShiftedBuffer::copy(const Buffer& src, DWORD src_offset, 
+shifted_buffer::copy(const buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length) 
-throw (OutOfBoundsError, IOError)
+throw (out_of_bounds_error, io_error)
 { 
-   this->checkBounds(dst_offset, length);
+   this->check_bounds(dst_offset, length);
    _backed_buffer->copy(src, src_offset, shift(dst_offset), length);
 }
 
 void
-ShiftedBuffer::checkBounds(DWORD offset, DWORD length) const
-throw (OutOfBoundsError)
+shifted_buffer::check_bounds(DWORD offset, DWORD length) const
+throw (out_of_bounds_error)
 {
    if (offset < _offset_shift || shift(offset) + length > _backed_capacity)
-      THROW_ERROR(OutOfBoundsError() <<
-            LowerBoundInfo(0) <<
-            UpperBoundInfo(_backed_capacity - 1) <<
-            IndexInfo(offset + length));
+      BOOST_THROW_EXCEPTION(out_of_bounds_error() <<
+            lower_bound_info(0) <<
+            upper_bound_info(_backed_capacity - 1) <<
+            index_info(offset + length));
 }
 
-DoubleBuffer::DoubleBuffer(
-      const Ptr<Buffer>& backed_buffer_0,
-      const Ptr<Buffer>& backed_buffer_1) :
+double_buffer::double_buffer(
+      const ptr<buffer>& backed_buffer_0,
+      const ptr<buffer>& backed_buffer_1) :
    _current_buffer(0)
 {
-   _backed_buffer[0] = Ptr<Buffer>(backed_buffer_0);
-   _backed_buffer[1] = Ptr<Buffer>(backed_buffer_1);     
+   _backed_buffer[0] = ptr<buffer>(backed_buffer_0);
+   _backed_buffer[1] = ptr<buffer>(backed_buffer_1);
 }
 
 void
-DoubleBuffer::read(void* dst, DWORD offset, DWORD length) const 
-throw (OutOfBoundsError)
+double_buffer::read(void* dst, DWORD offset, DWORD length) const 
+throw (out_of_bounds_error)
 { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
 void
-DoubleBuffer::read(OutputStream& dst, DWORD offset, DWORD length) const
-throw (OutOfBoundsError, ReadError, OutputStream::WriteError)
+double_buffer::read(output_stream& dst, DWORD offset, DWORD length) const
+throw (out_of_bounds_error, read_error, output_stream::write_error)
 { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
 void
-DoubleBuffer::write(const void* src, DWORD offset, DWORD length) 
-throw (OutOfBoundsError)
+double_buffer::write(const void* src, DWORD offset, DWORD length) 
+throw (out_of_bounds_error)
 { _backed_buffer[_current_buffer]->write(src, offset, length); }
 
 DWORD
-DoubleBuffer::write(InputStream& src, DWORD offset, DWORD length)
-throw (OutOfBoundsError)
+double_buffer::write(input_stream& src, DWORD offset, DWORD length)
+throw (out_of_bounds_error)
 { return _backed_buffer[_current_buffer]->write(src, offset, length); }
 
 void
-DoubleBuffer::copy(const Buffer& src, DWORD src_offset, 
+double_buffer::copy(const buffer& src, DWORD src_offset, 
       DWORD dst_offset, DWORD length)
-throw (OutOfBoundsError)
+throw (out_of_bounds_error)
 { _backed_buffer[_current_buffer]->copy(src, src_offset, dst_offset, length); }
 
 void
-DoubleBuffer::swap()
+double_buffer::swap()
 { _current_buffer ^= 1; }
 
 DWORD
-BufferInputStream::read(void* buffer, DWORD count)
+buffer_input_stream::read(void* buffer, DWORD count)
 {
    auto remain = _buffer->capacity() - _index;
    if (count > remain)
@@ -197,19 +197,19 @@ BufferInputStream::read(void* buffer, DWORD count)
 }
 
 void
-BufferOutputStream::write(const void* buffer, DWORD count)
-throw (CapacityExhaustedError)
+buffer_output_stream::write(const void* buffer, DWORD count)
+throw (capacity_exhausted_error)
 {
    auto remain = _buffer->capacity() - _index;
    if (count > remain)
-      THROW_ERROR(CapacityExhaustedError() <<
-                  RemainingBytesInfo(remain) << RequestedBytesInfo(count));
+      BOOST_THROW_EXCEPTION(capacity_exhausted_error() <<
+                  remaining_bytes_info(remain) << requested_bytes_info(count));
    _buffer->write(buffer, _index, count);
    _index += count;
 }
 
 void
-BufferOutputStream::flush()
+buffer_output_stream::flush()
 {
    // Well, it's a buffer. Nothing to be done here.
 }

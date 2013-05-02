@@ -30,7 +30,7 @@
 
 namespace oac {
 
-struct Error : virtual std::exception, virtual boost::exception
+struct error : virtual std::exception, virtual boost::exception
 {
    virtual const char* what() const throw ()
    {
@@ -43,8 +43,8 @@ struct Error : virtual std::exception, virtual boost::exception
 };
 
 
-struct LogicErrorBase : virtual Error {};
-struct RuntimeErrorBase : virtual Error {};
+struct logic_error_base : virtual error {};
+struct runtime_error_base : virtual error {};
 
 template <typename ErrorInfo, typename E>
 const typename ErrorInfo::error_info::value_type* GetErrorInfo(const E& e)
@@ -62,33 +62,31 @@ const typename ErrorInfo::error_info::value_type* GetErrorInfo(const E& e)
       {} \
    };
 
-#define DECL_LOGIC_ERROR(name) struct name : virtual LogicErrorBase {}
-#define DECL_RUNTIME_ERROR(name) struct name : virtual RuntimeErrorBase {}
-#define DECL_ERROR(name, parent) struct name : virtual parent {}
+#define OAC_DECL_LOGIC_ERROR(name) struct name : virtual logic_error_base {}
+#define OAC_DECL_RUNTIME_ERROR(name) struct name : virtual runtime_error_base {}
+#define OAC_DECL_ERROR(name, parent) struct name : virtual parent {}
 
-#define DECL_ERROR_INFO(name, type) \
+#define OAC_DECL_ERROR_INFO(name, type) \
    typedef boost::error_info<struct name##Tag, type> name
-
-#define THROW_ERROR(error) BOOST_THROW_EXCEPTION(error)
 
 namespace oac {
 
-DECL_LOGIC_ERROR(ConnectionError);
-DECL_LOGIC_ERROR(InvalidInputError);
-DECL_LOGIC_ERROR(NotFoundError);
-DECL_LOGIC_ERROR(NullPointerError);
+OAC_DECL_LOGIC_ERROR(connection_error);
+OAC_DECL_LOGIC_ERROR(invalid_input_error);
+OAC_DECL_LOGIC_ERROR(not_found_error);
+OAC_DECL_LOGIC_ERROR(null_pointer_error);
 
-DECL_RUNTIME_ERROR(IllegalStateError);
-DECL_RUNTIME_ERROR(IOError);
+OAC_DECL_RUNTIME_ERROR(illegal_state_error);
+OAC_DECL_RUNTIME_ERROR(io_error);
 
-DECL_ERROR_INFO(CodeInfo, int);
-DECL_ERROR_INFO(FileNameInfo, std::wstring);
-DECL_ERROR_INFO(FunctionNameInfo, std::string);
-DECL_ERROR_INFO(IndexInfo, int);
-DECL_ERROR_INFO(LowerBoundInfo, int);
-DECL_ERROR_INFO(MessageInfo, std::string);
-DECL_ERROR_INFO(NestedErrorInfo, boost::exception_ptr);
-DECL_ERROR_INFO(UpperBoundInfo, int);
+OAC_DECL_ERROR_INFO(code_info, int);
+OAC_DECL_ERROR_INFO(file_name_info, std::wstring);
+OAC_DECL_ERROR_INFO(function_name_info, std::string);
+OAC_DECL_ERROR_INFO(index_info, int);
+OAC_DECL_ERROR_INFO(lower_bound_info, int);
+OAC_DECL_ERROR_INFO(message_info, std::string);
+OAC_DECL_ERROR_INFO(nested_error_info, boost::exception_ptr);
+OAC_DECL_ERROR_INFO(upper_bound_info, int);
 
 } // namespace oac
 

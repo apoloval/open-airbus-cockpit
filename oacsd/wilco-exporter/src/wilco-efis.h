@@ -26,56 +26,56 @@
 
 namespace oac { namespace we {
 
-class EFISControlPanelImpl :
-      public CockpitFront::EFISControlPanel,
-      public DllInspector
+class efis_control_panel_impl :
+      public cockpit_front::efis_control_panel,
+      public dll_inspector
 {
 public:
 
-   EFISControlPanelImpl(const DllInfo& dll_info, HINSTANCE dll_instance);
+   efis_control_panel_impl(const dll_info& dll_info, HINSTANCE dll_instance);
 
-   virtual BarometricMode getBarometricMode() const;
+   virtual barometric_mode get_barometric_mode() const;
 
-   virtual void setBarometricMode(BarometricMode mode);
+   virtual void set_barometric_mode(barometric_mode mode);
 
-   virtual BarometricFormat getBarometricFormat() const;
+   virtual barometric_format get_barometric_format() const;
 
-   virtual void setBarometricFormat(BarometricFormat fmt);
+   virtual void set_barometric_format(barometric_format fmt);
 
-   virtual BinarySwitch getFDButton() const;
+   virtual binary_switch get_fd_button() const;
 
-   virtual void pushFDButton();
+   virtual void push_fd_button();
 
-   virtual BinarySwitch getILSButton() const;
+   virtual binary_switch get_ils_button() const;
 
-   virtual void pushILSButton();
+   virtual void push_ils_button();
 
-   virtual BinarySwitch getMCPSwitch(MCPSwitch sw) const;
+   virtual binary_switch get_mcp_switch(mcp_switch sw) const;
 
-   virtual void pushMCPSwitch(MCPSwitch sw);
+   virtual void push_mcp_switch(mcp_switch sw);
 
-   virtual NDModeSwitch getNDModeSwitch() const;
+   virtual nd_mode_switch get_nd_mode_switch() const;
 
-   virtual void setNDModeSwitch(NDModeSwitch mode);
+   virtual void set_nd_mode_switch(nd_mode_switch mode);
 
-   virtual NDRangeSwitch getNDRangeSwitch() const;
+   virtual nd_range_switch get_nd_range_switch() const;
 
-   virtual void setNDRangeSwitch(NDRangeSwitch range);
+   virtual void set_nd_range_switch(nd_range_switch range);
 
-   virtual NDNavModeSwitch getNDNav1ModeSwitch() const;
+   virtual nd_nav_mode_switch get_nd_nav1_mode_switch() const;
 
-   virtual void setNDNav1ModeSwitch(NDNavModeSwitch value);
+   virtual void set_nd_nav1_mode_switch(nd_nav_mode_switch value);
 
-   virtual NDNavModeSwitch getNDNav2ModeSwitch() const;
+   virtual nd_nav_mode_switch get_nd_nav2_mode_switch() const;
 
-   virtual void setNDNav2ModeSwitch(NDNavModeSwitch value);
+   virtual void set_nd_nav2_mode_switch(nd_nav_mode_switch value);
 
 private:
 
-   inline BinarySwitch invert(BinarySwitch value)
+   inline binary_switch invert(binary_switch value)
    { return value == SWITCHED_ON ? SWITCHED_OFF : SWITCHED_ON; }
 
-   Ptr<FSUIPC> _fsuipc;
+   ptr<fsuipc> _fsuipc;
 };
 
 

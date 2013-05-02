@@ -22,11 +22,11 @@
 
 namespace oac {
 
-Reader::Reader(const Ptr<InputStream>& input)
+reader::reader(const ptr<input_stream>& input)
    : _input(input) {}
 
 std::string
-Reader::readLine()
+reader::readLine()
 {
    static const unsigned CHUNK_SIZE = 64;
    CHAR buff[CHUNK_SIZE];

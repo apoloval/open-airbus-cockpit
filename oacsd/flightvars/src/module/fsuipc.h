@@ -40,61 +40,54 @@ namespace oac { namespace fv {
  * indicating a value in bytes (BYTE, WORD and DWORD, respectively). E.g.,
  * 0x0354:2 means a WORD variable at offset 0x0354 (transponder code).
  */
-class FsuipcFlightVars : public FlightVars
+class fsuipc_flight_vars : public flight_vars
 {
 public:
 
-   static const VariableGroup VAR_GROUP;
+   static const variable_group VAR_GROUP;
 
-   FsuipcFlightVars(const Ptr<Buffer>& fsuipc = nullptr);
+   fsuipc_flight_vars(const ptr<buffer>& fsuipc = nullptr);
 
    virtual void subscribe(
-         const VariableGroup& grp,
-         const VariableName& name,
-         const Subscription& subs) throw (UnknownVariableError);
+         const variable_group& grp,
+         const variable_name& name,
+         const subscription& subs) throw (unknown_variable_error);
 
 private:
 
-   struct Offset : TaggedElement
+   struct offset : tagged_element
    {
-      VariableName var_name;
+      variable_name var_name;
       DWORD address;
       DWORD length;
 
-      Offset(const VariableName& var_name) throw (UnknownVariableNameError);
-      virtual bool isUpdated(DoubleBuffer& buf);
-      virtual VariableValue read(DoubleBuffer& buf);
+      offset(const variable_name& var_name) throw (unknown_variable_name_error);
+      virtual bool isUpdated(double_buffer& buf);
+      virtual variable_value read(double_buffer& buf);
    };
 
-   typedef std::list<Subscription> SubscriptionList;
-   typedef std::map<Offset, SubscriptionList> OffsetSubscriptionsDict;
+   typedef std::list<subscription> subscriptionList;
+   typedef std::map<offset, subscriptionList> offsetsubscriptionsDict;
 
-   OffsetSubscriptionsDict _subscribers;
-   SimConnectClient _sc;
-   Ptr<Buffer> _fsuipc;
-   Ptr<DoubleBuffer> _buffer;
+   offsetsubscriptionsDict _subscribers;
+   simconnect_client _sc;
+   ptr<buffer> _fsuipc;
+   ptr<double_buffer> _buffer;
 
    /**
     * Check whether given var group corresponds to FSUIPC offset, and throw
-    * a UnknownVariableGroupError if not.
+    * a unknown_variable_group_error if not.
     */
-   void checkGroup(const VariableGroup& grp) throw (UnknownVariableGroupError);
-
-   /**
-    * Parse variable name and convert into FSUIPC offset, or throw a
-    * UnknownVariableNameError of given name doesn't match expected pattern.
-    */
-   Offset parseVarName(
-         const VariableName& name) throw (UnknownVariableNameError);
+   void check_group(const variable_group& grp) throw (unknown_variable_group_error);
 
    /**
     * Create a new subscription for given offset
     */
-   void subscribe(const Offset& offset, const Subscription& subs);
+   void subscribe(const offset& offset, const subscription& subs);
 
-   void notifyChanges();
+   void notify_changes();
 
-   void syncOffset(const Offset& offset);
+   void sync_offset(const offset& offset);
 };
 
 }} // namespace oac::fv

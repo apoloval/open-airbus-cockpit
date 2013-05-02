@@ -26,46 +26,46 @@
 
 namespace oac { namespace we {
 
-class Plugin
+class plugin
 {
 public:
 
-   Plugin();
+   plugin();
 
 private:
 
-   void onSimConnectOpen(
-         SimConnectClient& client, const SIMCONNECT_RECV_OPEN& msg);
+   void on_simconnect_open(
+         simconnect_client& client, const SIMCONNECT_RECV_OPEN& msg);
 
-   void onSimConnectQuit(
-         SimConnectClient& client, const SIMCONNECT_RECV& msg);
+   void on_simconnect_quit(
+         simconnect_client& client, const SIMCONNECT_RECV& msg);
 
-   void onSimConnectException(
-         SimConnectClient& client, const SIMCONNECT_RECV_EXCEPTION& msg);
+   void on_simconnect_exception(
+         simconnect_client& client, const SIMCONNECT_RECV_EXCEPTION& msg);
 
-   void onSimConnectEvent(
-         SimConnectClient& client, const SIMCONNECT_RECV_EVENT& msg);
+   void on_simconnect_event(
+         simconnect_client& client, const SIMCONNECT_RECV_EVENT& msg);
 
-   void onSimConnectEventFilename(
-         SimConnectClient& client, const SIMCONNECT_RECV_EVENT_FILENAME& msg);
+   void on_simconnect_event_filename(
+         simconnect_client& client, const SIMCONNECT_RECV_EVENT_FILENAME& msg);
 
-   void onSimConnectSimObjectData(
-         SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg);
+   void on_simconnect_simobject_data(
+         simconnect_client& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg);
 
-   void on1secElapsed();
+   void on_1sec_elapsed();
 
-   void onNewAircraft(const Aircraft::Title& title);
+   void on_new_aircraft(const aircraft_title& title);
 
-   void requestAircraftTitle();
+   void request_aircraft_title();
 
-   void registerOnAircraftLoadedCallback();
+   void request_on_aircraft_loaded_callback();
 
-   void resetCockpit();
-   void resetCockpit(const Aircraft& aircraft);
+   void reset_cockpit();
+   void reset_cockpit(const aircraft& aircraft);
 
-   SimConnectClient _sc;
-   Ptr<WilcoCockpit> _wilco;
-   Ptr<CockpitBack> _fsuipc;
+   simconnect_client _sc;
+   ptr<wilco_cockpit> _wilco;
+   ptr<cockpit_back> _fsuipc;
 };
 
 }}; // namespace oac::we

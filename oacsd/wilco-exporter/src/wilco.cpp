@@ -41,34 +41,34 @@ const std::string AIRCRAFT_NAME[] =
    "Airbus A320 CFM",      // A320_CFM
 };
 
-class WilcoCockpitImpl : public WilcoCockpit, public DllInspector
+class wilco_cockpit_impl : public wilco_cockpit, public dll_inspector
 {
 public:
 
-   WilcoCockpitImpl(const Aircraft& aircraft)
-   throw (InvalidInputError) :
-         DllInspector(DllInfo::forAircraft(aircraft),
-                      LoadDLLForAircraft(aircraft)),
-         _aircraft(aircraft)
+   wilco_cockpit_impl(const aircraft& ac)
+   throw (invalid_input_error) :
+         dll_inspector(dll_info::for_aircraft(ac),
+                      load_dll_for_aircraft(ac)),
+         _aircraft(ac)
    {
-      auto& dll_info = DllInfo::forAircraft(aircraft);
-      auto dll_instance = this->getDLLInstance();
-      _efis_ctrl_panel = new EFISControlPanelImpl(dll_info, dll_instance);
-      _fcu = new FlightControlUnitImpl(dll_info, dll_instance);
+      auto& dll_info = dll_info::for_aircraft(ac);
+      auto dll_instance = this->get_dll_instance();
+      _efis_ctrl_panel = new efis_control_panel_impl(dll_info, dll_instance);
+      _fcu = new flight_control_unit_impl(dll_info, dll_instance);
    }
 
-   virtual ~WilcoCockpitImpl()
+   virtual ~wilco_cockpit_impl()
    {
-      FreeDLL(this->getDLLInstance());
+      free_dll(this->get_dll_instance());
    }
 
-   virtual const Aircraft& aircraft() const
+   virtual const aircraft& get_aircraft() const
    { return _aircraft; }
 
-   virtual GPUSwitch getGpuSwitch() const
+   virtual gpu_switch get_gpu_switch() const
    {
-      auto hp = this->getDataObject<Wilco_HeadPanel*>(VADDR_HEAD_PANEL);
-      auto gpu = this->getDataObject<Wilco_GPU*>(VADDR_GPU);
+      auto hp = this->get_data_object<wilco_headpanel*>(VADDR_HEAD_PANEL);
+      auto gpu = this->get_data_object<wilco_gpu*>(VADDR_GPU);
       if (hp && hp->gpu_energy)
          return GPU_ON;
       if (gpu && gpu->vtable->isGpuAvailable(gpu))
@@ -76,9 +76,9 @@ public:
       return GPU_OFF;
    }
 
-   virtual void getAPUSwitches(APUSwitches& sw) const
+   virtual void get_apu_switches(apu_switches& sw) const
    {
-      auto apu = this->getDataObject<Wilco_APU*>(VADDR_APU);
+      auto apu = this->get_data_object<wilco_apu*>(VADDR_APU);
       sw.master = apu->master_switch ? APU_MASTER_ON : APU_MASTER_OFF;
 
       if (!apu->unused_08 && apu->unused_0c == 0x40590000)
@@ -89,69 +89,69 @@ public:
          sw.start = APU_START_OFF;
    }
 
-   virtual SDPageButton getSDPageButton() const
+   virtual sd_page_button get_sd_page_button() const
    {
-      auto pedestal = this->getDataObject<Wilco_Pedestal*>(VADDR_PEDESTAL);
-      return (SDPageButton) pedestal->sd_page_selected;
+      auto pedestal = this->get_data_object<wilco_pedestal*>(VADDR_PEDESTAL);
+      return (sd_page_button) pedestal->sd_page_selected;
    }
 
-   virtual const FlightControlUnit& getFlightControlUnit() const 
+   virtual const flight_control_unit& get_flight_control_unit() const 
    { return *_fcu; }
 
-   virtual FlightControlUnit& getFlightControlUnit() 
+   virtual flight_control_unit& get_flight_control_unit() 
    { return *_fcu; }
 
-   virtual const EFISControlPanel& getEFISControlPanel() const
+   virtual const efis_control_panel& get_efis_control_panel() const
    { return *_efis_ctrl_panel; }
 
-   virtual EFISControlPanel& getEFISControlPanel()
+   virtual efis_control_panel& get_efis_control_panel()
    { return *_efis_ctrl_panel; }
 
    virtual void debug() const
    {
-      auto data = (DWORD*) this->getActualAddress(0x1012AA40);
-      TrackChangesOnMemory(data, 4*sizeof(DWORD));
+      auto data = (DWORD*) this->get_actual_address(0x1012AA40);
+      track_changes_on_memory(data, 4*sizeof(DWORD));
    }
 
 private:
 
-   inline static BinarySwitch toBinarySwitch(bool expr)
+   inline static binary_switch tobinary_switch(bool expr)
    { return expr ? SWITCHED_ON : SWITCHED_OFF; }
 
-   inline static BinarySwitch toBinarySwitch(DWORD expr)
-   { return toBinarySwitch(expr > 0); }
+   inline static binary_switch tobinary_switch(DWORD expr)
+   { return tobinary_switch(expr > 0); }
 
-   Aircraft _aircraft;
-   Ptr<EFISControlPanel> _efis_ctrl_panel;
-   Ptr<FlightControlUnit> _fcu;
+   aircraft _aircraft;
+   ptr<efis_control_panel> _efis_ctrl_panel;
+   ptr<flight_control_unit> _fcu;
 };
 
-Aircraft::Type
-ResolveAircraftTypeFromTitle(const Aircraft::Title& title)
-throw (Aircraft::InvalidTitle)
+aircraft_type
+resolve_aircraft_type_from_title(const aircraft_title& title)
+throw (aircraft::invalid_title)
 {
    if (boost::contains(title, "Feelthere"))
    {
       if (boost::contains(title, "A320 CFM"))
-         return Aircraft::A320_CFM;
+         return aircraft_type::A320_CFM;
    }
-   THROW_ERROR(Aircraft::InvalidTitle() << Aircraft::TitleInfo(title));
+   BOOST_THROW_EXCEPTION(aircraft::invalid_title() << aircraft::title_info(title));
 }
 
 } // anonymous namespace
 
-Aircraft::Aircraft(const Type& type) :
+aircraft::aircraft(const aircraft_type& type) :
       type(type), title(AIRCRAFT_NAME[type]) {}
 
 
-Aircraft::Aircraft(const Title& title)
-throw (InvalidTitle) :
-      type(ResolveAircraftTypeFromTitle(title)), title(title) {}
+aircraft::aircraft(const aircraft_title& title)
+throw (invalid_title) :
+      type(resolve_aircraft_type_from_title(title)), title(title) {}
 
-WilcoCockpit*
-WilcoCockpit::newCockpit(const Aircraft& aircraft)
+wilco_cockpit*
+wilco_cockpit::new_cockpit(const aircraft& aircraft)
 {
-   return new WilcoCockpitImpl(aircraft);
+   return new wilco_cockpit_impl(aircraft);
 }
 
 }}; // namespace oac::we

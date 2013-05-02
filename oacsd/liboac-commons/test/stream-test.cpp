@@ -26,64 +26,64 @@
 
 using namespace oac;
 
-BOOST_AUTO_TEST_SUITE(ReaderTest)
+BOOST_AUTO_TEST_SUITE(readerTest)
 
 BOOST_AUTO_TEST_CASE(ShouldReadLine)
 {
-   Ptr<Buffer> buff = new FixedBuffer(512);
-   Ptr<OutputStream> os = new BufferOutputStream(buff);
-   Ptr<InputStream> is = new BufferInputStream(buff);
-   Ptr<Reader> reader = new Reader(is);
-   os->writeAs<std::string>("The quick brown fox jumps over the lazy dog\n");
+   ptr<buffer> buff = new fixed_buffer(512);
+   ptr<output_stream> os = new buffer_output_stream(buff);
+   ptr<input_stream> is = new buffer_input_stream(buff);
+   ptr<reader> rd = new reader(is);
+   os->write_as<std::string>("The quick brown fox jumps over the lazy dog\n");
    BOOST_CHECK_EQUAL(
             "The quick brown fox jumps over the lazy dog",
-            reader->readLine());
+            rd->readLine());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadSeveralLines)
 {
-   Ptr<Buffer> buff = new FixedBuffer(512);
-   Ptr<OutputStream> os = new BufferOutputStream(buff);
-   Ptr<InputStream> is = new BufferInputStream(buff);
-   Ptr<Reader> reader = new Reader(is);
-   os->writeAs<std::string>("The quick brown\n");
-   os->writeAs<std::string>("fox jumps over\n");
-   os->writeAs<std::string>("the lazy dog\n");
-   BOOST_CHECK_EQUAL("The quick brown", reader->readLine());
-   BOOST_CHECK_EQUAL("fox jumps over", reader->readLine());
-   BOOST_CHECK_EQUAL("the lazy dog", reader->readLine());
+   ptr<buffer> buff = new fixed_buffer(512);
+   ptr<output_stream> os = new buffer_output_stream(buff);
+   ptr<input_stream> is = new buffer_input_stream(buff);
+   ptr<reader> rd = new reader(is);
+   os->write_as<std::string>("The quick brown\n");
+   os->write_as<std::string>("fox jumps over\n");
+   os->write_as<std::string>("the lazy dog\n");
+   BOOST_CHECK_EQUAL("The quick brown", rd->readLine());
+   BOOST_CHECK_EQUAL("fox jumps over", rd->readLine());
+   BOOST_CHECK_EQUAL("the lazy dog", rd->readLine());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadEmptyLineOnEmptyBuffer)
 {
-   Ptr<Buffer> buff = new FixedBuffer(0);
-   Ptr<InputStream> is = new BufferInputStream(buff);
-   Ptr<Reader> reader = new Reader(is);
-   BOOST_CHECK_EQUAL("", reader->readLine());
+   ptr<buffer> buff = new fixed_buffer(0);
+   ptr<input_stream> is = new buffer_input_stream(buff);
+   ptr<reader> rd = new reader(is);
+   BOOST_CHECK_EQUAL("", rd->readLine());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadPedingLineUntilEndOfFile)
 {
-   Ptr<Buffer> buff = new FixedBuffer(15);
-   Ptr<OutputStream> os = new BufferOutputStream(buff);
-   Ptr<InputStream> is = new BufferInputStream(buff);
-   Ptr<Reader> reader = new Reader(is);
-   os->writeAs<std::string>("The quick brown");
-   BOOST_CHECK_EQUAL("The quick brown", reader->readLine());
+   ptr<buffer> buff = new fixed_buffer(15);
+   ptr<output_stream> os = new buffer_output_stream(buff);
+   ptr<input_stream> is = new buffer_input_stream(buff);
+   ptr<reader> rd = new reader(is);
+   os->write_as<std::string>("The quick brown");
+   BOOST_CHECK_EQUAL("The quick brown", rd->readLine());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadLineWithMultipleChunks)
 {
-   Ptr<Buffer> buff = new FixedBuffer(256);
-   Ptr<OutputStream> os = new BufferOutputStream(buff);
-   Ptr<InputStream> is = new BufferInputStream(buff);
-   Ptr<Reader> reader = new Reader(is);
-   os->writeAs<std::string>("The quick brown fox jumps over the lazy dog, ");
-   os->writeAs<std::string>("The quick brown fox jumps over the lazy dog\n");
+   ptr<buffer> buff = new fixed_buffer(256);
+   ptr<output_stream> os = new buffer_output_stream(buff);
+   ptr<input_stream> is = new buffer_input_stream(buff);
+   ptr<reader> rd = new reader(is);
+   os->write_as<std::string>("The quick brown fox jumps over the lazy dog, ");
+   os->write_as<std::string>("The quick brown fox jumps over the lazy dog\n");
    BOOST_CHECK_EQUAL(
             "The quick brown fox jumps over the lazy dog, "
             "The quick brown fox jumps over the lazy dog",
-            reader->readLine());
+            rd->readLine());
 }
 
 

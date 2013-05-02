@@ -22,59 +22,59 @@
 
 namespace oac { namespace we {
 
-FlightControlUnitImpl::FlightControlUnitImpl(
-      const DllInfo& dll_info, HINSTANCE dll_instance) :
-   DllInspector(dll_info, dll_instance), _fsuipc(new LocalFSUIPC())
+flight_control_unit_impl::flight_control_unit_impl(
+      const dll_info& dll_info, HINSTANCE dll_instance) :
+   dll_inspector(dll_info, dll_instance), _fsuipc(new local_fsuipc())
 {}
 
-SpeedUnits
-FlightControlUnitImpl::getSpeedDisplayUnits() const
-{ return SpeedUnits(this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY)); }
+speed_units
+flight_control_unit_impl::get_speed_display_units() const
+{ return speed_units(this->get_data_object<DWORD>(VADDR_FCU_SPD_DISPLAY)); }
 
 void
-FlightControlUnitImpl::pushSpeedUnitsButton()
+flight_control_unit_impl::push_speed_units_button()
 {
-   auto units = this->getDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY);
-   this->setDataObject<DWORD>(VADDR_FCU_SPD_DISPLAY, units ^ 1);
+   auto units = this->get_data_object<DWORD>(VADDR_FCU_SPD_DISPLAY);
+   this->set_data_object<DWORD>(VADDR_FCU_SPD_DISPLAY, units ^ 1);
 }
 
-GuidanceDisplayMode
-FlightControlUnitImpl::getGuidanceDisplayMode() const
+guidance_display_mode
+flight_control_unit_impl::get_guidance_display_mode() const
 {
-   return this->access<GuidanceDisplayMode>([](const Wilco_FCU& fcu) {
-      return GuidanceDisplayMode(fcu.hdg_track_display_mode &&
+   return this->access<guidance_display_mode>([](const wilco_fcu& fcu) {
+      return guidance_display_mode(fcu.hdg_track_display_mode &&
          fcu.vs_fpa_display_mode);
    });
 }
 
 void
-FlightControlUnitImpl::pushGuidanceModeButton()
+flight_control_unit_impl::push_guidance_display_mode()
 {
-   this->sendCommand(CMD_FCU_PRESS_HDG_TRK_BTN);
+   this->send_command(CMD_FCU_PRESS_HDG_TRK_BTN);
 }
 
-AltitudeUnits
-FlightControlUnitImpl::getAltitudeDisplayUnits() const
+altitude_units
+flight_control_unit_impl::get_altitude_display_units() const
 {
-   return this->access<AltitudeUnits>([](const Wilco_FCU& fcu) {
-      return AltitudeUnits(fcu.metric_altitude);
+   return this->access<altitude_units>([](const wilco_fcu& fcu) {
+      return altitude_units(fcu.metric_altitude);
    });
 }
 
 void
-FlightControlUnitImpl::pushAltitudeUnitsButton()
+flight_control_unit_impl::push_altitude_units_button()
 {
-   this->sendCommand(CMD_FCU_PRESS_METRIC_ALT_BTN);
+   this->send_command(CMD_FCU_PRESS_METRIC_ALT_BTN);
 }
 
-BinarySwitch
-FlightControlUnitImpl::getSwitch(FCUSwitch sw) const
+binary_switch
+flight_control_unit_impl::get_switch(fcu_switch sw) const
 {
-   return this->access<BinarySwitch>([&sw](const Wilco_FCU& fcu) {
+   return this->access<binary_switch>([&sw](const wilco_fcu& fcu) {
       switch (sw)
       {
          case FCU_SWITCH_LOC:
-            return BinarySwitch(
+            return binary_switch(
                   (fcu.armed_lateral_mode == LAT_MOD_LOC ||
                      fcu.active_lateral_mode == LAT_MOD_LOC) &&
                   (fcu.armed_vertical_mode != VER_MOD_GS &&
@@ -82,14 +82,14 @@ FlightControlUnitImpl::getSwitch(FCUSwitch sw) const
          case FCU_SWITCH_ATHR:
             return fcu.auto_thrust > 0 ? SWITCHED_ON : SWITCHED_OFF;
          case FCU_SWITCH_EXPE:
-            return BinarySwitch(fcu.expedite);
+            return binary_switch(fcu.expedite);
          case FCU_SWITCH_APPR:
-             return BinarySwitch(fcu.armed_vertical_mode == VER_MOD_GS ||
+             return binary_switch(fcu.armed_vertical_mode == VER_MOD_GS ||
                   fcu.active_vertical_mode == VER_MOD_GS);
          case FCU_SWITCH_AP1:
-            return BinarySwitch(fcu.autopilot & AP_1);
+            return binary_switch(fcu.autopilot & AP_1);
          case FCU_SWITCH_AP2:
-            return BinarySwitch(fcu.autopilot & AP_2);
+            return binary_switch(fcu.autopilot & AP_2);
          default:
             return SWITCHED_OFF;
       }
@@ -97,193 +97,193 @@ FlightControlUnitImpl::getSwitch(FCUSwitch sw) const
 }
 
 void
-FlightControlUnitImpl::pushSwitch(FCUSwitch sw)
+flight_control_unit_impl::push_switch(fcu_switch sw)
 {
    switch (sw)
    {
       case FCU_SWITCH_LOC:
-         this->sendCommand(CMD_FCU_PUSH_LOC_BTN);
+         this->send_command(CMD_FCU_PUSH_LOC_BTN);
          break;
       case FCU_SWITCH_ATHR:
-         this->mutate([](Wilco_FCU& fcu) {
+         this->mutate([](wilco_fcu& fcu) {
             fcu.auto_thrust ^= 2;
          });
          break;
       case FCU_SWITCH_EXPE:
-         this->sendCommand(CMD_FCU_PUSH_EXPED_BTN);
+         this->send_command(CMD_FCU_PUSH_EXPED_BTN);
          break;
       case FCU_SWITCH_APPR:
-         this->sendCommand(CMD_FCU_PUSH_APPR_BTN);
+         this->send_command(CMD_FCU_PUSH_APPR_BTN);
          break;
       case FCU_SWITCH_AP1:
-         this->sendCommand(CMD_FCU_PUSH_AP1_BTN);
+         this->send_command(CMD_FCU_PUSH_AP1_BTN);
          break;
       case FCU_SWITCH_AP2:
-         this->sendCommand(CMD_FCU_PUSH_AP2_BTN);
+         this->send_command(CMD_FCU_PUSH_AP2_BTN);
          break;
    }
 }
 
-FCUManagementMode
-FlightControlUnitImpl::getSpeedMode() const
+fcu_management_mode
+flight_control_unit_impl::get_speed_mode() const
 {
-   return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
-      return FCUManagementMode(fcu.speed_knob);
+   return this->access<fcu_management_mode>([](const wilco_fcu& fcu) {
+      return fcu_management_mode(fcu.speed_knob);
    });
 }
 
-FCUManagementMode
-FlightControlUnitImpl::getLateralMode() const
+fcu_management_mode
+flight_control_unit_impl::get_lateral_mode() const
 {
-   return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
-      return FCUManagementMode(fcu.heading_knob);
+   return this->access<fcu_management_mode>([](const wilco_fcu& fcu) {
+      return fcu_management_mode(fcu.heading_knob);
    });
 }
 
-FCUManagementMode
-FlightControlUnitImpl::getVerticalMode() const
+fcu_management_mode
+flight_control_unit_impl::get_vertical_mode() const
 {
-   return this->access<FCUManagementMode>([](const Wilco_FCU& fcu) {
-      return FCUManagementMode(fcu.vertical_speed_knob);
+   return this->access<fcu_management_mode>([](const wilco_fcu& fcu) {
+      return fcu_management_mode(fcu.vertical_speed_knob);
    });
 }
 
-Knots
-FlightControlUnitImpl::getSpeedValue() const
+knots
+flight_control_unit_impl::get_speed_value() const
 {
-   return _fsuipc->readAs<WORD>(0x07E2);
+   return _fsuipc->read_as<WORD>(0x07E2);
 }
 
 void
-FlightControlUnitImpl::setSpeedValue(Knots value)
+flight_control_unit_impl::set_speed_value(knots value)
 {
-   this->sendCommand<Knots>(CMD_FCU_SET_SPD_VALUE, value);
+   this->send_command<knots>(CMD_FCU_SET_SPD_VALUE, value);
 }
 
-Mach100
-FlightControlUnitImpl::getMachValue() const
+mach100
+flight_control_unit_impl::get_mach_value() const
 {
-   auto v = _fsuipc->readAs<DWORD>(0x07E8);
+   auto v = _fsuipc->read_as<DWORD>(0x07E8);
    return boost::math::iround<double>(v / 655.36);
 }
 
 void
-FlightControlUnitImpl::setMachValue(Mach100 value)
+flight_control_unit_impl::set_mach_value(mach100 value)
 {
    DWORD v = boost::math::iround(value * 655.36);
-   _fsuipc->writeAs<DWORD>(0x07E8, v);
+   _fsuipc->write_as<DWORD>(0x07E8, v);
 }
 
-Degrees
-FlightControlUnitImpl::getHeadingValue() const
+degrees
+flight_control_unit_impl::get_heading_value() const
 {
-   auto v = _fsuipc->readAs<DWORD>(0x07CC);
+   auto v = _fsuipc->read_as<DWORD>(0x07CC);
    return boost::math::iround<double>(v * 360.0 / 65536.0);
 }
 
 void
-FlightControlUnitImpl::setHeadingValue(Degrees value)
+flight_control_unit_impl::set_heading_value(degrees value)
 {
-   this->sendCommand<Degrees>(CMD_FCU_SET_HDG_VALUE, value);
+   this->send_command<degrees>(CMD_FCU_SET_HDG_VALUE, value);
 }
 
-Degrees
-FlightControlUnitImpl::getTrackValue() const
+degrees
+flight_control_unit_impl::get_track_value() const
 {
-   return this->access<Degrees>([](const Wilco_FCU& fcu) {
-      return Degrees(fcu.selected_track);
+   return this->access<degrees>([](const wilco_fcu& fcu) {
+      return degrees(fcu.selected_track);
    });
 }
 
 void
-FlightControlUnitImpl::setTrackValue(Degrees value)
+flight_control_unit_impl::set_track_value(degrees value)
 {
-   this->mutate([value](Wilco_FCU& fcu) {
+   this->mutate([value](wilco_fcu& fcu) {
       fcu.selected_track = value;
    });
 }
 
-Feet
-FlightControlUnitImpl::getTargetAltitude() const
+feet
+flight_control_unit_impl::get_target_altitude() const
 {
-   return this->access<Feet>([](const Wilco_FCU& fcu) {
+   return this->access<feet>([](const wilco_fcu& fcu) {
       return fcu.target_altitude;
    });
 }
 
 void
-FlightControlUnitImpl::setTargetAltitude(Feet value)
+flight_control_unit_impl::set_target_altitude(feet value)
 {
-   this->sendCommand<Feet>(CMD_FCU_SET_ALT_VALUE, value);
+   this->send_command<feet>(CMD_FCU_SET_ALT_VALUE, value);
 }
 
-FeetPerMin
-FlightControlUnitImpl::getVerticalSpeedValue() const
+feet_per_min
+flight_control_unit_impl::get_vertical_speed_value() const
 {
-   return this->access<FeetPerMin>([](const Wilco_FCU& fcu) {
+   return this->access<feet_per_min>([](const wilco_fcu& fcu) {
       return fcu.selected_vertical_speed;
    });
 }
 
 void
-FlightControlUnitImpl::setVerticalSpeedValue(FeetPerMin value)
+flight_control_unit_impl::set_vertical_speed_value(feet_per_min value)
 {
    auto fvalue = FLOAT(value);
-   this->sendCommand<FLOAT>(CMD_FCU_SET_VS_VALUE, fvalue);
+   this->send_command<FLOAT>(CMD_FCU_SET_VS_VALUE, fvalue);
 }
 
-Degrees100
-FlightControlUnitImpl::getFPAValue() const
+degrees100
+flight_control_unit_impl::get_fpa_value() const
 {
-   return this->access<Degrees100>([](const Wilco_FCU& fcu) {
+   return this->access<degrees100>([](const wilco_fcu& fcu) {
       return boost::math::iround(fcu.selected_fpa * 100.0f);
    });
 }
 
 void
-FlightControlUnitImpl::setFPAValue(Degrees100 value)
+flight_control_unit_impl::set_fpa_value(degrees100 value)
 {
-   this->mutate([value](Wilco_FCU& fcu) {
+   this->mutate([value](wilco_fcu& fcu) {
       fcu.selected_fpa = (value / 100.0f);
    });
 }
 
 void
-FlightControlUnitImpl::pushKnob(FCUKnob knob)
+flight_control_unit_impl::push_knob(fcu_knob knob)
 {
    switch (knob)
    {
       case FCU_KNOB_SPD:
-         this->sendCommand(CMD_FCU_PUSH_SPD_KNOB);
+         this->send_command(CMD_FCU_PUSH_SPD_KNOB);
          break;
       case FCU_KNOB_HDG:
-         this->sendCommand(CMD_FCU_PUSH_HDG_KNOB);
+         this->send_command(CMD_FCU_PUSH_HDG_KNOB);
          break;
       case FCU_KNOB_ALT:
-         this->sendCommand(CMD_FCU_PUSH_ALT_KNOB);
+         this->send_command(CMD_FCU_PUSH_ALT_KNOB);
          break;
       case FCU_KNOB_VS:
-         this->sendCommand(CMD_FCU_PUSH_VS_KNOB);
+         this->send_command(CMD_FCU_PUSH_VS_KNOB);
          break;
    }
 }
 
 void
-FlightControlUnitImpl::pullKnob(FCUKnob knob)
+flight_control_unit_impl::pull_knob(fcu_knob knob)
 {
    switch (knob)
    {
       case FCU_KNOB_SPD:
-         this->sendCommand(CMD_FCU_PULL_SPD_KNOB);
+         this->send_command(CMD_FCU_PULL_SPD_KNOB);
          break;
       case FCU_KNOB_HDG:
-         this->sendCommand(CMD_FCU_PULL_HDG_KNOB);
+         this->send_command(CMD_FCU_PULL_HDG_KNOB);
          break;
       case FCU_KNOB_ALT:
-         this->sendCommand(CMD_FCU_PULL_ALT_KNOB);
+         this->send_command(CMD_FCU_PULL_ALT_KNOB);
          break;
       case FCU_KNOB_VS:
-         this->sendCommand(CMD_FCU_PULL_VS_KNOB);
+         this->send_command(CMD_FCU_PULL_VS_KNOB);
          break;
    }
 }

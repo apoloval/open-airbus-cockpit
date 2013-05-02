@@ -37,76 +37,76 @@ namespace oac {
  * FSUIPC class. This class encapsulates the access to FSUIPC module. It 
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
-class FSUIPC : public Buffer
+class fsuipc : public buffer
 {
 public:
 
-   DECL_ERROR(InitializationError, ConnectionError);
-   DECL_ERROR_INFO(ErrorCodeInfo, DWORD);
-   DECL_ERROR_INFO(ErrorMessageInfo, std::string);
+   OAC_DECL_ERROR(init_error, connection_error);
+   OAC_DECL_ERROR_INFO(error_code_info, DWORD);
+   OAC_DECL_ERROR_INFO(error_msg_info, std::string);
 
    typedef DWORD Offset;
 
-   class Factory 
+   class factory 
    {
    public:
 
-      virtual FSUIPC* createFSUIPC() throw (InitializationError) = 0;
+      virtual fsuipc* create_fsuipc() throw (init_error) = 0;
    };
 
    virtual DWORD capacity() const
    { return 0xffff; }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError);
+         throw (out_of_bounds_error, read_error);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+         throw (out_of_bounds_error, write_error);
 
-   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError);
+   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
+         throw (out_of_bounds_error, read_error);
 
-   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
+         throw (out_of_bounds_error, write_error);
 
    virtual void copy(
-         const Buffer& src,
+         const buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsError, IOError);
+         DWORD length) throw (out_of_bounds_error, io_error);
 
 protected:
 
-   inline FSUIPC() {}
+   inline fsuipc() {}
 };
 
-class LocalFSUIPC : public FSUIPC
+class local_fsuipc : public fsuipc
 {
 public:
 
-   class Factory : public FSUIPC::Factory
+   class factory : public fsuipc::factory
    {
    public:
       
-      virtual LocalFSUIPC* createFSUIPC() throw (InitializationError)
-      { return new LocalFSUIPC(); }
+      virtual local_fsuipc* create_fsuipc() throw (init_error)
+      { return new local_fsuipc(); }
    };
 
-   LocalFSUIPC() throw (IllegalStateError);
+   local_fsuipc() throw (illegal_state_error);
 
-   virtual ~LocalFSUIPC();
+   virtual ~local_fsuipc();
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError);
+         throw (out_of_bounds_error, read_error);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+         throw (out_of_bounds_error, write_error);
 
    virtual void copy(
-         const Buffer& src,
+         const buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsError, IOError);
+         DWORD length) throw (out_of_bounds_error, io_error);
 
 };
 

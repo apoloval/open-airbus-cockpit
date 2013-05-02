@@ -26,83 +26,83 @@
 
 namespace oac { namespace we {
 
-class FlightControlUnitImpl :
-      public CockpitFront::FlightControlUnit,
-      public DllInspector {
+class flight_control_unit_impl :
+      public cockpit_front::flight_control_unit,
+      public dll_inspector {
 public:
 
-   FlightControlUnitImpl(const DllInfo& dll_info, HINSTANCE dll_instance);
+   flight_control_unit_impl(const dll_info& dll_info, HINSTANCE dll_instance);
 
-   virtual SpeedUnits getSpeedDisplayUnits() const;
+   virtual speed_units get_speed_display_units() const;
 
-   virtual void pushSpeedUnitsButton();
+   virtual void push_speed_units_button();
 
-   virtual GuidanceDisplayMode getGuidanceDisplayMode() const;
+   virtual guidance_display_mode get_guidance_display_mode() const;
 
-   virtual void pushGuidanceModeButton();
+   virtual void push_guidance_display_mode();
 
-   virtual AltitudeUnits getAltitudeDisplayUnits() const;
+   virtual altitude_units get_altitude_display_units() const;
 
-   virtual void pushAltitudeUnitsButton();
+   virtual void push_altitude_units_button();
 
-   virtual BinarySwitch getSwitch(FCUSwitch sw) const;
+   virtual binary_switch get_switch(fcu_switch sw) const;
 
-   virtual void pushSwitch(FCUSwitch sw);
+   virtual void push_switch(fcu_switch sw);
 
-   virtual FCUManagementMode getSpeedMode() const;
+   virtual fcu_management_mode get_speed_mode() const;
 
-   virtual FCUManagementMode getLateralMode() const;
+   virtual fcu_management_mode get_lateral_mode() const;
 
-   virtual FCUManagementMode getVerticalMode() const;
+   virtual fcu_management_mode get_vertical_mode() const;
 
-   virtual Knots getSpeedValue() const;
+   virtual knots get_speed_value() const;
 
-   virtual void setSpeedValue(Knots value);
+   virtual void set_speed_value(knots value);
 
-   virtual Mach100 getMachValue() const;
+   virtual mach100 get_mach_value() const;
 
-   virtual void setMachValue(Mach100 value);
+   virtual void set_mach_value(mach100 value);
 
-   virtual Degrees getHeadingValue() const;
+   virtual degrees get_heading_value() const;
 
-   virtual void setHeadingValue(Degrees value);
+   virtual void set_heading_value(degrees value);
 
-   virtual Degrees getTrackValue() const;
+   virtual degrees get_track_value() const;
 
-   virtual void setTrackValue(Degrees value);
+   virtual void set_track_value(degrees value);
 
-   virtual Feet getTargetAltitude() const;
+   virtual feet get_target_altitude() const;
 
-   virtual void setTargetAltitude(Feet value);
+   virtual void set_target_altitude(feet value);
 
-   virtual FeetPerMin getVerticalSpeedValue() const;
+   virtual feet_per_min get_vertical_speed_value() const;
 
-   virtual void setVerticalSpeedValue(FeetPerMin value);
+   virtual void set_vertical_speed_value(feet_per_min value);
 
-   virtual Degrees100 getFPAValue() const;
+   virtual degrees100 get_fpa_value() const;
 
-   virtual void setFPAValue(Degrees100 value);
+   virtual void set_fpa_value(degrees100 value);
 
-   virtual void pushKnob(FCUKnob knob);
+   virtual void push_knob(fcu_knob knob);
 
-   virtual void pullKnob(FCUKnob knob);
+   virtual void pull_knob(fcu_knob knob);
 
 private:
 
-   inline void mutate(std::function<void(Wilco_FCU&)> mutator)
+   inline void mutate(std::function<void(wilco_fcu&)> mutator)
    {
-      auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
-      mutator(*wilco_fcu);
+      auto fcu = this->get_data_object<wilco_fcu*>(VADDR_FCU);
+      mutator(*fcu);
    }
 
    template <typename T>
-   inline T access(std::function<T(const Wilco_FCU&)> accessor) const
+   inline T access(std::function<T(const wilco_fcu&)> accessor) const
    {
-      auto wilco_fcu = this->getDataObject<Wilco_FCU*>(VADDR_FCU);
-      return accessor(*wilco_fcu);
+      auto fcu = this->get_data_object<wilco_fcu*>(VADDR_FCU);
+      return accessor(*fcu);
    }
 
-   Ptr<FSUIPC> _fsuipc;
+   ptr<fsuipc> _fsuipc;
 };
 
 }} // namespace oac

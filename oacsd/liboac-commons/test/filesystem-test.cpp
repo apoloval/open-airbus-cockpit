@@ -25,67 +25,67 @@
 
 using namespace oac;
 
-BOOST_AUTO_TEST_SUITE(FileMeta)
+BOOST_AUTO_TEST_SUITE(fileMeta)
 
 BOOST_AUTO_TEST_CASE(ShouldIndicateExistence)
 {
-   File f("C:\\Windows\\Notepad.exe");
+   file f("C:\\Windows\\Notepad.exe");
    BOOST_CHECK(f.exists());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldIndicateUnexistence)
 {
-   File f("C:\\Windows\\Foobar.exe");
+   file f("C:\\Windows\\Foobar.exe");
    BOOST_CHECK(!f.exists());
 }
 
-BOOST_AUTO_TEST_CASE(ShouldIndicateRegularFile)
+BOOST_AUTO_TEST_CASE(ShouldIndicateRegularfile)
 {
-   File f("C:\\Windows\\Notepad.exe");
-   BOOST_CHECK(f.isRegularFile());
-   BOOST_CHECK(!f.isDirectory());
+   file f("C:\\Windows\\Notepad.exe");
+   BOOST_CHECK(f.is_regular_file());
+   BOOST_CHECK(!f.is_directory());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldIndicateDirectory)
 {
-   File f("C:\\Windows");
-   BOOST_CHECK(!f.isRegularFile());
-   BOOST_CHECK(f.isDirectory());
+   file f("C:\\Windows");
+   BOOST_CHECK(!f.is_regular_file());
+   BOOST_CHECK(f.is_directory());
 }
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(FileIO)
+BOOST_AUTO_TEST_SUITE(fileIO)
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndRead)
 {
-   File f(File::makeTemp());
+   file f(file::makeTemp());
    auto output = f.append();
-   output->writeAs<DWORD>(100);
-   output->writeAs<DWORD>(200);
-   output->writeAs<DWORD>(300);
+   output->write_as<DWORD>(100);
+   output->write_as<DWORD>(200);
+   output->write_as<DWORD>(300);
    output.reset(); // stream close
 
    auto input = f.read();
-   BOOST_CHECK_EQUAL(100, input->readAs<DWORD>());
-   BOOST_CHECK_EQUAL(200, input->readAs<DWORD>());
-   BOOST_CHECK_EQUAL(300, input->readAs<DWORD>());
+   BOOST_CHECK_EQUAL(100, input->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(200, input->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(300, input->read_as<DWORD>());
 }
 
-BOOST_AUTO_TEST_CASE(ShouldNotReadBehindEndOfFile)
+BOOST_AUTO_TEST_CASE(ShouldNotReadBehindEndOffile)
 {
-   File f(File::makeTemp());
+   file f(file::makeTemp());
    auto output = f.append();
-   output->writeAs<DWORD>(100);
-   output->writeAs<DWORD>(200);
-   output->writeAs<DWORD>(300);
+   output->write_as<DWORD>(100);
+   output->write_as<DWORD>(200);
+   output->write_as<DWORD>(300);
    output.reset(); // stream close
 
    auto input = f.read();
    BYTE buff[4];
-   input->readAs<DWORD>();
-   input->readAs<DWORD>();
-   input->readAs<DWORD>();
+   input->read_as<DWORD>();
+   input->read_as<DWORD>();
+   input->read_as<DWORD>();
    BOOST_CHECK_EQUAL(0, input->read(buff, 4));
 }
 

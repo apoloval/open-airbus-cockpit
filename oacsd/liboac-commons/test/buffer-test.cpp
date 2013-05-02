@@ -25,169 +25,169 @@
 
 using namespace oac;
 
-void FillBuffer(Buffer& buff, DWORD from_offset)
+void fill_buffer(buffer& buff, DWORD from_offset)
 {
    for (DWORD i = 0; i < buff.capacity(); i += sizeof(DWORD))
    {
       if (i + sizeof(DWORD) <= buff.capacity())
-         buff.writeAs<DWORD>(from_offset + i, i / sizeof(DWORD));
+         buff.write_as<DWORD>(from_offset + i, i / sizeof(DWORD));
    }
 }
 
-void BufferWriteTest(
-      const Buffer::Factory& fact, DWORD offset)
+void buffer_write_test(
+      const buffer::factory& fact, DWORD offset)
 {
-   Ptr<Buffer> buff(fact.createBuffer());
+   ptr<buffer> buff(fact.create_buffer());
    DWORD d = 600;
    buff->write(&d, offset, sizeof(DWORD));
 }
 
-void BufferReadTest(
-      const Buffer::Factory& fact, DWORD offset)
+void buffer_read_test(
+      const buffer::factory& fact, DWORD offset)
 {
-   Ptr<Buffer> buff(fact.createBuffer());
+   ptr<buffer> buff(fact.create_buffer());
    DWORD d = 600;
    buff->read(&d, offset, sizeof(DWORD));
 }
 
-void BufferWriteReadTest(
-      const Buffer::Factory& fact, DWORD offset)
+void buffer_write_read_test(
+      const buffer::factory& fact, DWORD offset)
 {
-   Ptr<Buffer> buff(fact.createBuffer());
+   ptr<buffer> buff(fact.create_buffer());
    DWORD d1 = 600, d2;
    buff->write(&d1, offset, sizeof(DWORD));
    buff->read(&d2, offset, sizeof(DWORD));
    BOOST_CHECK_EQUAL(d1, d2);
 }
 
-void BufferWriteAsReadAsTest(
-      const Buffer::Factory& fact, DWORD offset)
+void buffer_write_as_read_as_test(
+      const buffer::factory& fact, DWORD offset)
 {
-   Ptr<Buffer> buff(fact.createBuffer());
-   buff->writeAs<DWORD>(offset, 600);
-   BOOST_CHECK_EQUAL(600, buff->readAs<DWORD>(offset));
+   ptr<buffer> buff(fact.create_buffer());
+   buff->write_as<DWORD>(offset, 600);
+   BOOST_CHECK_EQUAL(600, buff->read_as<DWORD>(offset));
 }
 
-void BufferCopyTest(
-      const Buffer::Factory& fact0,
-      const Buffer::Factory& fact1,
+void buffer_copy_test(
+      const buffer::factory& fact0,
+      const buffer::factory& fact1,
       DWORD fill_from_offset,
       DWORD offset0,
       DWORD offset1,
       DWORD length)
-throw (Buffer::OutOfBoundsError)
+throw (buffer::out_of_bounds_error)
 {
-   Ptr<Buffer> buff0(fact0.createBuffer());
-   Ptr<Buffer> buff1(fact1.createBuffer());
+   ptr<buffer> buff0(fact0.create_buffer());
+   ptr<buffer> buff1(fact1.create_buffer());
 
-   FillBuffer(*buff0, fill_from_offset);
+   fill_buffer(*buff0, fill_from_offset);
    buff1->copy(*buff0, offset0, offset1, length);
    for (DWORD i = 0; i < length; i += sizeof(DWORD))
-      BOOST_CHECK_EQUAL(i / 4, buff1->readAs<DWORD>(offset1 + i));
+      BOOST_CHECK_EQUAL(i / 4, buff1->read_as<DWORD>(offset1 + i));
 }
 
-void DoubleBufferTest(DWORD* seq, unsigned int seql, bool expect_mod)
+void double_buffer_test(DWORD* seq, unsigned int seql, bool expect_mod)
 {
-   DoubleBuffer buff(new FixedBuffer(12), new FixedBuffer(12));
+   double_buffer buff(new fixed_buffer(12), new fixed_buffer(12));
    for (unsigned int i = 0; i < seql; i++)
    {
-      buff.writeAs<DWORD>(0, seq[i]);
+      buff.write_as<DWORD>(0, seq[i]);
       buff.swap();
    }
-   BOOST_CHECK(expect_mod == buff.isModified<sizeof(DWORD)>(0));
+   BOOST_CHECK(expect_mod == buff.is_modified<sizeof(DWORD)>(0));
 }
 
 template <typename BufferType>
-Ptr<BufferType> PrepareBufferStream(DWORD length)
+ptr<BufferType> prepare_buffer_stream(DWORD length)
 {
-   auto b = new FixedBuffer(length);
-   FillBuffer(*b, 0);
+   auto b = new fixed_buffer(length);
+   fill_buffer(*b, 0);
    return new BufferType(b);
 }
 
-BOOST_AUTO_TEST_SUITE(FixedBufferTestSuite);
+BOOST_AUTO_TEST_SUITE(fixed_bufferTestSuite);
 
 BOOST_AUTO_TEST_CASE(ShouldCreate)
 {
-   FixedBuffer buff(12);
+   fixed_buffer buff(12);
    BOOST_CHECK_EQUAL(12, buff.capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
-   Ptr<Buffer::Factory> fact(new FixedBuffer::Factory(12));
-   Ptr<Buffer> buff(fact->createBuffer());
+   ptr<buffer::factory> fact(new fixed_buffer::factory(12));
+   ptr<buffer> buff(fact->create_buffer());
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
-   BufferWriteReadTest(FixedBuffer::Factory(12), 0);
+   buffer_write_read_test(fixed_buffer::factory(12), 0);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnMiddlePosition)
 {
-   BufferWriteReadTest(FixedBuffer::Factory(12), 4);
+   buffer_write_read_test(fixed_buffer::factory(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
-   BufferWriteReadTest(FixedBuffer::Factory(12), 8);
+   buffer_write_read_test(fixed_buffer::factory(12), 8);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldWriteAndReadAs)
+BOOST_AUTO_TEST_CASE(ShouldWriteAndread_as)
 {
-   BufferWriteAsReadAsTest(FixedBuffer::Factory(12), 4);
+   buffer_write_as_read_as_test(fixed_buffer::factory(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferWriteTest(FixedBuffer::Factory(12), 12),
-         Buffer::OutOfBoundsError);
+         buffer_write_test(fixed_buffer::factory(12), 12),
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferReadTest(FixedBuffer::Factory(12), 12),
-         Buffer::OutOfBoundsError);
+         buffer_read_test(fixed_buffer::factory(12), 12),
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnSameOffsets)
 {
-   BufferCopyTest(FixedBuffer::Factory(12), FixedBuffer::Factory(12),
+   buffer_copy_test(fixed_buffer::factory(12), fixed_buffer::factory(12),
                   0, 0, 0, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnDifferentOffsets)
 {
-   BufferCopyTest(FixedBuffer::Factory(12), FixedBuffer::Factory(24),
+   buffer_copy_test(fixed_buffer::factory(12), fixed_buffer::factory(24),
                   0, 0, 12, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(FixedBuffer::Factory(12), FixedBuffer::Factory(12),
+         buffer_copy_test(fixed_buffer::factory(12), fixed_buffer::factory(12),
                         0, 16, 0, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(FixedBuffer::Factory(12), FixedBuffer::Factory(12),
+         buffer_copy_test(fixed_buffer::factory(12), fixed_buffer::factory(12),
                         0, 0, 16, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(FixedBuffer::Factory(12), FixedBuffer::Factory(12),
+         buffer_copy_test(fixed_buffer::factory(12), fixed_buffer::factory(12),
                         0, 0, 0, 24),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END();
@@ -195,148 +195,148 @@ BOOST_AUTO_TEST_SUITE_END();
 
 
 
-BOOST_AUTO_TEST_SUITE(ShiftedBufferTestSuite);
+BOOST_AUTO_TEST_SUITE(shifted_bufferTestSuite);
 
 BOOST_AUTO_TEST_CASE(ShouldCreate)
 {
-   Ptr<Buffer> inner(FixedBuffer::Factory(12).createBuffer());
-   ShiftedBuffer outer(inner, 1024);
+   ptr<buffer> inner(fixed_buffer::factory(12).create_buffer());
+   shifted_buffer outer(inner, 1024);
    BOOST_CHECK_EQUAL(12, outer.capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
-   Ptr<Buffer::Factory> fixed_buff_fact(new FixedBuffer::Factory(12));
-   Ptr<Buffer::Factory> shifted_buff_fact(
-            new ShiftedBuffer::Factory(fixed_buff_fact, 1024));
-   Ptr<Buffer> outer(shifted_buff_fact->createBuffer());
+   ptr<buffer::factory> fixed_buff_fact(new fixed_buffer::factory(12));
+   ptr<buffer::factory> shifted_buff_fact(
+            new shifted_buffer::factory(fixed_buff_fact, 1024));
+   ptr<buffer> outer(shifted_buff_fact->create_buffer());
    BOOST_CHECK_EQUAL(12, outer->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
-   BufferWriteReadTest(
-         ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+   buffer_write_read_test(
+         shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
          1024);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
-   BufferWriteReadTest(
-         ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+   buffer_write_read_test(
+         shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
          1032);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadBeforeFirstPosition)
 {
    BOOST_CHECK_THROW(
-         BufferReadTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_read_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                512),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteBeforeFirstPosition)
 {
    BOOST_CHECK_THROW(
-         BufferWriteTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_write_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                512),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferReadTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_read_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                1036),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferWriteTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_write_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                1036),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldCopyFromShiftedBuffer)
+BOOST_AUTO_TEST_CASE(ShouldCopyFromshifted_buffer)
 {
-   BufferCopyTest(
-         ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
-         FixedBuffer::Factory(12),
+   buffer_copy_test(
+         shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
+         fixed_buffer::factory(12),
          1024, 1024, 0, 12);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldCopyToShiftedBuffer)
+BOOST_AUTO_TEST_CASE(ShouldCopyToshifted_buffer)
 {
-   BufferCopyTest(
-         FixedBuffer::Factory(12),
-         ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+   buffer_copy_test(
+         fixed_buffer::factory(12),
+         shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
          0, 0, 1024, 12);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromShiftedBufferWithWrongSourceOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
+               fixed_buffer::factory(12),
                1024, 512, 0, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromShiftedBufferWithWrongDestinationOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
+               fixed_buffer::factory(12),
                1024, 1024, 16, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromShiftedBufferWithWrongLength)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
+               fixed_buffer::factory(12),
                1024, 1024, 0, 24),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToShiftedBufferWithWrongSourceOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                0, 16, 1024, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToShiftedBufferWithWrongDestinationOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                0, 0, 512, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToShiftedBufferWithWrongLength)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               ShiftedBuffer::Factory(new FixedBuffer::Factory(12), 1024),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               shifted_buffer::factory(new fixed_buffer::factory(12), 1024),
                0, 0, 1024, 24),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END();
@@ -344,151 +344,151 @@ BOOST_AUTO_TEST_SUITE_END();
 
 
 
-BOOST_AUTO_TEST_SUITE(DoubleBufferTestSuite)
+BOOST_AUTO_TEST_SUITE(double_buffer_testSuite)
 
 BOOST_AUTO_TEST_CASE(ShouldCreate)
 {
-   DoubleBuffer buff(new FixedBuffer(12), new FixedBuffer(12));
+   double_buffer buff(new fixed_buffer(12), new fixed_buffer(12));
    BOOST_CHECK_EQUAL(12, buff.capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
-   DoubleBuffer::Factory fact(new FixedBuffer::Factory(12));
-   Ptr<Buffer> buff(fact.createBuffer());
+   double_buffer::factory fact(new fixed_buffer::factory(12));
+   ptr<buffer> buff(fact.create_buffer());
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
-   BufferWriteReadTest(
-         DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+   buffer_write_read_test(
+         double_buffer::factory(new fixed_buffer::factory(12)),
          0);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
-   BufferWriteReadTest(
-         DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+   buffer_write_read_test(
+         double_buffer::factory(new fixed_buffer::factory(12)),
          8);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferReadTest(
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+         buffer_read_test(
+               double_buffer::factory(new fixed_buffer::factory(12)),
                12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         BufferWriteTest(
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+         buffer_write_test(
+               double_buffer::factory(new fixed_buffer::factory(12)),
                12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldCopyFromDoubleBuffer)
+BOOST_AUTO_TEST_CASE(ShouldCopyFromdouble_buffer)
 {
-   BufferCopyTest(
-         DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
-         FixedBuffer::Factory(12),
+   buffer_copy_test(
+         double_buffer::factory(new fixed_buffer::factory(12)),
+         fixed_buffer::factory(12),
          0, 0, 0, 12);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldCopyToDoubleBuffer)
+BOOST_AUTO_TEST_CASE(ShouldCopyTodouble_buffer)
 {
-   BufferCopyTest(
-         FixedBuffer::Factory(12),
-         DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+   buffer_copy_test(
+         fixed_buffer::factory(12),
+         double_buffer::factory(new fixed_buffer::factory(12)),
          0, 0, 0, 12);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromDoubleBufferWithWrongSourceOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               double_buffer::factory(new fixed_buffer::factory(12)),
+               fixed_buffer::factory(12),
                0, 12, 0, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromDoubleBufferWithWrongDestinationOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               double_buffer::factory(new fixed_buffer::factory(12)),
+               fixed_buffer::factory(12),
                0, 0, 12, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromDoubleBufferWithWrongLength)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
-               FixedBuffer::Factory(12),
+         buffer_copy_test(
+               double_buffer::factory(new fixed_buffer::factory(12)),
+               fixed_buffer::factory(12),
                0, 0, 0, 24),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToDoubleBufferWithWrongSourceOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               double_buffer::factory(new fixed_buffer::factory(12)),
                0, 12, 0, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToDoubleBufferWithWrongDestinationOffset)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               double_buffer::factory(new fixed_buffer::factory(12)),
                0, 0, 12, 12),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToDoubleBufferWithWrongLength)
+BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
-         BufferCopyTest(
-               FixedBuffer::Factory(12),
-               DoubleBuffer::Factory(new FixedBuffer::Factory(12)),
+         buffer_copy_test(
+               fixed_buffer::factory(12),
+               double_buffer::factory(new fixed_buffer::factory(12)),
                0, 0, 0, 24),
-         Buffer::OutOfBoundsError);
+         buffer::out_of_bounds_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldDetectModificationOnChange)
 {
    DWORD data[] = { 600, 601 };
-   DoubleBufferTest(data, 2, true);
+   double_buffer_test(data, 2, true);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldNotDetectModificationOnSameValueTwice)
 {
    DWORD data[] = { 600, 600 };
-   DoubleBufferTest(data, 2, false);
+   double_buffer_test(data, 2, false);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldDetectModificationOnSameFirstAndLastValue)
 {
    DWORD data[] = { 600, 601, 602, 601, 600 };
-   DoubleBufferTest(data, 5, true);
+   double_buffer_test(data, 5, true);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldNotDetectModificationOnSameLastTwoValues)
 {
    DWORD data[] = { 600, 601, 602, 601, 601 };
-   DoubleBufferTest(data, 5, false);
+   double_buffer_test(data, 5, false);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -497,49 +497,49 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(BufferStreams)
 
-BOOST_AUTO_TEST_CASE(ShouldReadFromBufferInputStream)
+BOOST_AUTO_TEST_CASE(ShouldReadFrombuffer_input_stream)
 {
-   auto s = PrepareBufferStream<BufferInputStream>(16);
-   BOOST_CHECK_EQUAL(0, s->readAs<DWORD>());
-   BOOST_CHECK_EQUAL(1, s->readAs<DWORD>());
-   BOOST_CHECK_EQUAL(2, s->readAs<DWORD>());
-   BOOST_CHECK_EQUAL(3, s->readAs<DWORD>());
+   auto s = prepare_buffer_stream<buffer_input_stream>(16);
+   BOOST_CHECK_EQUAL(0, s->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(1, s->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(2, s->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(3, s->read_as<DWORD>());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadAndDetectNoMoreBytesAvailable)
 {
-   auto s = PrepareBufferStream<BufferInputStream>(2);
+   auto s = prepare_buffer_stream<buffer_input_stream>(2);
    BYTE buf[4];
    BOOST_CHECK_EQUAL(2, s->read(buf, 4));
    BOOST_CHECK_EQUAL(0, s->read(buf, 4));
 }
 
 
-BOOST_AUTO_TEST_CASE(ShouldFailOnReadAsWhenNoEnoughBytes)
+BOOST_AUTO_TEST_CASE(ShouldFailOnread_asWhenNoEnoughBytes)
 {
-   auto s = PrepareBufferStream<BufferInputStream>(2);
-   BOOST_CHECK_THROW(s->readAs<DWORD>(), InputStream::EndOfFileError);
+   auto s = prepare_buffer_stream<buffer_input_stream>(2);
+   BOOST_CHECK_THROW(s->read_as<DWORD>(), input_stream::eof_error);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldWriteToBufferOutputStream)
+BOOST_AUTO_TEST_CASE(ShouldWriteTobuffer_output_stream)
 {
-   auto s = PrepareBufferStream<BufferOutputStream>(16);
-   s->writeAs<DWORD>(100);
-   s->writeAs<DWORD>(101);
-   s->writeAs<DWORD>(102);
-   s->writeAs<DWORD>(103);
-   auto b = s->buffer();
-   BOOST_CHECK_EQUAL(100, b->readAs<DWORD>(0));
-   BOOST_CHECK_EQUAL(101, b->readAs<DWORD>(4));
-   BOOST_CHECK_EQUAL(102, b->readAs<DWORD>(8));
-   BOOST_CHECK_EQUAL(103, b->readAs<DWORD>(12));
+   auto s = prepare_buffer_stream<buffer_output_stream>(16);
+   s->write_as<DWORD>(100);
+   s->write_as<DWORD>(101);
+   s->write_as<DWORD>(102);
+   s->write_as<DWORD>(103);
+   auto b = s->get_buffer();
+   BOOST_CHECK_EQUAL(100, b->read_as<DWORD>(0));
+   BOOST_CHECK_EQUAL(101, b->read_as<DWORD>(4));
+   BOOST_CHECK_EQUAL(102, b->read_as<DWORD>(8));
+   BOOST_CHECK_EQUAL(103, b->read_as<DWORD>(12));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteWhenNoEnoughCapacity)
 {
-   auto s = PrepareBufferStream<BufferOutputStream>(2);
-   BOOST_CHECK_THROW(s->writeAs<DWORD>(100),
-                     BufferOutputStream::CapacityExhaustedError);
+   auto s = prepare_buffer_stream<buffer_output_stream>(2);
+   BOOST_CHECK_THROW(s->write_as<DWORD>(100),
+                     buffer_output_stream::capacity_exhausted_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

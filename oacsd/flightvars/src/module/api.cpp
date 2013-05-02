@@ -25,87 +25,87 @@ namespace oac { namespace fv {
 namespace {
 
 template <typename T>
-Ptr<Buffer> MakeBufferOf(const T& value)
+ptr<buffer> MakeBufferOf(const T& value)
 {
-   auto buffer = new FixedBuffer(sizeof(T));
-   buffer->writeAs<T>(0, value);
+   auto buffer = new fixed_buffer(sizeof(T));
+   buffer->write_as<T>(0, value);
    return buffer;
 }
 
 } // anonymous namespace
 
-TaggedElement::TaggedElement(const Tag& tag) : _tag(tag)
+tagged_element::tagged_element(const tag& tag) : _tag(tag)
 {
    boost::algorithm::to_lower(_tag);
 }
 
-VariableValue
-VariableValue::fromBool(bool value)
-{ return VariableValue(VAR_BOOLEAN, MakeBufferOf<bool>(value)); }
+variable_value
+variable_value::from_bool(bool value)
+{ return variable_value(VAR_BOOLEAN, MakeBufferOf<bool>(value)); }
 
-VariableValue
-VariableValue::fromByte(BYTE value)
-{ return VariableValue(VAR_BYTE, MakeBufferOf<BYTE>(value)); }
+variable_value
+variable_value::from_byte(BYTE value)
+{ return variable_value(VAR_BYTE, MakeBufferOf<BYTE>(value)); }
 
-VariableValue
-VariableValue::fromWord(WORD value)
-{ return VariableValue(VAR_WORD, MakeBufferOf<WORD>(value)); }
+variable_value
+variable_value::from_word(WORD value)
+{ return variable_value(VAR_WORD, MakeBufferOf<WORD>(value)); }
 
-VariableValue
-VariableValue::fromDWord(DWORD value)
-{ return VariableValue(VAR_DWORD, MakeBufferOf<DWORD>(value)); }
+variable_value
+variable_value::from_dword(DWORD value)
+{ return variable_value(VAR_DWORD, MakeBufferOf<DWORD>(value)); }
 
-VariableValue
-VariableValue::fromFloat(float value)
-{ return VariableValue(VAR_FLOAT, MakeBufferOf<float>(value)); }
+variable_value
+variable_value::from_float(float value)
+{ return variable_value(VAR_FLOAT, MakeBufferOf<float>(value)); }
 
 bool
-VariableValue::asBool() const
-throw (InvalidTypeError)
+variable_value::as_bool() const
+throw (invalid_type_error)
 {
    checkType(VAR_BOOLEAN);
-   return _buffer->readAs<bool>(0);
+   return _buffer->read_as<bool>(0);
 }
 
 BYTE
-VariableValue::asByte() const
-throw (InvalidTypeError)
+variable_value::as_byte() const
+throw (invalid_type_error)
 {
    checkType(VAR_BYTE);
-   return _buffer->readAs<BYTE>(0);
+   return _buffer->read_as<BYTE>(0);
 }
 
 WORD
-VariableValue::asWord() const
-throw (InvalidTypeError)
+variable_value::as_word() const
+throw (invalid_type_error)
 {
    checkType(VAR_WORD);
-   return _buffer->readAs<WORD>(0);
+   return _buffer->read_as<WORD>(0);
 }
 
 DWORD
-VariableValue::asDWord() const
-throw (InvalidTypeError)
+variable_value::as_dword() const
+throw (invalid_type_error)
 {
    checkType(VAR_DWORD);
-   return _buffer->readAs<DWORD>(0);
+   return _buffer->read_as<DWORD>(0);
 }
 
 float
-VariableValue::asFloat() const
-throw (InvalidTypeError)
+variable_value::as_float() const
+throw (invalid_type_error)
 {
    checkType(VAR_FLOAT);
-   return _buffer->readAs<float>(0);
+   return _buffer->read_as<float>(0);
 }
 
 void
-VariableValue::checkType(const VariableType& type) const
-throw (InvalidTypeError)
+variable_value::checkType(const variable_type& type) const
+throw (invalid_type_error)
 {
    if (_type != type)
-      THROW_ERROR(InvalidTypeError() <<
-            ExpectedTypeInfo(type) << ActualTypeInfo(_type));
+      BOOST_THROW_EXCEPTION(invalid_type_error() <<
+            expected_type_info(type) << actual_type_info(_type));
 }
 
 

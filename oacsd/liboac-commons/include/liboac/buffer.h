@@ -34,47 +34,47 @@ namespace oac {
 /**
  * Buffer class. This class provides an abstraction for a data buffer. 
  */
-class Buffer
+class buffer
 {
 public:
 
-   DECL_ERROR(OutOfBoundsError, InvalidInputError);
-   DECL_ERROR(ReadError, IOError);
-   DECL_ERROR(WriteError, IOError);
+   OAC_DECL_ERROR(out_of_bounds_error, invalid_input_error);
+   OAC_DECL_ERROR(read_error, io_error);
+   OAC_DECL_ERROR(write_error, io_error);
 
-   class Factory
+   class factory
    {
    public:
 
-      virtual ~Factory() {}
-      virtual Buffer* createBuffer() const = 0;
+      virtual ~factory() {}
+      virtual buffer* create_buffer() const = 0;
    };
 
-   virtual ~Buffer() {}
+   virtual ~buffer() {}
 
    virtual DWORD capacity() const = 0;
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsError, ReadError) = 0;
+         throw (out_of_bounds_error, read_error) = 0;
 
-   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError, OutputStream::WriteError) = 0;
+   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
+         throw (out_of_bounds_error, read_error, output_stream::write_error) = 0;
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError) = 0;
+         throw (out_of_bounds_error, write_error) = 0;
 
-   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, InputStream::ReadError, WriteError) = 0;
+   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
+         throw (out_of_bounds_error, input_stream::read_error, write_error) = 0;
 
    virtual void copy(
-         const Buffer& src,
+         const buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (OutOfBoundsError, IOError) = 0;
+         DWORD length) throw (out_of_bounds_error, io_error) = 0;
 
    template <typename T>
-   inline T readAs(DWORD offset) const
-   throw (OutOfBoundsError, ReadError)
+   inline T read_as(DWORD offset) const
+   throw (out_of_bounds_error, read_error)
    {
       T result;
       this->read(&result, offset, sizeof(T));
@@ -82,8 +82,8 @@ public:
    }
 
    template <typename T>
-   inline void writeAs(DWORD offset, const T& t)
-   throw (OutOfBoundsError, WriteError)
+   inline void write_as(DWORD offset, const T& t)
+   throw (out_of_bounds_error, write_error)
    { this->write(&t, offset, sizeof(T)); }
 };
 
@@ -91,50 +91,50 @@ public:
  * Buffer of fixed capacity. This is an actual implementation of buffer of
  * fixed capacity set at object construction. 
  */
-class FixedBuffer : public Buffer
+class fixed_buffer : public buffer
 {
 public:
 
-   class Factory : public Buffer::Factory
+   class factory : public buffer::factory
    {
    public:
 
-      inline Factory(size_t capacity) : _capacity(capacity) {}
-      inline virtual FixedBuffer* createBuffer() const
-      { return new FixedBuffer(_capacity); }
+      inline factory(size_t capacity) : _capacity(capacity) {}
+      inline virtual fixed_buffer* create_buffer() const
+      { return new fixed_buffer(_capacity); }
 
    private:
       size_t _capacity;
    };
 
-   FixedBuffer(size_t capacity);
+   fixed_buffer(size_t capacity);
 
-   virtual ~FixedBuffer();
+   virtual ~fixed_buffer();
 
    inline virtual DWORD capacity() const
    { return _capacity; }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError);
+         throw (out_of_bounds_error);
 
-   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
+         throw (out_of_bounds_error, read_error, output_stream::write_error);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+         throw (out_of_bounds_error, write_error);
 
-   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
+   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
+         throw (out_of_bounds_error, input_stream::read_error, write_error);
 
-   virtual void copy(const Buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
+   virtual void copy(const buffer& src, DWORD src_offset,
+         DWORD dst_offset, DWORD length) throw (out_of_bounds_error);
 
 private:
 
    BYTE *_data;
    size_t _capacity;
 
-   void checkBounds(DWORD offset, DWORD length) const throw (OutOfBoundsError);
+   void check_bounds(DWORD offset, DWORD length) const throw (out_of_bounds_error);
 };
 
 /**
@@ -144,58 +144,58 @@ private:
  * or write are shifted. E.g., for shift 0x5600, a read/write on offset
  * 0x5678 would be made on decorated buffer on 0x0078. 
  */
-class ShiftedBuffer : public Buffer
+class shifted_buffer : public buffer
 {
 public:
 
-   class Factory : public Buffer::Factory
+   class factory : public buffer::factory
    {
    public:
 
-      inline Factory(const Ptr<Buffer::Factory>& backed_buffer_fact,
+      inline factory(const ptr<buffer::factory>& backed_buffer_fact,
             DWORD shift) : 
          _backed_buffer_fact(backed_buffer_fact),
          _shift(shift)
       {}
       
-      inline virtual ShiftedBuffer* createBuffer() const
+      inline virtual shifted_buffer* create_buffer() const
       { 
-         return new ShiftedBuffer(_backed_buffer_fact->createBuffer(), _shift);
+         return new shifted_buffer(_backed_buffer_fact->create_buffer(), _shift);
       }
       
    private:
 
-      Ptr<Buffer::Factory> _backed_buffer_fact;
+      ptr<buffer::factory> _backed_buffer_fact;
       DWORD _shift;
    };
 
-   ShiftedBuffer(const Ptr<Buffer>& backed_buffer, DWORD offset_shift);
+   shifted_buffer(const ptr<buffer>& backed_buffer, DWORD offset_shift);
 
    virtual DWORD capacity() const
    { return _backed_buffer->capacity(); }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError);
+         throw (out_of_bounds_error, read_error);
 
-   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
+         throw (out_of_bounds_error, read_error, output_stream::write_error);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+         throw (out_of_bounds_error, write_error);
 
-   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
+   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
+         throw (out_of_bounds_error, input_stream::read_error, write_error);
 
-   virtual void copy(const Buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsError, IOError);
+   virtual void copy(const buffer& src, DWORD src_offset,
+         DWORD dst_offset, DWORD length) throw (out_of_bounds_error, io_error);
 
 private:
 
-   Ptr<Buffer> _backed_buffer;
+   ptr<buffer> _backed_buffer;
    DWORD _backed_capacity;
    DWORD _offset_shift;
 
-   void checkBounds(DWORD offset, DWORD length) const throw (OutOfBoundsError);
+   void check_bounds(DWORD offset, DWORD length) const throw (out_of_bounds_error);
 
    inline DWORD shift(DWORD offset) const
    { return offset - _offset_shift; }
@@ -205,56 +205,56 @@ private:
  * Double buffer class. This class decorates a couple of buffers, 
  * making it possible to detect modifications among them. 
  */
-class DoubleBuffer : public Buffer
+class double_buffer : public buffer
 {
 public:
 
-   class Factory : public Buffer::Factory
+   class factory : public buffer::factory
    {
    public:
 
-      inline Factory(const Ptr<Buffer::Factory>& backed_buffer_fact) : 
+      inline factory(const ptr<buffer::factory>& backed_buffer_fact) :
          _backed_buffer_fact(backed_buffer_fact)
       {}
       
-      inline virtual DoubleBuffer* createBuffer() const
+      inline virtual double_buffer* create_buffer() const
       { 
-         return new DoubleBuffer(
-               _backed_buffer_fact->createBuffer(), 
-               _backed_buffer_fact->createBuffer());
+         return new double_buffer(
+               _backed_buffer_fact->create_buffer(),
+               _backed_buffer_fact->create_buffer());
       }
       
    private:
 
-      Ptr<Buffer::Factory> _backed_buffer_fact;
+      ptr<buffer::factory> _backed_buffer_fact;
       DWORD _shift;
    };
 
-   DoubleBuffer(const Ptr<Buffer>& backed_buffer_0, 
-         const Ptr<Buffer>& backed_buffer_1);
+   double_buffer(const ptr<buffer>& backed_buffer_0,
+         const ptr<buffer>& backed_buffer_1);
 
    virtual DWORD capacity() const
    { return _backed_buffer[_current_buffer]->capacity(); }
 
    virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (OutOfBoundsError, ReadError);
+         throw (out_of_bounds_error, read_error);
 
-   virtual void read(OutputStream& dst, DWORD offset, DWORD length) const
-         throw (OutOfBoundsError, ReadError, OutputStream::WriteError);
+   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
+         throw (out_of_bounds_error, read_error, output_stream::write_error);
 
    virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, WriteError);
+         throw (out_of_bounds_error, write_error);
 
-   virtual DWORD write(InputStream& src, DWORD offset, DWORD length)
-         throw (OutOfBoundsError, InputStream::ReadError, WriteError);
+   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
+         throw (out_of_bounds_error, input_stream::read_error, write_error);
 
-   virtual void copy(const Buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (OutOfBoundsError);
+   virtual void copy(const buffer& src, DWORD src_offset,
+         DWORD dst_offset, DWORD length) throw (out_of_bounds_error);
 
    void swap();
 
    template <DWORD length>
-   inline bool isModified(DWORD offset)
+   inline bool is_modified(DWORD offset)
    {
       BYTE data0[length];
       BYTE data1[length];
@@ -264,52 +264,52 @@ public:
    }
 
    template <typename T>
-   inline bool isModifiedAs(DWORD offset)
-   { return this->isModified<sizeof(T)>(offset); }
+   inline bool is_modified_as(DWORD offset)
+   { return this->is_modified<sizeof(T)>(offset); }
 
 private:
 
-   Ptr<Buffer> _backed_buffer[2];
+   ptr<buffer> _backed_buffer[2];
    BYTE _current_buffer;
 };
 
-class BufferInputStream : public InputStream {
+class buffer_input_stream : public input_stream {
 public:
 
-   inline BufferInputStream(
-         const Ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+   inline buffer_input_stream(
+         const ptr<buffer>& buffer) : _buffer(buffer), _index(0) {}
 
    virtual DWORD read(void* buffer, DWORD count);
 
-   inline Ptr<Buffer> buffer() const { return _buffer; }
+   inline ptr<buffer> get_buffer() const { return _buffer; }
 
 private:
 
-   Ptr<Buffer> _buffer;
+   ptr<buffer> _buffer;
    DWORD _index;
 };
 
-class BufferOutputStream : public OutputStream {
+class buffer_output_stream : public output_stream {
 public:
 
-   DECL_ERROR(CapacityExhaustedError, WriteError);
+   OAC_DECL_ERROR(capacity_exhausted_error, write_error);
 
-   DECL_ERROR_INFO(RemainingBytesInfo, DWORD);
-   DECL_ERROR_INFO(RequestedBytesInfo, DWORD);
+   OAC_DECL_ERROR_INFO(remaining_bytes_info, DWORD);
+   OAC_DECL_ERROR_INFO(requested_bytes_info, DWORD);
 
-   inline BufferOutputStream(
-         const Ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+   inline buffer_output_stream(
+         const ptr<buffer>& buffer) : _buffer(buffer), _index(0) {}
 
    virtual void write(
-         const void* buffer, DWORD count) throw (CapacityExhaustedError);
+         const void* buffer, DWORD count) throw (capacity_exhausted_error);
 
    virtual void flush();
 
-   inline Ptr<Buffer> buffer() const { return _buffer; }
+   inline ptr<buffer> get_buffer() const { return _buffer; }
 
 private:
 
-   Ptr<Buffer> _buffer;
+   ptr<buffer> _buffer;
    DWORD _index;
 
 };

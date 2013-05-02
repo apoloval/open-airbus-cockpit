@@ -40,81 +40,81 @@ DWORD parseHexadecimal(const std::string& str)
 
 }
 
-const VariableGroup FsuipcFlightVars::VAR_GROUP("fsuipc/offset");
+const variable_group fsuipc_flight_vars::VAR_GROUP("fsuipc/offset");
 
-FsuipcFlightVars::FsuipcFlightVars(const Ptr<Buffer>& fsuipc)
-   : _sc("FlightVars - FSUIPC"),
+fsuipc_flight_vars::fsuipc_flight_vars(const ptr<buffer>& fsuipc)
+   : _sc("flight_vars - FSUIPC"),
      _fsuipc(fsuipc),
-     _buffer(DoubleBuffer::Factory(
-                new FixedBuffer::Factory(0xffff)).createBuffer())
+     _buffer(double_buffer::factory(
+                new fixed_buffer::factory(0xffff)).create_buffer())
 {
    /**
     * Register a timed callback on SimConnect to check var changes
     * every 1/6 seconds.
     */
    Log(INFO, "@FSUIPC; Registering 6HZ event in SimConnect...");
-   _sc.registerOnEventCallback(
-            [this](SimConnectClient&, const SIMCONNECT_RECV_EVENT&) {
+   _sc.register_on_event_callback(
+            [this](simconnect_client&, const SIMCONNECT_RECV_EVENT&) {
       // We only register SYSTEM_EVENT_6HZ event, so args check is not needed
-      notifyChanges();
+      notify_changes();
    });
-   _sc.subscribeToSystemEvent(SimConnectClient::SYSTEM_EVENT_6HZ);
-   _sc.dispatchMessage();
+   _sc.subscribe_to_system_event(simconnect_client::SYSTEM_EVENT_6HZ);
+   _sc.dispatch_message();
    Log(INFO, "@FSUIPC; 6HZ event successfully registered!");
 
    // Initialize FSUIPC interface
    if (!_fsuipc)
    {
       Log(INFO, "@FSUIPC; Initializing FSUIPC interface... ");
-      _fsuipc = new LocalFSUIPC();
+      _fsuipc = new local_fsuipc();
       Log(INFO, "@FSUIPC; FSUIPC interface successfully initialized!");
    }
 }
 
 void
-FsuipcFlightVars::subscribe(
-      const VariableGroup& grp,
-      const VariableName& name,
-      const Subscription& subs)
-throw (UnknownVariableError)
+fsuipc_flight_vars::subscribe(
+      const variable_group& grp,
+      const variable_name& name,
+      const subscription& subs)
+throw (unknown_variable_error)
 {
    Log(INFO, boost::format("@FSUIPC; Subscribing on %s -> %s...")
-       % grp.tag() % name.tag());
-   checkGroup(grp);
-   Offset offset(name);
+       % grp.get_tag() % name.get_tag());
+   check_group(grp);
+   offset offset(name);
    subscribe(offset, subs);
    Log(INFO, "@FSUIPC; Subscribed successfully!");
 }
 
 void
-FsuipcFlightVars::checkGroup(const VariableGroup& grp)
-throw (UnknownVariableGroupError)
+fsuipc_flight_vars::check_group(const variable_group& grp)
+throw (unknown_variable_group_error)
 {
    if (grp != VAR_GROUP)
-      THROW_ERROR(UnknownVariableGroupError() << VariableGroupInfo(grp));
+      BOOST_THROW_EXCEPTION(unknown_variable_group_error() << variable_group_info(grp));
 }
 
 void
-FsuipcFlightVars::subscribe(const Offset& offset,
-                            const Subscription& subs)
+fsuipc_flight_vars::subscribe(const offset& offset,
+                            const subscription& subs)
 {
    // Insert a new subscription list, or take the existing one if any
    auto entry = _subscribers.find(offset);
    if (entry == _subscribers.end())
    {
-      _subscribers[offset] = SubscriptionList();
+      _subscribers[offset] = subscriptionList();
       entry = _subscribers.find(offset);
    }
    entry->second.push_back(subs);
 }
 
 void
-FsuipcFlightVars::notifyChanges()
+fsuipc_flight_vars::notify_changes()
 {
    for (auto entry : _subscribers)
    {
       auto offset = entry.first;
-      syncOffset(offset);
+      sync_offset(offset);
       if (offset.isUpdated(*_buffer))
          for (auto subs : entry.second)
          {
@@ -125,20 +125,20 @@ FsuipcFlightVars::notifyChanges()
 }
 
 void
-FsuipcFlightVars::syncOffset(const Offset& offset)
+fsuipc_flight_vars::sync_offset(const offset& offset)
 {
    _buffer->copy(*_fsuipc, offset.address, offset.address, offset.length);
 }
 
-FsuipcFlightVars::Offset::Offset(const VariableName& var_name)
-throw (UnknownVariableNameError)
-   : TaggedElement(var_name),
+fsuipc_flight_vars::offset::offset(const variable_name& var_name)
+throw (unknown_variable_name_error)
+   : tagged_element(var_name),
      var_name(var_name)
 {
    try
    {
       std::vector<std::string> parts;
-      boost::split(parts, var_name.tag(), boost::is_any_of(":"));
+      boost::split(parts, var_name.get_tag(), boost::is_any_of(":"));
       if (parts.size() <= 2)
       {
          // If no offset size is specified, assume BYTE
@@ -154,30 +154,30 @@ throw (UnknownVariableNameError)
    catch(boost::bad_lexical_cast&) {
       // Let's continue and throw below
    }
-   THROW_ERROR(UnknownVariableNameError() << VariableNameInfo(var_name));
+   BOOST_THROW_EXCEPTION(unknown_variable_name_error() << variable_name_info(var_name));
 }
 
 bool
-FsuipcFlightVars::Offset::isUpdated(DoubleBuffer& buf)
+fsuipc_flight_vars::offset::isUpdated(double_buffer& buf)
 {
    switch (length)
    {
-      case 1: return buf.isModifiedAs<BYTE>(address);
-      case 2: return buf.isModifiedAs<WORD>(address);
-      case 4: return buf.isModifiedAs<DWORD>(address);
-      default: THROW_ERROR(IllegalStateError()); // never happens
+      case 1: return buf.is_modified_as<BYTE>(address);
+      case 2: return buf.is_modified_as<WORD>(address);
+      case 4: return buf.is_modified_as<DWORD>(address);
+      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
    }
 }
 
-VariableValue
-FsuipcFlightVars::Offset::read(DoubleBuffer& buf)
+variable_value
+fsuipc_flight_vars::offset::read(double_buffer& buf)
 {
    switch (length)
    {
-      case 1: return VariableValue::fromByte(buf.readAs<BYTE>(address));
-      case 2: return VariableValue::fromWord(buf.readAs<WORD>(address));
-      case 4: return VariableValue::fromDWord(buf.readAs<DWORD>(address));
-      default: THROW_ERROR(IllegalStateError()); // never happens
+      case 1: return variable_value::from_byte(buf.read_as<BYTE>(address));
+      case 2: return variable_value::from_word(buf.read_as<WORD>(address));
+      case 4: return variable_value::from_dword(buf.read_as<DWORD>(address));
+      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
    }
 
 }

@@ -39,13 +39,13 @@ class Logger
 {
 public:
 
-   inline static void setMain(const Ptr<Logger>& logger)
+   inline static void setMain(const ptr<Logger>& logger)
    { _main = logger; }
 
-   inline static Ptr<Logger> main()
+   inline static ptr<Logger> main()
    { return _main; }
 
-   inline Logger(const LogLevel& level, const Ptr<OutputStream>& output)
+   inline Logger(const LogLevel& level, const ptr<output_stream>& output)
       : _output(output), _level(level) {}
 
    /**
@@ -55,10 +55,10 @@ public:
 
 private:
 
-   Ptr<OutputStream> _output;
+   ptr<output_stream> _output;
    LogLevel _level;
 
-   static Ptr<Logger> _main;
+   static ptr<Logger> _main;
 };
 
 /**

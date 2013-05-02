@@ -31,16 +31,16 @@ using namespace oac::fv;
 
 void __stdcall DLLStart(void)
 {
-   File log_file(LOG_FILE);
+   file log_file(LOG_FILE);
    Logger::setMain(new Logger(LogLevel::INFO, log_file.append()));
    try
    {
-      Log(oac::INFO, "FlightVars module is starting");
-      auto core = FlightVarsCore::instance();
-      core->registerGroupMaster(
-            FsuipcFlightVars::VAR_GROUP, new FsuipcFlightVars());
-      Log(oac::INFO, "FlightVars module has been started");
-   } catch (Error& e)
+      Log(oac::INFO, "flight_vars module is starting");
+      auto core = flight_vars_core::instance();
+      core->register_group_master(
+            fsuipc_flight_vars::VAR_GROUP, new fsuipc_flight_vars());
+      Log(oac::INFO, "flight_vars module has been started");
+   } catch (error& e)
    {
       Log(oac::FAIL, boost::format("Unexpected error: %s") %
           boost::diagnostic_information(e));
@@ -49,8 +49,8 @@ void __stdcall DLLStart(void)
 
 void __stdcall DLLStop(void)
 {
-   Log(oac::INFO, "FlightVars module is stopping");
+   Log(oac::INFO, "flight_vars module is stopping");
    // Destroy core here
-   Log(oac::INFO, "FlightVars module has been stopped");
+   Log(oac::INFO, "flight_vars module has been stopped");
    Logger::setMain(nullptr); // close the main logger
 }

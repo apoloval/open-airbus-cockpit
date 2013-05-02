@@ -27,27 +27,27 @@ namespace oac {
 
 typedef boost::filesystem::path Path;
 
-class File {
+class file {
 public:
 
-   DECL_ERROR(OpenError, InvalidInputError);
-   DECL_ERROR(NotFoundError, OpenError);
+   OAC_DECL_ERROR(open_error, invalid_input_error);
+   OAC_DECL_ERROR(not_found_error, open_error);
 
-   static File makeTemp();
+   static file makeTemp();
 
-   inline File(const Path& path) : _path(path) {}
+   inline file(const Path& path) : _path(path) {}
 
    bool exists() const;
 
-   bool isRegularFile() const;
+   bool is_regular_file() const;
 
-   bool isDirectory() const;
+   bool is_directory() const;
 
-   Ptr<InputStream> read() const;
+   ptr<input_stream> read() const;
 
-   Ptr<OutputStream> append() const;
+   ptr<output_stream> append() const;
 
-   Ptr<OutputStream> write() const;
+   ptr<output_stream> write() const;
 
 private:
 

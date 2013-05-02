@@ -30,139 +30,139 @@ void CALLBACK DispatchMessage(
 {
    try 
    {
-      auto receiver = static_cast<SimConnectClient*>(pContext);
-      receiver->onMessage(pData, cbData);
+      auto receiver = static_cast<simconnect_client*>(pContext);
+      receiver->on_message(pData, cbData);
    } catch (std::exception& ex) {
       Log(WARN, ex.what());
    }
 }
 
-void OnOpenIgnore(SimConnectClient& client, const SIMCONNECT_RECV_OPEN& msg)
+void OnOpenIgnore(simconnect_client& client, const SIMCONNECT_RECV_OPEN& msg)
 {}
 
 }; // anonymous namespace
 
-SimConnectClient::DataDefinition&
-SimConnectClient::DataDefinition::add(
-      const DataName& name, 
-      const DataUnits& units, 
+simconnect_client::data_definition&
+simconnect_client::data_definition::add(
+      const data_name& name,
+      const data_units& units,
       SIMCONNECT_DATATYPE data_type)
-throw (DataDefinitionError)
+throw (data_definition_error)
 { 
    auto result = SimConnect_AddToDataDefinition(
          _handle, _id, name.c_str(), units.c_str(), data_type); 
    if (result != S_OK)
-      THROW_ERROR(DataDefinitionError() <<
-            DataNameInfo(name) << DataUnitsInfo(units));
+      BOOST_THROW_EXCEPTION(data_definition_error() <<
+            data_name_info(name) << data_units_info(units));
    return *this;
 }
 
 void
-SimConnectClient::DataPullRequest::submit()
-throw (DataRequestError)
+simconnect_client::data_pull_request::submit()
+throw (data_request_error)
 {
    auto result = SimConnect_RequestDataOnSimObject(
          _handle, _id, _data_def, _object, _period, 
          _flags, _origin, _interval, _limit);
    if (result != S_OK)
-      THROW_ERROR(DataRequestError() << DataDefinitionInfo(_data_def));
+      BOOST_THROW_EXCEPTION(data_request_error() << data_definition_info(_data_def));
 }
 
 void
-SimConnectClient::DataPushRequest::submit(void* data)
-throw (DataRequestError)
+simconnect_client::data_push_request::submit(void* data)
+throw (data_request_error)
 {
    auto result = SimConnect_SetDataOnSimObject(
          _handle, _data_def, _object, _flags, _count, _element_size, data);
    if (result != S_OK)
-      THROW_ERROR(DataRequestError() << DataDefinitionInfo(_data_def));
+      BOOST_THROW_EXCEPTION(data_request_error() << data_definition_info(_data_def));
 }
 
-SimConnectClient::ClientEvent::ClientEvent(
-      const SimConnectClient& cli,
-      const EventName& event_name,
+simconnect_client::client_event::client_event(
+      const simconnect_client& cli,
+      const event_name& ev_name,
       SIMCONNECT_CLIENT_EVENT_ID id)
-throw (EventError) :
+throw (event_error) :
    _handle(cli._handle), _id(id), _object(SIMCONNECT_OBJECT_ID_USER),
    _group(SIMCONNECT_GROUP_PRIORITY_HIGHEST), 
    _flags(SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY)
 {
    auto result = SimConnect_MapClientEventToSimEvent(
-         _handle, _id, event_name.c_str());
+         _handle, _id, ev_name.c_str());
    if (result != S_OK)
-      THROW_ERROR(EventError() <<
-            SimConnectFunctionInfo("SimConnect_MapClientEventToSimEvent") <<
-            EventNameInfo(event_name));
+      BOOST_THROW_EXCEPTION(event_error() <<
+            simconnect_function_info("SimConnect_MapClientEventToSimEvent") <<
+            event_name_info(ev_name));
 }
 
-SimConnectClient::ClientEvent::ClientEvent(
-      const SimConnectClient& cli,
+simconnect_client::client_event::client_event(
+      const simconnect_client& cli,
       SIMCONNECT_CLIENT_EVENT_ID id)
-throw (EventError) :
+throw (event_error) :
    _handle(cli._handle), _id(id), _object(SIMCONNECT_OBJECT_ID_USER),
    _group(SIMCONNECT_GROUP_PRIORITY_HIGHEST), 
    _flags(SIMCONNECT_EVENT_FLAG_GROUPID_IS_PRIORITY)
 {
    auto result = SimConnect_MapClientEventToSimEvent(_handle, _id);
    if (result != S_OK)
-      THROW_ERROR(EventError() <<
-            SimConnectFunctionInfo("SimConnect_MapClientEventToSimEvent"));
+      BOOST_THROW_EXCEPTION(event_error() <<
+            simconnect_function_info("SimConnect_MapClientEventToSimEvent"));
 }
 
 void 
-SimConnectClient::ClientEvent::transmit(DWORD value)
-throw (EventError)
+simconnect_client::client_event::transmit(DWORD value)
+throw (event_error)
 {
    auto result = SimConnect_TransmitClientEvent(
          _handle, _object, _id, value, _group, _flags);
    if (result != S_OK)
-      THROW_ERROR(EventError() <<
-            SimConnectFunctionInfo("SimConnect_TransmitClientEvent"));
+      BOOST_THROW_EXCEPTION(event_error() <<
+            simconnect_function_info("SimConnect_TransmitClientEvent"));
 }
 
-SimConnectClient::EventTransmitter::EventTransmitter(
-      const SimConnectClient::EventName& event_name) :
-   _client(new SimConnectClient("Event Transmitter")),
-   _event(_client->newClientEvent(event_name))
+simconnect_client::event_transmitter::event_transmitter(
+      const simconnect_client::event_name& event_name) :
+   _client(new simconnect_client("Event Transmitter")),
+   _event(_client->new_client_event(event_name))
 {}
 
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_1SEC("1sec");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_1SEC("1sec");
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_4SEC("4sec");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_4SEC("4sec");
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_6HZ("6hz");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_6HZ("6hz");
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_FRAME("Frame");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_FRAME("Frame");
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_AIRCRAFT_LOADED("AircraftLoaded");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_AIRCRAFT_LOADED("AircraftLoaded");
 
-const SimConnectClient::EventName
-SimConnectClient::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
+const simconnect_client::event_name
+simconnect_client::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
 
-SimConnectClient::SimConnectClient(const std::string& name)
-throw (ConnectionError) :
+simconnect_client::simconnect_client(const std::string& name)
+throw (connection_error) :
    _name(name)
 { 
    this->open(); 
-   this->registerOnOpenCallback(OnOpenIgnore);
+   this->register_on_open_callback(OnOpenIgnore);
 }
 
-SimConnectClient::SimConnectClient(const std::string& name,
-         const OnOpenCallback& open_callback) 
-throw (ConnectionError) :
+simconnect_client::simconnect_client(const std::string& name,
+         const on_open_callback& open_callback)
+throw (connection_error) :
    _name(name)
 {
    this->open();
-   this->registerOnOpenCallback(open_callback);
+   this->register_on_open_callback(open_callback);
 }
 
-SimConnectClient::~SimConnectClient()
+simconnect_client::~simconnect_client()
 {
    if (SimConnect_Close(_handle) != S_OK)
       Log(WARN, str(boost::format(
@@ -171,11 +171,11 @@ SimConnectClient::~SimConnectClient()
 }
 
 void
-SimConnectClient::dispatchMessage()
+simconnect_client::dispatch_message()
 { SimConnect_CallDispatch(_handle, DispatchMessage, this); }
 
 void
-SimConnectClient::onMessage(SIMCONNECT_RECV* msg, DWORD msg_len)
+simconnect_client::on_message(SIMCONNECT_RECV* msg, DWORD msg_len)
 {
    try 
    {
@@ -183,7 +183,7 @@ SimConnectClient::onMessage(SIMCONNECT_RECV* msg, DWORD msg_len)
 
       auto callback = this->receiver(SIMCONNECT_RECV_ID(msg_id));
       if (callback)
-         callback->sendMessage(*this, msg);
+         callback->send_message(*this, msg);
       else
          Log(WARN, str(boost::format(
                "cannot deliver message with ID %d: no callback registered") %
@@ -197,185 +197,185 @@ SimConnectClient::onMessage(SIMCONNECT_RECV* msg, DWORD msg_len)
 }
 
 void 
-SimConnectClient::registerOnNullCallback(const OnNullCallback& callback)
+simconnect_client::register_on_null_callback(const on_null_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV>(callback, SIMCONNECT_RECV_ID_NULL);
+   this->register_callback<SIMCONNECT_RECV>(callback, SIMCONNECT_RECV_ID_NULL);
 }
 
 void 
-SimConnectClient::registerOnExceptionCallback(
-      const OnExceptionCallback& callback)
+simconnect_client::register_on_exception_callback(
+      const on_exception_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_EXCEPTION>(
+   this->register_callback<SIMCONNECT_RECV_EXCEPTION>(
          callback, SIMCONNECT_RECV_ID_EXCEPTION);
 }
 
 void 
-SimConnectClient::registerOnOpenCallback(const OnOpenCallback& callback)
+simconnect_client::register_on_open_callback(const on_open_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_OPEN>(
+   this->register_callback<SIMCONNECT_RECV_OPEN>(
       callback, SIMCONNECT_RECV_ID_OPEN);
 }
 
 void 
-SimConnectClient::registerOnQuitCallback(const OnQuitCallback& callback)
+simconnect_client::register_on_quit_callback(const on_quit_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV>(
+   this->register_callback<SIMCONNECT_RECV>(
       callback, SIMCONNECT_RECV_ID_QUIT);
 }
 
 void 
-SimConnectClient::registerOnEventCallback(const OnEventCallback& callback)
+simconnect_client::register_on_event_callback(const on_event_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_EVENT>(
+   this->register_callback<SIMCONNECT_RECV_EVENT>(
       callback, SIMCONNECT_RECV_ID_EVENT);
 }
 
 void 
-SimConnectClient::registerOnEventObjectAddRemoveCallback(
-      const OnEventObjectAddRemoveCallback& callback)
+simconnect_client::register_on_event_object_add_remove_callback(
+      const on_event_object_add_remove_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE>(
+   this->register_callback<SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE>(
       callback, SIMCONNECT_RECV_ID_EVENT_OBJECT_ADDREMOVE);
 }
 
 void 
-SimConnectClient::registerOnEventFilenameCallback(
-      const OnEventFilenameCallback& callback)
+simconnect_client::register_on_event_filename_callback(
+      const on_event_filename_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_EVENT_FILENAME>(
+   this->register_callback<SIMCONNECT_RECV_EVENT_FILENAME>(
       callback, SIMCONNECT_RECV_ID_EVENT_FILENAME);
 }
 
 void 
-SimConnectClient::registerOnEventFrameCallback(
-      const OnEventFrameCallback& callback)
+simconnect_client::register_on_event_frame_callback(
+      const on_event_frame_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_EVENT_FRAME>(
+   this->register_callback<SIMCONNECT_RECV_EVENT_FRAME>(
       callback, SIMCONNECT_RECV_ID_EVENT_FRAME);
 }
 
 void 
-SimConnectClient::registerOnSimObjectDataCallback(
-      const OnSimObjectDataCallback& callback)
+simconnect_client::register_on_simobject_data_callback(
+      const on_simobject_data_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_SIMOBJECT_DATA>(
+   this->register_callback<SIMCONNECT_RECV_SIMOBJECT_DATA>(
       callback, SIMCONNECT_RECV_ID_SIMOBJECT_DATA);
 }
 
 void 
-SimConnectClient::registerOnSimObjectDataByTypeCallback(
-      const OnSimObjectDataByTypeCallback& callback)
+simconnect_client::register_on_simobject_data_by_type_callback(
+      const on_simobject_data_by_type_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE>(
+   this->register_callback<SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE>(
       callback, SIMCONNECT_RECV_ID_SIMOBJECT_DATA_BYTYPE);
 }
 
 void 
-SimConnectClient::registerOnWeatherObservationCallback(
-      const OnWeatherObservationCallback& callback)
+simconnect_client::register_on_weather_observation_callback(
+      const on_weather_observation_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_WEATHER_OBSERVATION>(
+   this->register_callback<SIMCONNECT_RECV_WEATHER_OBSERVATION>(
       callback, SIMCONNECT_RECV_ID_CLOUD_STATE);
 }
 
 void 
-SimConnectClient::registerOnCloudStateCallback(
-      const OnCloudStateCallback& callback)
+simconnect_client::register_on_cloud_state_callback(
+      const on_cloud_state_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_CLOUD_STATE>(
+   this->register_callback<SIMCONNECT_RECV_CLOUD_STATE>(
       callback, SIMCONNECT_RECV_ID_WEATHER_OBSERVATION);
 }
 
 void 
-SimConnectClient::registerOnAssignedObjectIDCallback(
-      const OnAssignedObjectIDCallback& callback)
+simconnect_client::register_on_assigned_object_id_callback(
+      const on_assigned_object_id_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID>(
+   this->register_callback<SIMCONNECT_RECV_ASSIGNED_OBJECT_ID>(
       callback, SIMCONNECT_RECV_ID_ASSIGNED_OBJECT_ID);
 }
 
 void 
-SimConnectClient::registerOnReservedKeyCallback(
-      const OnReservedKeyCallback& callback)
+simconnect_client::register_on_reserved_key_callback(
+      const on_reserved_key_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_RESERVED_KEY>(
+   this->register_callback<SIMCONNECT_RECV_RESERVED_KEY>(
       callback, SIMCONNECT_RECV_ID_RESERVED_KEY);
 }
 
 void 
-SimConnectClient::registerOnCustomActionCallback(
-      const OnCustomActionCallback& callback)
+simconnect_client::register_on_custom_action_callback(
+      const on_custom_action_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_CUSTOM_ACTION>(
+   this->register_callback<SIMCONNECT_RECV_CUSTOM_ACTION>(
       callback, SIMCONNECT_RECV_ID_CUSTOM_ACTION);
 }
 
 void 
-SimConnectClient::registerOnSystemStateCallback(
-      const OnSystemStateCallback& callback)
+simconnect_client::register_on_system_state_callback(
+      const on_system_state_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_SYSTEM_STATE>(
+   this->register_callback<SIMCONNECT_RECV_SYSTEM_STATE>(
       callback, SIMCONNECT_RECV_ID_SYSTEM_STATE);
 }
 
 void 
-SimConnectClient::registerOnClientDataCallback(
-      const OnClientDataCallback& callback)
+simconnect_client::register_on_client_data_callback(
+      const on_client_data_callback& callback)
 {
-   this->registerCallback<SIMCONNECT_RECV_CLIENT_DATA>(
+   this->register_callback<SIMCONNECT_RECV_CLIENT_DATA>(
       callback, SIMCONNECT_RECV_ID_CLIENT_DATA);
 }
 
 void
-SimConnectClient::subscribeToSystemEvent(
-      const EventName& event_name,
+simconnect_client::subscribe_to_system_event(
+      const event_name& event_name,
       SIMCONNECT_CLIENT_EVENT_ID event_id)
-throw (UnknownEventNameError)
+throw (unknown_event_name_error)
 {
    auto result = SimConnect_SubscribeToSystemEvent(
          _handle, event_id, event_name.c_str());
    if (result != S_OK)
-      THROW_ERROR(UnknownEventNameError() << EventNameInfo(event_name));
+      BOOST_THROW_EXCEPTION(unknown_event_name_error() << event_name_info(event_name));
 }
 
-SimConnectClient::DataDefinition
-SimConnectClient::newDataDefinition()
+simconnect_client::data_definition
+simconnect_client::new_data_definition()
 {
    static SIMCONNECT_DATA_DEFINITION_ID next_id = 0xffff0000;
-   return DataDefinition(*this, next_id++);
+   return data_definition(*this, next_id++);
 }
 
-SimConnectClient::DataPullRequest 
-SimConnectClient::newDataPullRequest(const DataDefinition& data_def)
+simconnect_client::data_pull_request
+simconnect_client::new_data_pull_request(const data_definition& data_def)
 {
    static SIMCONNECT_DATA_REQUEST_ID next_id = 0xffff0000;
-   return DataPullRequest(*this, data_def, next_id++);
+   return data_pull_request(*this, data_def, next_id++);
 }
 
-SimConnectClient::DataPushRequest 
-SimConnectClient::newDataPushRequest(const DataDefinition& data_def)
-{ return DataPushRequest(*this, data_def); }
+simconnect_client::data_push_request
+simconnect_client::new_data_push_request(const data_definition& data_def)
+{ return data_push_request(*this, data_def); }
 
-SimConnectClient::ClientEvent
-SimConnectClient::newClientEvent(const EventName& event_name)
+simconnect_client::client_event
+simconnect_client::new_client_event(const event_name& event_name)
 { 
    static SIMCONNECT_CLIENT_EVENT_ID next_id = 0xffff0000;
-   return ClientEvent(*this, event_name, next_id++);
+   return client_event(*this, event_name, next_id++);
 }
 
 void
-SimConnectClient::open()
-throw (ConnectionError)
+simconnect_client::open()
+throw (connection_error)
 {
    if (SimConnect_Open(&_handle, _name.c_str(), NULL, 0, 0, 0) != S_OK)
-      THROW_ERROR(ConnectionError());
+      BOOST_THROW_EXCEPTION(connection_error());
    if (SimConnect_CallDispatch(_handle, DispatchMessage, this) != S_OK)
-      THROW_ERROR(ConnectionError());
+      BOOST_THROW_EXCEPTION(connection_error());
 }
 
-Ptr<SimConnectClient::AbstractMessageReceiver>&
-SimConnectClient::receiver(SIMCONNECT_RECV_ID message_type)
+ptr<simconnect_client::abstract_message_receiver>&
+simconnect_client::receiver(SIMCONNECT_RECV_ID message_type)
 {
    if (_msg_receivers.size() <= std::size_t(message_type))
          _msg_receivers.resize(message_type + 1);

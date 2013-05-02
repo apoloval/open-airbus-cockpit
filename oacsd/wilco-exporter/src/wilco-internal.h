@@ -27,14 +27,14 @@
 
 namespace oac { namespace we {
 
-typedef std::wstring DllName;
-typedef const char* FunctionName;
-typedef size_t VirtualAddress;
+typedef std::wstring dll_name;
+typedef const char* function_name;
+typedef size_t virtual_address;
 
 /**
  * Enumeration of all known virtual addresses in Wilco libraries.
  */
-enum VirtualAddressKey
+enum virtual_address_key
 {
    VADDR_BASE,
    VADDR_FN_PUSH_MCP_CONSTRAINT,
@@ -70,43 +70,43 @@ enum VirtualAddressKey
    VADDR_NELEMENTS,
 };
 
-struct DllInfo
+struct dll_info
 {
-   const DllName name;
-   const VirtualAddress virtualAddresses[VADDR_NELEMENTS];
+   const dll_name name;
+   const virtual_address virtual_addresses[VADDR_NELEMENTS];
 
-   static const DllInfo& forAircraft(const Aircraft& aircraft);
+   static const dll_info& for_aircraft(const aircraft& aircraft);
 };
 
-struct FunctionNames
+struct function_names
 {
-   static FunctionName GET_INTERNAL_DATA;
-   static FunctionName GET_EXTENDED_DATA;
-   static FunctionName RESET_INTERNAL_DATA;
-   static FunctionName RESET_FLIGHT;
+   static function_name GET_INTERNAL_DATA;
+   static function_name GET_EXTENDED_DATA;
+   static function_name RESET_INTERNAL_DATA;
+   static function_name RESET_FLIGHT;
 };
 
-struct Wilco_FCU
+struct wilco_fcu
 {
    DWORD target_altitude;                 // 0x00
    UINT32 selected_vertical_speed;        // 0x04
    DWORD selected_track;                  // 0x08
    FLOAT selected_fpa;                    // 0x0C
-   DWORD autopilot;                       // 0x10, Autopilot
+   DWORD autopilot;                       // 0x10, autopilot
    DWORD unknown_14;                      // 0x14 e.g., 0
    DWORD unknown_18;                      // 0x18 e.g., 0
    DWORD unknown_1c;                      // 0x1C e.g., 0
-   DWORD auto_thrust;                     // 0x20, AutoThrust
-   DWORD speed_mode;                      // 0x24, SpeedMode
-   DWORD active_vertical_mode;            // 0x28, VerticalMode
-   DWORD armed_vertical_mode;             // 0x2C, VerticalMode
-   DWORD active_lateral_mode;             // 0x30, LateralMode
-   DWORD armed_lateral_mode;              // 0x34, LateralMode
+   DWORD auto_thrust;                     // 0x20, auto_thrust
+   DWORD speed_mode;                      // 0x24, speed_mode
+   DWORD active_vertical_mode;            // 0x28, vertical_mode
+   DWORD armed_vertical_mode;             // 0x2C, vertical_mode
+   DWORD active_lateral_mode;             // 0x30, lateral_mode
+   DWORD armed_lateral_mode;              // 0x34, lateral_mode
    DWORD hdg_track_display_mode;          // 0x38, FCUDisplayMode
    DWORD vs_fpa_display_mode;             // 0x3C, FCUDisplayMode
    DWORD speed_knob;                      // 0x40, FCUKnob
    DWORD heading_knob;                    // 0x44, FCUKnob
-   DWORD metric_altitude;                 // 0x48, BinarySwitch
+   DWORD metric_altitude;                 // 0x48, binary_switch
    DWORD vertical_speed_knob;             // 0x4C, FCUKnob
    void* unknown_50;                      // 0x50
    DWORD unknown_54;                      // 0x54 e.g., 0
@@ -116,15 +116,15 @@ struct Wilco_FCU
    DWORD unknown_64;                      // 0x64 e.g., 18
    DWORD unknown_68;                      // 0x68 e.g., 0
    DWORD unknown_6c;                      // 0x6C e.g., 0
-   DWORD expedite;                        // 0x70, BinarySwitch
-   DWORD autoland;                        // 0x74, BinarySwitch when AP engaged
+   DWORD expedite;                        // 0x70, binary_switch
+   DWORD autoland;                        // 0x74, binary_switch when AP engaged
    void* unknown_78;                      // 0x78
    DWORD unknown_7c;                      // 0x7C e.g., 0
    DWORD unknown_80;                      // 0x80 e.g., 1
    DWORD indicated_altitude;              // 0x84
 }; // size: 34 (0x22) words, 136 (0x88) bytes
 
-struct Wilco_HeadPanel
+struct wilco_headpanel
 {
    BYTE unused_0000[0x550C];              // 0x0000
    DWORD ldgFlap3_1;                      // 0x550C
@@ -198,17 +198,17 @@ struct Wilco_HeadPanel
    DWORD unknown_561C;                    // 0x561C
 };
 
-struct Wilco_GPUVTable
+struct wilco_gpu_vtable
 {
    uint8_t unknown_0000 [0x2C];                             // 0x00
    DWORD (__fastcall *isGpuAvailable)(void* _this);      // 0x2C
 };
 
-struct Wilco_GPU {
-   Wilco_GPUVTable* vtable;
+struct wilco_gpu {
+   wilco_gpu_vtable* vtable;
 };
 
-struct Wilco_APU {
+struct wilco_apu {
    DWORD master_switch;                   // 0x00
    DWORD unused_04;                       // 0x04
    DWORD unused_08;                       // 0x08
@@ -222,9 +222,9 @@ struct Wilco_APU {
 }; // 0x48 bytes
 
 
-struct Wilco_FADEC{};
+struct wilco_fadec{};
 
-struct Wilco_FMGC
+struct wilco_fmgc
 {
    BYTE unused_00000[0x1F0];              // 0x00000
    DWORD cost_index;                      // 0x001F0
@@ -233,7 +233,7 @@ struct Wilco_FMGC
 
 };
 
-struct Wilco_GPWS
+struct wilco_gpws
 {
    DWORD sys_switch;                      // 0x00
    DWORD unused_04[6];                    // 0x04
@@ -243,7 +243,7 @@ struct Wilco_GPWS
    DWORD ldg_flap3_switch;                // 0x28
 };
 
-struct Wilco_Pedestal
+struct wilco_pedestal
 {
    BYTE unused_0000[0x08];                // 0x00
    DOUBLE ctl_value;                      // 0x08
@@ -253,14 +253,14 @@ struct Wilco_Pedestal
    DWORD sd_page_button;                  // 0x30
 };
 
-struct Wilco_InternalData
+struct wilco_internal_data
 {
-   DWORD apu_status;                      // 0x00, APUStatus
-   DWORD engine_max_pos;                  // 0x04, ThrustLevers
-   DWORD tcas;                            // 0x08, TCAS
+   DWORD apu_status;                      // 0x00, apu_status
+   DWORD engine_max_pos;                  // 0x04, thrust_levers
+   DWORD tcas;                            // 0x08, tcas
    DWORD selected_barometric_mode;        // 0x0C, BarometricMode
    DWORD transition_altitude;             // 0x10
-   DWORD irs;                             // 0x14, IRSStatus
+   DWORD irs;                             // 0x14, irs_status
    DWORD selected_engine_mode;            // 0x18, EngineMode
    DWORD seat_belts_sign;                 // 0x1C, CabinSign
    DWORD no_smoking_sign;                 // 0x20, CabinSign
@@ -272,7 +272,7 @@ struct Wilco_InternalData
    DWORD master_warning_count;            // 0x38
 };
 
-struct Wilco_ExtendedData
+struct wilco_extended_data
 {
    void* unknown_00;                      // 0x00
    void* unknown_04;                      // 0x04
@@ -287,16 +287,16 @@ struct Wilco_ExtendedData
    DWORD fcu_display_mode;                // 0x1C
    void* fmgc;                            // 0x20
    void* mcdu;                            // 0x24
-   Wilco_FCU* fcu;                        // 0x28
+   wilco_fcu* fcu;                        // 0x28
    void* fadec;                           // 0x2C
-   Wilco_HeadPanel* head_panel;           // 0x30
+   wilco_headpanel* head_panel;           // 0x30
    void* fbw;                             // 0x34, 0x160 len
    void* gpws;                            // 0x38
    void* pedestal;                        // 0x3C
    void* gpu;                             // 0x40, 57 words
 };
 
-enum Wilco_Command {
+enum wilco_command {
    CMD_PEDESTAL_FLOOD_LGT = 0x01,
    CMD_RESET_FLIGHT = 0x02,
    CMD_MCDU_PRESS_INIT_BTN = 0x03,
@@ -396,48 +396,48 @@ enum Wilco_Command {
 };
 
 
-typedef DWORD (__fastcall *Wilco_GetFadecMode)(
-      Wilco_FADEC* f, DWORD unused, DWORD fadecn);
+typedef DWORD (__fastcall *wilco_get_fadec_mode)(
+      wilco_fadec* f, DWORD unused, DWORD fadecn);
 
-typedef double (__fastcall *Wilco_GetFadecTLA)(
-      Wilco_FADEC* f, DWORD unused, DWORD fadecn);
+typedef double (__fastcall *wilco_get_fadec_tla)(
+      wilco_fadec* f, DWORD unused, DWORD fadecn);
 
-typedef DWORD (__fastcall *Wilco_IsApuAvailable)(Wilco_APU* apu);
+typedef DWORD (__fastcall *wilco_is_apu_available)(wilco_apu* apu);
 
-typedef DWORD (__stdcall *Wilco_PushMCPButton)(DWORD num1, DWORD num2);
+typedef DWORD (__stdcall *wilco_push_mcp_button)(DWORD num1, DWORD num2);
 
-typedef void (*Wilco_ResetInternalData)(void);
+typedef void (*wilco_reset_internal_data)(void);
 
-typedef void (*Wilco_ResetFlight)(void);
+typedef void (*wilco_reset_flight)(void);
 
-typedef void (__cdecl *Wilco_SetNDMode)(DWORD mode);
+typedef void (__cdecl *wilco_set_nd_mode)(DWORD mode);
 
-typedef void (__cdecl *Wilco_SendCommand)(DWORD cmd, const void* args);
+typedef void (__cdecl *wilco_send_command)(DWORD cmd, const void* args);
 
 
 /**
  * Get the function with signature F or throw the exception E if not found.
  */
 template <typename F, typename E>
-F GetFunctionOrThrow(HINSTANCE inst, const char* func_name)
+F get_function_or_throw(HINSTANCE inst, const char* func_name)
 {
    auto result = (F) GetProcAddress(inst, func_name);
    if (!result)
-      THROW_ERROR(E() << FunctionNameInfo(func_name));
+      BOOST_THROW_EXCEPTION(E() << function_nameInfo(func_name));
    return result;
 }
 
 /**
- * Load DLL library for given aircraft. InvalidAircraftError is thrown if
+ * Load DLL library for given aircraft. invalid_aircraft_error is thrown if
  * given aircraft is unknown or DLL cannot be resolved for it.
  */
-HINSTANCE LoadDLLForAircraft(const Aircraft& aircraft)
-      throw (WilcoCockpit::InvalidAircraftError);
+HINSTANCE load_dll_for_aircraft(const aircraft& aircraft)
+      throw (wilco_cockpit::invalid_aircraft_error);
 
 /**
  * Free a DLL instance previously loaded.
  */
-void FreeDLL(HINSTANCE lib);
+void free_dll(HINSTANCE lib);
 
 /**
  * Track changes on memory location. This auxiliary function should be used
@@ -447,18 +447,18 @@ void FreeDLL(HINSTANCE lib);
  * On each subsequent call, the previous content is compared with the new
  * one and any difference is reported to the log.
  */
-void TrackChangesOnMemory(void* mem, size_t len);
+void track_changes_on_memory(void* mem, size_t len);
 
 /**
  * DLL inspector class. This is a support class that may be extended by any
  * other class which has the responsibility to inspect the variables of
  * Wilco DLLs.
  */
-class DllInspector
+class dll_inspector
 {
 public:
 
-   inline DllInspector(const DllInfo& dll_info, HINSTANCE dll_instance) :
+   inline dll_inspector(const dll_info& dll_info, HINSTANCE dll_instance) :
          _dll_info(dll_info), _dll_instance(dll_instance)
    {}
 
@@ -467,10 +467,10 @@ protected:
    /**
     * Get the actual address for the given virtual address.
     */
-   void* getActualAddress(VirtualAddress vaddr) const
+   void* get_actual_address(virtual_address vaddr) const
    {
-      auto offset = vaddr - _dll_info.virtualAddresses[VADDR_BASE];
-      auto actualAddress = VirtualAddress(_dll_instance) + offset;
+      auto offset = vaddr - _dll_info.virtual_addresses[VADDR_BASE];
+      auto actualAddress = virtual_address(_dll_instance) + offset;
       return (void*)(actualAddress);
    }
 
@@ -480,10 +480,10 @@ protected:
     * to given DataObject.
     */
    template <typename DataObject>
-   DataObject getDataObject(VirtualAddressKey vaddr_key) const
+   DataObject get_data_object(virtual_address_key vaddr_key) const
    {
-      auto vaddr = _dll_info.virtualAddresses[vaddr_key];
-      auto data = this->getActualAddress(vaddr);
+      auto virtual_address = _dll_info.virtual_addresses[vaddr_key];
+      auto data = this->get_actual_address(virtual_address);
       return *(DataObject*) data;
    }
 
@@ -493,10 +493,10 @@ protected:
     * given function.
     */
    template <typename Function>
-   Function getFunction(VirtualAddressKey vaddr_key) const
+   Function get_function(virtual_address_key virtual_address_key) const
    {
-      auto vaddr = _dll_info.virtualAddresses[vaddr_key];
-      auto addr = this->getActualAddress(vaddr);
+      auto virtual_address = _dll_info.virtual_addresses[virtual_address_key];
+      auto addr = this->get_actual_address(virtual_address);
       return Function(addr);
    }
 
@@ -507,11 +507,11 @@ protected:
     * object located there.
     */
    template <typename DataObject>
-   void setDataObject(
-         VirtualAddressKey vaddrKey, const DataObject& new_data)
+   void set_data_object(
+         virtual_address_key virtual_addressKey, const DataObject& new_data)
    {
-      auto vaddr = _dll_info.virtualAddresses[vaddrKey];
-      auto data = (DataObject*) this->getActualAddress(vaddr);
+      auto virtual_address = _dll_info.virtual_addresses[virtual_addressKey];
+      auto data = (DataObject*) this->get_actual_address(virtual_address);
       *data = new_data;
    }
 
@@ -521,10 +521,10 @@ protected:
     * given boolean value, which is then toggled.
     */
    template <typename DataObject>
-   void toggleBoolObject(VirtualAddressKey vaddrKey)
+   void toggle_bool_object(virtual_address_key virtual_addressKey)
    {
-      auto vaddr = _dll_info.virtualAddresses[vaddrKey];
-      auto data = (DataObject*) this->getActualAddress(vaddr);
+      auto virtual_address = _dll_info.virtual_addresses[virtual_addressKey];
+      auto data = (DataObject*) this->get_actual_address(virtual_address);
       *data = !(*data);
    }
 
@@ -533,10 +533,10 @@ protected:
     * DLL. The given value is passed as argument to the command.
     */
    template <typename T>
-   inline void sendCommand(Wilco_Command cmd, const T& arg)
+   inline void send_command(wilco_command cmd, const T& arg)
    {
       auto send_cmd =
-            this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
+            this->get_function<wilco_send_command>(VADDR_FN_SEND_COMMAND);
       send_cmd(cmd, &arg);
    }
 
@@ -544,19 +544,19 @@ protected:
     * Send a command to Wilco Airbus using the facilities provided by its
     * DLL. No argument as passed along the command.
     */
-   inline void sendCommand(Wilco_Command cmd)
+   inline void send_command(wilco_command cmd)
    {
       auto send_cmd =
-            this->getFunction<Wilco_SendCommand>(VADDR_FN_SEND_COMMAND);
+            this->get_function<wilco_send_command>(VADDR_FN_SEND_COMMAND);
       send_cmd(cmd, nullptr);
    }
 
-   inline HINSTANCE getDLLInstance() const
+   inline HINSTANCE get_dll_instance() const
    { return _dll_instance; }
 
 private:
 
-   DllInfo _dll_info;
+   dll_info _dll_info;
    HINSTANCE _dll_instance;
 };
 

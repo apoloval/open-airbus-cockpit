@@ -32,40 +32,40 @@
 
 namespace oac {
 
-class SimConnectClient 
+class simconnect_client
 {
 public:
 
-   typedef std::string EventName;
-   typedef std::string DataName;
-   typedef std::string DataUnits;
+   typedef std::string event_name;
+   typedef std::string data_name;
+   typedef std::string data_units;
 
-   DECL_ERROR(UnknownEventNameError, InvalidInputError);
-   DECL_ERROR_INFO(EventNameInfo, EventName);
+   OAC_DECL_ERROR(unknown_event_name_error, invalid_input_error);
+   OAC_DECL_ERROR_INFO(event_name_info, event_name);
 
-   DECL_ERROR(DataDefinitionError, InvalidInputError);
-   DECL_ERROR_INFO(DataNameInfo, DataName);
-   DECL_ERROR_INFO(DataUnitsInfo, DataUnits);
+   OAC_DECL_ERROR(data_definition_error, invalid_input_error);
+   OAC_DECL_ERROR_INFO(data_name_info, data_name);
+   OAC_DECL_ERROR_INFO(data_units_info, data_units);
 
-   DECL_ERROR(DataRequestError, IOError);
-   DECL_ERROR_INFO(DataDefinitionInfo, SIMCONNECT_DATA_DEFINITION_ID);
+   OAC_DECL_ERROR(data_request_error, io_error);
+   OAC_DECL_ERROR_INFO(data_definition_info, SIMCONNECT_DATA_DEFINITION_ID);
 
-   DECL_ERROR(EventError, IOError);
-   DECL_ERROR_INFO(SimConnectFunctionInfo, std::string);
+   OAC_DECL_ERROR(event_error, io_error);
+   OAC_DECL_ERROR_INFO(simconnect_function_info, std::string);
 
 
-   class DataDefinition
+   class data_definition
    {
    public:
 
-      inline DataDefinition(const SimConnectClient& cli, 
+      inline data_definition(const simconnect_client& cli,
             SIMCONNECT_DATA_DEFINITION_ID id) :
          _handle(cli._handle), _id(id)
       {}
 
-      DataDefinition& add(const DataName& name, const DataUnits& units,
+      data_definition& add(const data_name& name, const data_units& units,
                SIMCONNECT_DATATYPE data_type = SIMCONNECT_DATATYPE_FLOAT64)
-            throw (DataDefinitionError);
+            throw (data_definition_error);
 
       inline SIMCONNECT_DATA_DEFINITION_ID id() const
       { return _id; }
@@ -76,12 +76,12 @@ public:
       SIMCONNECT_DATA_DEFINITION_ID _id;
    };
 
-   class DataPullRequest
+   class data_pull_request
    {
    public:
 
-      inline DataPullRequest(const SimConnectClient& cli,
-            const DataDefinition& data_def,
+      inline data_pull_request(const simconnect_client& cli,
+            const data_definition& data_def,
             SIMCONNECT_DATA_REQUEST_ID id) :
          _data_def(data_def.id()),_handle(cli._handle), _id(id), 
          _object(SIMCONNECT_OBJECT_ID_USER), _period(SIMCONNECT_PERIOD_ONCE),
@@ -89,25 +89,25 @@ public:
          _interval(0), _limit(0)
       {}
 
-      inline DataPullRequest& setObject(SIMCONNECT_OBJECT_ID object)
+      inline data_pull_request& set_object(SIMCONNECT_OBJECT_ID object)
       { _object = object; return *this; }
 
-      inline DataPullRequest& setPeriod(SIMCONNECT_PERIOD period)
+      inline data_pull_request& set_period(SIMCONNECT_PERIOD period)
       { _period = period; return *this; }
 
-      inline DataPullRequest& setFlags(SIMCONNECT_DATA_REQUEST_FLAG flags)
+      inline data_pull_request& set_flags(SIMCONNECT_DATA_REQUEST_FLAG flags)
       { _flags = flags; return *this; }
 
-      inline DataPullRequest& setOrigin(DWORD origin)
+      inline data_pull_request& set_origin(DWORD origin)
       { _origin = origin; return *this; }
 
-      inline DataPullRequest& setInterval(DWORD interval)
+      inline data_pull_request& set_interval(DWORD interval)
       { _interval = interval; return *this; }
 
-      inline DataPullRequest& setLimit(DWORD limit)
+      inline data_pull_request& set_limit(DWORD limit)
       { _limit = limit; return *this; }
 
-      void submit() throw (DataRequestError);
+      void submit() throw (data_request_error);
 
    private:
 
@@ -122,31 +122,31 @@ public:
       DWORD _limit;
    };
 
-   class DataPushRequest
+   class data_push_request
    {
    public:
 
-      inline DataPushRequest(const SimConnectClient& cli,
-            const DataDefinition& data_def) :
+      inline data_push_request(const simconnect_client& cli,
+            const data_definition& data_def) :
          _handle(cli._handle), _data_def(data_def.id()),
          _object(SIMCONNECT_OBJECT_ID_USER),
          _flags(SIMCONNECT_DATA_SET_FLAG_DEFAULT), _count(0), 
          _element_size(sizeof(double))
       {}
 
-      inline DataPushRequest& setObject(SIMCONNECT_OBJECT_ID object)
+      inline data_push_request& set_object(SIMCONNECT_OBJECT_ID object)
       { _object = object; return *this; }
 
-      inline DataPushRequest& setFlags(SIMCONNECT_DATA_SET_FLAG flags)
+      inline data_push_request& set_flags(SIMCONNECT_DATA_SET_FLAG flags)
       { _flags = flags; return *this; }
 
-      inline DataPushRequest& setCount(DWORD count)
+      inline data_push_request& set_count(DWORD count)
       { _count = count; return *this; }
 
-      inline DataPushRequest& setElementSize(DWORD element_size)
+      inline data_push_request& set_element_size(DWORD element_size)
       { _element_size = element_size; return *this; }
 
-      void submit(void* data) throw (DataRequestError);
+      void submit(void* data) throw (data_request_error);
 
    private:
 
@@ -158,24 +158,24 @@ public:
       DWORD _element_size;
    };
 
-   class ClientEvent
+   class client_event
    {
    public:
 
-      ClientEvent(const SimConnectClient& cli,
-                  const EventName& event_name,
-                  SIMCONNECT_CLIENT_EVENT_ID id) throw (EventError);
+      client_event(const simconnect_client& cli,
+                  const event_name& event_name,
+                  SIMCONNECT_CLIENT_EVENT_ID id) throw (event_error);
 
-      ClientEvent(const SimConnectClient& cli,
-                  SIMCONNECT_CLIENT_EVENT_ID id) throw (EventError);
+      client_event(const simconnect_client& cli,
+                  SIMCONNECT_CLIENT_EVENT_ID id) throw (event_error);
 
-      inline ClientEvent& setObject(SIMCONNECT_OBJECT_ID object)
+      inline client_event& set_object(SIMCONNECT_OBJECT_ID object)
       { _object = object; return *this; }
 
-      inline ClientEvent& setGroup(SIMCONNECT_NOTIFICATION_GROUP_ID group)
+      inline client_event& set_group(SIMCONNECT_NOTIFICATION_GROUP_ID group)
       { _group = group; return *this; }
 
-      inline ClientEvent& setFlags(SIMCONNECT_EVENT_FLAG flags)
+      inline client_event& set_flags(SIMCONNECT_EVENT_FLAG flags)
       { _flags = flags; return *this; }
 
       inline SIMCONNECT_CLIENT_EVENT_ID id() const
@@ -193,153 +193,153 @@ public:
    };
 
    template <typename T>
-   class VariableWatch
+   class variable_watch
    {
    public:
 
-      inline VariableWatch() :
-         _client("Variable Watch"), _data_def(_client.newDataDefinition())
+      inline variable_watch() :
+         _client("Variable Watch"), _data_def(_client.new_data_definition())
       {
       }
 
-      inline DataDefinition dataDefinition()
+      inline data_definition get_data_definition()
       { return _data_def; }
 
       inline T get() const
       {      
          bool done = false;
          T data;
-         _client.registerOnSimObjectDataCallback([&data, &done](
-            SimConnectClient& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
+         _client.register_on_simobject_data_callback([&data, &done](
+            simconnect_client& client, const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)
          {
             memcpy(&data, &msg.dwData, sizeof(T));
             done = true;
          });
-         _client.newDataPullRequest(_data_def).submit();
+         _client.new_data_pull_request(_data_def).submit();
          while (!done)
-            _client.dispatchMessage();
+            _client.dispatch_message();
          return data;
       }
 
       inline void set(const T& t)
       {
-         _client.newDataPushRequest(_data_def)
-               .setElementSize(sizeof(T))
+         _client.new_data_push_request(_data_def)
+               .set_element_size(sizeof(T))
                .submit((void*) &t);
       }
 
    protected:
 
-      mutable SimConnectClient _client;
-      DataDefinition _data_def;
+      mutable simconnect_client _client;
+      data_definition _data_def;
    };
 
-   class EventTransmitter
+   class event_transmitter
    {
    public:
 
-      EventTransmitter(const SimConnectClient::EventName& event_name);
+      event_transmitter(const simconnect_client::event_name& event_name);
 
       inline void transmit(DWORD value)
       { _event.transmit(value); }
 
    private:
 
-      Ptr<SimConnectClient> _client;
-      ClientEvent _event;
+      ptr<simconnect_client> _client;
+      client_event _event;
    };
 
    typedef std::function<void(
-         SimConnectClient& client, 
-         const SIMCONNECT_RECV& msg)> OnNullCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV& msg)> on_null_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_EXCEPTION& msg)> OnExceptionCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_EXCEPTION& msg)> on_exception_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_OPEN& msg)> OnOpenCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_OPEN& msg)> on_open_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV& msg)> OnQuitCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV& msg)> on_quit_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_EVENT& msg)> OnEventCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_EVENT& msg)> on_event_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
+         simconnect_client& client,
          const SIMCONNECT_RECV_EVENT_OBJECT_ADDREMOVE& msg)> 
-               OnEventObjectAddRemoveCallback;
+               on_event_object_add_remove_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_EVENT_FILENAME& msg)> OnEventFilenameCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_EVENT_FILENAME& msg)> on_event_filename_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_EVENT_FRAME& msg)> OnEventFrameCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_EVENT_FRAME& msg)> on_event_frame_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)> OnSimObjectDataCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_SIMOBJECT_DATA& msg)> on_simobject_data_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
+         simconnect_client& client,
          const SIMCONNECT_RECV_SIMOBJECT_DATA_BYTYPE& msg)> 
-               OnSimObjectDataByTypeCallback;
+               on_simobject_data_by_type_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
+         simconnect_client& client,
          const SIMCONNECT_RECV_WEATHER_OBSERVATION& msg)> 
-               OnWeatherObservationCallback;
+               on_weather_observation_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_CLOUD_STATE& msg)> OnCloudStateCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_CLOUD_STATE& msg)> on_cloud_state_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
+         simconnect_client& client,
          const SIMCONNECT_RECV_ASSIGNED_OBJECT_ID& msg)> 
-               OnAssignedObjectIDCallback;
+               on_assigned_object_id_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_RESERVED_KEY & msg)> OnReservedKeyCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_RESERVED_KEY & msg)> on_reserved_key_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_CUSTOM_ACTION& msg)> OnCustomActionCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_CUSTOM_ACTION& msg)> on_custom_action_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_SYSTEM_STATE& msg)> OnSystemStateCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_SYSTEM_STATE& msg)> on_system_state_callback;
 
    typedef std::function<void(
-         SimConnectClient& client,
-         const SIMCONNECT_RECV_CLIENT_DATA& msg)> OnClientDataCallback;
+         simconnect_client& client,
+         const SIMCONNECT_RECV_CLIENT_DATA& msg)> on_client_data_callback;
 
-   static const EventName SYSTEM_EVENT_1SEC;
-   static const EventName SYSTEM_EVENT_4SEC;
-   static const EventName SYSTEM_EVENT_6HZ;
-   static const EventName SYSTEM_EVENT_FRAME;
-   static const EventName SYSTEM_EVENT_AIRCRAFT_LOADED;
-   static const EventName SYSTEM_EVENT_FLIGHT_LOADED;
+   static const event_name SYSTEM_EVENT_1SEC;
+   static const event_name SYSTEM_EVENT_4SEC;
+   static const event_name SYSTEM_EVENT_6HZ;
+   static const event_name SYSTEM_EVENT_FRAME;
+   static const event_name SYSTEM_EVENT_AIRCRAFT_LOADED;
+   static const event_name SYSTEM_EVENT_FLIGHT_LOADED;
 
-   SimConnectClient(const std::string& name) throw (ConnectionError);
+   simconnect_client(const std::string& name) throw (connection_error);
 
-   SimConnectClient(const std::string& name,
-         const OnOpenCallback& open_callback) throw (ConnectionError);
+   simconnect_client(const std::string& name,
+         const on_open_callback& open_callback) throw (connection_error);
 
-   virtual ~SimConnectClient();
+   virtual ~simconnect_client();
 
    /**
     * Dispatch an incoming message (if any) from the server. When compiled
     * into a DLL plugin, it has no effect. 
     */
-   void dispatchMessage();
+   void dispatch_message();
 
    /**
     * Callback function member for incoming messages from SimConnect. The
@@ -347,103 +347,103 @@ public:
     * registered callback, if any. It may be overriden if needed, but doing
     * that may break the callback registration mechanism, so do it with care.
     */
-   virtual void onMessage(SIMCONNECT_RECV* msg, DWORD msg_len);
+   virtual void on_message(SIMCONNECT_RECV* msg, DWORD msg_len);
 
-   void registerOnNullCallback(const OnNullCallback& callback);
+   void register_on_null_callback(const on_null_callback& callback);
 
-   void registerOnExceptionCallback(const OnExceptionCallback& callback);
+   void register_on_exception_callback(const on_exception_callback& callback);
 
-   void registerOnOpenCallback(const OnOpenCallback& callback);
+   void register_on_open_callback(const on_open_callback& callback);
 
-   void registerOnQuitCallback(const OnQuitCallback& callback);
+   void register_on_quit_callback(const on_quit_callback& callback);
 
-   void registerOnEventCallback(const OnEventCallback& callback);
+   void register_on_event_callback(const on_event_callback& callback);
 
-   void registerOnEventObjectAddRemoveCallback(
-         const OnEventObjectAddRemoveCallback& callback);
+   void register_on_event_object_add_remove_callback(
+         const on_event_object_add_remove_callback& callback);
 
-   void registerOnEventFilenameCallback(const OnEventFilenameCallback& callback);
+   void register_on_event_filename_callback(const on_event_filename_callback& callback);
 
-   void registerOnEventFrameCallback(const OnEventFrameCallback& callback);
+   void register_on_event_frame_callback(const on_event_frame_callback& callback);
 
-   void registerOnSimObjectDataCallback(const OnSimObjectDataCallback& callback);
+   void register_on_simobject_data_callback(const on_simobject_data_callback& callback);
 
-   void registerOnSimObjectDataByTypeCallback(
-         const OnSimObjectDataByTypeCallback& callback);
+   void register_on_simobject_data_by_type_callback(
+         const on_simobject_data_by_type_callback& callback);
 
-   void registerOnWeatherObservationCallback(
-         const OnWeatherObservationCallback& callback);
+   void register_on_weather_observation_callback(
+         const on_weather_observation_callback& callback);
 
-   void registerOnCloudStateCallback(const OnCloudStateCallback& callback);
+   void register_on_cloud_state_callback(const on_cloud_state_callback& callback);
 
-   void registerOnAssignedObjectIDCallback(
-         const OnAssignedObjectIDCallback& callback);
+   void register_on_assigned_object_id_callback(
+         const on_assigned_object_id_callback& callback);
 
-   void registerOnReservedKeyCallback(const OnReservedKeyCallback& callback);
+   void register_on_reserved_key_callback(const on_reserved_key_callback& callback);
 
-   void registerOnCustomActionCallback(const OnCustomActionCallback& callback);
+   void register_on_custom_action_callback(const on_custom_action_callback& callback);
 
-   void registerOnSystemStateCallback(const OnSystemStateCallback& callback);
+   void register_on_system_state_callback(const on_system_state_callback& callback);
 
-   void registerOnClientDataCallback(const OnClientDataCallback& callback);
+   void register_on_client_data_callback(const on_client_data_callback& callback);
 
-   void subscribeToSystemEvent(
-         const EventName& event_name,
-         SIMCONNECT_CLIENT_EVENT_ID event_id = 0) throw (UnknownEventNameError);
+   void subscribe_to_system_event(
+         const event_name& event_name,
+         SIMCONNECT_CLIENT_EVENT_ID event_id = 0) throw (unknown_event_name_error);
 
-   DataDefinition newDataDefinition();
+   data_definition new_data_definition();
 
-   DataPullRequest newDataPullRequest(const DataDefinition& data_def);
+   data_pull_request new_data_pull_request(const data_definition& data_def);
 
-   DataPushRequest newDataPushRequest(const DataDefinition& data_def);
+   data_push_request new_data_push_request(const data_definition& data_def);
 
-   ClientEvent newClientEvent(const EventName& event_name);
+   client_event new_client_event(const event_name& event_name);
 
 private:
 
-   class AbstractMessageReceiver
+   class abstract_message_receiver
    {
    public:
-      virtual void sendMessage(
-            SimConnectClient& client, SIMCONNECT_RECV* msg) = 0;
-      virtual ~AbstractMessageReceiver() {}
+      virtual void send_message(
+            simconnect_client& client, SIMCONNECT_RECV* msg) = 0;
+      virtual ~abstract_message_receiver() {}
    };
 
    template <typename Message>
-   class MessageReceiver : public AbstractMessageReceiver
+   class message_receiver : public abstract_message_receiver
    {
    public:
 
-      inline MessageReceiver(const std::function<void(
-            SimConnectClient&, const Message&)>& callback) :
+      inline message_receiver(const std::function<void(
+            simconnect_client&, const Message&)>& callback) :
          _callback(callback)
       {}
 
-      virtual void sendMessage(SimConnectClient& client, SIMCONNECT_RECV* msg)
+      virtual void send_message(simconnect_client& client, SIMCONNECT_RECV* msg)
       {
          auto narrowed_msg = static_cast<Message*>(msg);
          _callback(client, *narrowed_msg);
       }
 
    private:
-      std::function<void(SimConnectClient&, const Message&)> _callback;
+      std::function<void(simconnect_client&, const Message&)> _callback;
    };
 
    template <typename Message>
-   void registerCallback(
-         const std::function<void(SimConnectClient&, const Message&)>& callback,
+   void register_callback(
+         const std::function<void(simconnect_client&, const Message&)>& callback,
          SIMCONNECT_RECV_ID message_type)
    {
-      this->receiver(message_type) = new MessageReceiver<Message>(callback);
+      this->receiver(message_type) = new message_receiver<Message>(callback);
    }
 
-   void open() throw (ConnectionError);
+   void open() throw (connection_error);
 
-   Ptr<AbstractMessageReceiver>& receiver(SIMCONNECT_RECV_ID message_type);
+   ptr<abstract_message_receiver>& receiver(SIMCONNECT_RECV_ID message_type);
 
    std::string _name;
    HANDLE _handle;
-   std::vector<Ptr<AbstractMessageReceiver>> _msg_receivers;
+   std::vector<ptr<abstract_message_receiver>> _msg_receivers;
 };
 
 }; // namespace oac

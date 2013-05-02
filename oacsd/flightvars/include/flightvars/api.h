@@ -30,53 +30,53 @@ namespace oac { namespace fv {
 
 /**
  * A class to represent tagged elements such as var groups, var names, etc.
- * Tags are case insensitive. The tag passed as argument to the constructor
+ * tags are case insensitive. The tag passed as argument to the constructor
  * is transformed into lower case.
  */
-class TaggedElement
+class tagged_element
 {
 public:
 
-   typedef std::string Tag;
+   typedef std::string tag;
 
-   TaggedElement(const Tag& tag);
+   tagged_element(const tag& tag);
 
-   inline operator const Tag& () const { return tag(); }
+   inline operator const tag& () const { return get_tag(); }
 
-   inline bool operator == (const TaggedElement& elem) const
+   inline bool operator == (const tagged_element& elem) const
    { return _tag == elem._tag; }
 
-   inline bool operator != (const TaggedElement& elem) const
+   inline bool operator != (const tagged_element& elem) const
    { return _tag != elem._tag; }
 
-   inline bool operator < (const TaggedElement& elem) const
+   inline bool operator < (const tagged_element& elem) const
    { return _tag < elem._tag; }
 
-   inline bool operator > (const TaggedElement& elem) const
+   inline bool operator > (const tagged_element& elem) const
    { return _tag > elem._tag; }
 
-   inline const Tag& tag() const { return _tag; }
+   inline const tag& get_tag() const { return _tag; }
 
 private:
 
-   Tag _tag;
+   tag _tag;
 };
 
-class VariableGroup : public TaggedElement
+class variable_group : public tagged_element
 {
 public:
 
-   inline VariableGroup(const Tag& tag) : TaggedElement(tag) {}
+   inline variable_group(const tag& tag) : tagged_element(tag) {}
 };
 
-class VariableName : public TaggedElement
+class variable_name : public tagged_element
 {
 public:
 
-   inline VariableName(const Tag& tag) : TaggedElement(tag) {}
+   inline variable_name(const tag& tag) : tagged_element(tag) {}
 };
 
-enum VariableType
+enum variable_type
 {
    VAR_BOOLEAN,
    VAR_BYTE,
@@ -85,79 +85,79 @@ enum VariableType
    VAR_FLOAT
 };
 
-class VariableValue
+class variable_value
 {
 public:
 
    /**
     * Thrown when the variable value is used as an invalid type. Contains:
-    *   - ExpectedTypeInfo, indicating the expected type
-    *   - ActualTypeInfo, indicating the actual type
+    *   - expected_type_info, indicating the expected type
+    *   - actual_type_info, indicating the actual type
     */
-   DECL_ERROR(InvalidTypeError, InvalidInputError);
+   OAC_DECL_ERROR(invalid_type_error, invalid_input_error);
 
-   DECL_ERROR_INFO(ExpectedTypeInfo, VariableType);
-   DECL_ERROR_INFO(ActualTypeInfo, VariableType);
+   OAC_DECL_ERROR_INFO(expected_type_info, variable_type);
+   OAC_DECL_ERROR_INFO(actual_type_info, variable_type);
 
-   static VariableValue fromBool(bool value);
-   static VariableValue fromByte(BYTE value);
-   static VariableValue fromWord(WORD value);
-   static VariableValue fromDWord(DWORD value);
-   static VariableValue fromFloat(float value);
+   static variable_value from_bool(bool value);
+   static variable_value from_byte(BYTE value);
+   static variable_value from_word(WORD value);
+   static variable_value from_dword(DWORD value);
+   static variable_value from_float(float value);
 
-   inline VariableType type() const { return _type; }
+   inline variable_type get_type() const { return _type; }
 
-   bool asBool() const throw (InvalidTypeError);
-   BYTE asByte() const throw (InvalidTypeError);
-   WORD asWord() const throw (InvalidTypeError);
-   DWORD asDWord() const throw (InvalidTypeError);
-   float asFloat() const throw (InvalidTypeError);
+   bool as_bool() const throw (invalid_type_error);
+   BYTE as_byte() const throw (invalid_type_error);
+   WORD as_word() const throw (invalid_type_error);
+   DWORD as_dword() const throw (invalid_type_error);
+   float as_float() const throw (invalid_type_error);
 
 private:
 
-   VariableType _type;
-   Ptr<Buffer> _buffer;
+   variable_type _type;
+   ptr<buffer> _buffer;
 
-   inline VariableValue(
-         const VariableType& type,
-         const Ptr<Buffer>& buffer) : _type(type), _buffer(buffer) {}
+   inline variable_value(
+         const variable_type& type,
+         const ptr<buffer>& buffer) : _type(type), _buffer(buffer) {}
 
-   void checkType(const VariableType& type) const throw (InvalidTypeError);
+   void checkType(const variable_type& get_type) const throw (invalid_type_error);
 };
 
 /**
  * Flight vars API interface.
  */
-class FlightVars
+class flight_vars
 {
 public:      
 
    /**
     * An operation was requested on a unknown variable.
     */
-   DECL_ERROR(UnknownVariableError, InvalidInputError);
+   OAC_DECL_ERROR(unknown_variable_error, invalid_input_error);
 
    /**
     * An operation was requested for a unknown variable group. Contains:
-    *  - VariableGroupInfo, indicating the var group which was unknown
+    *  - variable_group_info, indicating the var group which was unknown
     */
-   DECL_ERROR(UnknownVariableGroupError, UnknownVariableError);
+   OAC_DECL_ERROR(unknown_variable_group_error, unknown_variable_error);
 
    /**
     * An operation was requested for a unknown variable name. Contains:
-    *  - VariableNameInfo, indicating the var name which was unknown
+    *  - variable_name_info, indicating the var name which was unknown
     */
-   DECL_ERROR(UnknownVariableNameError, UnknownVariableError);
+   OAC_DECL_ERROR(unknown_variable_name_error, unknown_variable_error);
 
-   DECL_ERROR_INFO(VariableGroupInfo, VariableGroup);
-   DECL_ERROR_INFO(VariableNameInfo, VariableName);
+   OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
+   OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
    /**
     * A callback representing a subscription to a variable.
     */
-   typedef std::function<void(const VariableGroup& grp,
-                              const VariableName& name,
-                              const VariableValue& value)> Subscription;
+   typedef std::function<void(const variable_group& grp,
+                              const variable_name& name,
+                              const variable_value& value)> subscription;
 
    /**
     * Subscribe to a variable.
@@ -167,9 +167,9 @@ public:
     * @param subs the subscription callback to be invoked when var changes.
     */
    virtual void subscribe(
-         const VariableGroup& grp,
-         const VariableName& name,
-         const Subscription& subs) throw (UnknownVariableError) = 0;
+         const variable_group& grp,
+         const variable_name& name,
+         const subscription& subs) throw (unknown_variable_error) = 0;
 };
 
 }} // namespace oac::fv

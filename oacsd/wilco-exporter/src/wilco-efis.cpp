@@ -20,73 +20,73 @@
 
 namespace oac { namespace we {
 
-EFISControlPanelImpl::EFISControlPanelImpl(
-      const DllInfo& dll_info, HINSTANCE dll_instance) :
-   DllInspector(dll_info, dll_instance), _fsuipc(new LocalFSUIPC())
+efis_control_panel_impl::efis_control_panel_impl(
+      const dll_info& dll_info, HINSTANCE dll_instance) :
+   dll_inspector(dll_info, dll_instance), _fsuipc(new local_fsuipc())
 {}
 
-BarometricMode
-EFISControlPanelImpl::getBarometricMode() const
-{ return BarometricMode(this->getDataObject<DWORD>(VADDR_BARO_STD)); }
+barometric_mode
+efis_control_panel_impl::get_barometric_mode() const
+{ return barometric_mode(this->get_data_object<DWORD>(VADDR_BARO_STD)); }
 
 void
-EFISControlPanelImpl::setBarometricMode(BarometricMode mode)
+efis_control_panel_impl::set_barometric_mode(barometric_mode mode)
 {
    switch (mode)
    {
       case BARO_SELECTED:
-         this->sendCommand(CMD_EFIS_CTRL_PUSH_BARO_KNOB);
+         this->send_command(CMD_EFIS_CTRL_PUSH_BARO_KNOB);
          break;
       case BARO_STANDARD:
-         this->sendCommand(CMD_EFIS_CTRL_PULL_BARO_KNOB);
+         this->send_command(CMD_EFIS_CTRL_PULL_BARO_KNOB);
          break;
    }
 }
 
-BarometricFormat
-EFISControlPanelImpl::getBarometricFormat() const
-{ return BarometricFormat(this->getDataObject<DWORD>(VADDR_BARO_FORMAT)); }
+barometric_format
+efis_control_panel_impl::get_barometric_format() const
+{ return barometric_format(this->get_data_object<DWORD>(VADDR_BARO_FORMAT)); }
 
 void
-EFISControlPanelImpl::setBarometricFormat(BarometricFormat fmt)
+efis_control_panel_impl::set_barometric_format(barometric_format fmt)
 {
    switch (fmt)
    {
       case BARO_FMT_IN_HG:
-         this->sendCommand(CMD_EFIS_CTRL_SET_INHG_BARO_KNOB);
+         this->send_command(CMD_EFIS_CTRL_SET_INHG_BARO_KNOB);
          break;
       case BARO_FMT_H_PA:
-         this->sendCommand(CMD_EFIS_CTRL_SET_HPA_BARO_KNOB);
+         this->send_command(CMD_EFIS_CTRL_SET_HPA_BARO_KNOB);
          break;
    }
 }
 
-BinarySwitch
-EFISControlPanelImpl::getFDButton() const
+binary_switch
+efis_control_panel_impl::get_fd_button() const
 {
-   return BinarySwitch(_fsuipc->readAs<DWORD>(0x2EE0));
+   return binary_switch(_fsuipc->read_as<DWORD>(0x2EE0));
 }
 
 void
-EFISControlPanelImpl::pushFDButton()
+efis_control_panel_impl::push_fd_button()
 {
-   _fsuipc->writeAs<DWORD>(0x2EE0, this->invert(this->getFDButton()));
+   _fsuipc->write_as<DWORD>(0x2EE0, this->invert(this->get_fd_button()));
 }
 
-BinarySwitch
-EFISControlPanelImpl::getILSButton() const
-{ return BinarySwitch(this->getDataObject<DWORD>(VADDR_ILS_SWITCH)); }
+binary_switch
+efis_control_panel_impl::get_ils_button() const
+{ return binary_switch(this->get_data_object<DWORD>(VADDR_ILS_SWITCH)); }
 
 void
-EFISControlPanelImpl::pushILSButton()
+efis_control_panel_impl::push_ils_button()
 {
-   this->sendCommand(CMD_EFIS_CTRL_PRESS_ILS_BTN);
+   this->send_command(CMD_EFIS_CTRL_PRESS_ILS_BTN);
 }
 
-BinarySwitch
-EFISControlPanelImpl::getMCPSwitch(MCPSwitch sw) const
+binary_switch
+efis_control_panel_impl::get_mcp_switch(mcp_switch sw) const
 {
-   static VirtualAddressKey addresses[] =
+   static virtual_address_key addresses[] =
    {
       VADDR_MCP_CONSTRAINT,
       VADDR_MCP_WAYPOINT,
@@ -94,86 +94,86 @@ EFISControlPanelImpl::getMCPSwitch(MCPSwitch sw) const
       VADDR_MCP_NDB,
       VADDR_MCP_AIRPORT,
    };
-   return BinarySwitch(this->getDataObject<DWORD>(addresses[sw]));
+   return binary_switch(this->get_data_object<DWORD>(addresses[sw]));
 }
 
 void
-EFISControlPanelImpl::pushMCPSwitch(MCPSwitch sw)
+efis_control_panel_impl::push_mcp_switch(mcp_switch sw)
 {
    switch (sw)
    {
       case MCP_CONSTRAINT:
-         this->sendCommand(CMD_EFIS_CTRL_PRESS_CSTR_BTN);
+         this->send_command(CMD_EFIS_CTRL_PRESS_CSTR_BTN);
          break;
       case MCP_WAYPOINT:
-         this->sendCommand(CMD_EFIS_CTRL_PRESS_WPT_BTN);
+         this->send_command(CMD_EFIS_CTRL_PRESS_WPT_BTN);
          break;
       case MCP_VORD:
-         this->sendCommand(CMD_EFIS_CTRL_PRESS_VORD_BTN);
+         this->send_command(CMD_EFIS_CTRL_PRESS_VORD_BTN);
          break;
       case MCP_NDB:
-         this->sendCommand(CMD_EFIS_CTRL_PRESS_NDB_BTN);
+         this->send_command(CMD_EFIS_CTRL_PRESS_NDB_BTN);
          break;
       case MCP_AIRPORT:
-         this->sendCommand(CMD_EFIS_CTRL_PRESS_ARPT_BTN);
+         this->send_command(CMD_EFIS_CTRL_PRESS_ARPT_BTN);
          break;
    }
 }
 
-NDModeSwitch
-EFISControlPanelImpl::getNDModeSwitch() const
-{ return NDModeSwitch(this->getDataObject<DWORD>(VADDR_ND_MODE)); }
+nd_mode_switch
+efis_control_panel_impl::get_nd_mode_switch() const
+{ return nd_mode_switch(this->get_data_object<DWORD>(VADDR_ND_MODE)); }
 
 void
-EFISControlPanelImpl::setNDModeSwitch(NDModeSwitch mode)
-{ this->sendCommand<NDModeSwitch>(CMD_EFIS_CTRL_SET_ND_MODE, mode); }
+efis_control_panel_impl::set_nd_mode_switch(nd_mode_switch mode)
+{ this->send_command<nd_mode_switch>(CMD_EFIS_CTRL_SET_ND_MODE, mode); }
 
-NDRangeSwitch
-EFISControlPanelImpl::getNDRangeSwitch() const
-{ return NDRangeSwitch(this->getDataObject<DWORD>(VADDR_ND_RANGE)); }
-
-void
-EFISControlPanelImpl::setNDRangeSwitch(NDRangeSwitch range)
-{ this->sendCommand<NDRangeSwitch>(CMD_EFIS_CTRL_SET_ND_RANGE, range); }
-
-NDNavModeSwitch
-EFISControlPanelImpl::getNDNav1ModeSwitch() const
-{ return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_LEFT)); }
+nd_range_switch
+efis_control_panel_impl::get_nd_range_switch() const
+{ return nd_range_switch(this->get_data_object<DWORD>(VADDR_ND_RANGE)); }
 
 void
-EFISControlPanelImpl::setNDNav1ModeSwitch(NDNavModeSwitch value)
+efis_control_panel_impl::set_nd_range_switch(nd_range_switch range)
+{ this->send_command<nd_range_switch>(CMD_EFIS_CTRL_SET_ND_RANGE, range); }
+
+nd_nav_mode_switch
+efis_control_panel_impl::get_nd_nav1_mode_switch() const
+{ return nd_nav_mode_switch(this->get_data_object<DWORD>(VADDR_MCP_NAV_LEFT)); }
+
+void
+efis_control_panel_impl::set_nd_nav1_mode_switch(nd_nav_mode_switch value)
 {
    switch (value)
    {
       case ND_NAV_ADF:
-         this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_ADF);
+         this->send_command(CMD_EFIS_CTRL_LEFT_NAV_SW_ADF);
          break;
       case ND_NAV_OFF:
-         this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_OFF);
+         this->send_command(CMD_EFIS_CTRL_LEFT_NAV_SW_OFF);
          break;
       case ND_NAV_VOR:
-         this->sendCommand(CMD_EFIS_CTRL_LEFT_NAV_SW_VOR);
+         this->send_command(CMD_EFIS_CTRL_LEFT_NAV_SW_VOR);
          break;
    }
 }
 
-NDNavModeSwitch
-EFISControlPanelImpl::getNDNav2ModeSwitch() const
-{ return NDNavModeSwitch(this->getDataObject<DWORD>(VADDR_MCP_NAV_RIGHT)); }
+nd_nav_mode_switch
+efis_control_panel_impl::get_nd_nav2_mode_switch() const
+{ return nd_nav_mode_switch(this->get_data_object<DWORD>(VADDR_MCP_NAV_RIGHT)); }
 
 void
-EFISControlPanelImpl::setNDNav2ModeSwitch(NDNavModeSwitch value)
+efis_control_panel_impl::set_nd_nav2_mode_switch(nd_nav_mode_switch value)
 {
    switch (value)
    {
       case ND_NAV_ADF:
-         this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_ADF);
+         this->send_command(CMD_EFIS_CTRL_RIGHT_NAV_SW_ADF);
          break;
       case ND_NAV_OFF:
-         this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_OFF);
+         this->send_command(CMD_EFIS_CTRL_RIGHT_NAV_SW_OFF);
          break;
       case ND_NAV_VOR:
-         this->sendCommand(CMD_EFIS_CTRL_RIGHT_NAV_SW_VOR);
+         this->send_command(CMD_EFIS_CTRL_RIGHT_NAV_SW_VOR);
          break;
    }
 }

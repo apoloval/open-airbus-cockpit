@@ -31,13 +31,13 @@
 #include <liboac/lang-utils.h>
 namespace oac { namespace we {
 
-enum APUStatus
+enum apu_status
 {
    APU_OFF = 0,
    APU_ON = 1,
 };
 
-enum ThrustLevers
+enum thrust_levers
 {
    THRUST_REVERSE = 0,
    THRUST_IDLE = 1,
@@ -48,35 +48,35 @@ enum ThrustLevers
    THRUST_UNKNOWN = 0xffffffff,
 };
 
-enum TCAS
+enum tcas
 {
-   TCAS_THRT = 0,
-   TCAS_ALL = 1,
-   TCAS_ABOVE = 2,
-   TCAS_BELLOW = 3,
+   tcas_THRT = 0,
+   tcas_ALL = 1,
+   tcas_ABOVE = 2,
+   tcas_BELLOW = 3,
 };
 
-enum IRSStatus
+enum irs_status
 {
    IRS_NOT_ALIGNED,
    IRS_ALIGNING,
    IRS_ALIGNED,
 };
 
-enum EngineMode
+enum engine_mode
 {
    ENG_MOD_CRANK = 0,
    ENG_MOD_NORM = 1,
    ENG_MOD_IGNITION_START = 2,
 };
 
-enum AutoThrust
+enum auto_thrust
 {
    ATHR_DISENGAGED = 0,
    ATHR_ENGAGED = 2,
 };
 
-enum Autopilot
+enum autopilot
 {
    AP_NONE = 0,
    AP_1 = 1,
@@ -84,7 +84,7 @@ enum Autopilot
    AP_BOTH = 3,
 };
 
-enum SpeedMode
+enum speed_mode
 {
    SPD_MOD_NONE = 0,
    SPD_MOD_SPEED = 1,
@@ -93,7 +93,7 @@ enum SpeedMode
    SPD_MOD_THR_IDLE = 4,
 };
 
-enum VerticalMode
+enum vertical_mode
 {
    VER_MOD_NONE = 0,
    VER_MOD_GS = 1,
@@ -108,7 +108,7 @@ enum VerticalMode
    VER_MOD_SRS = 10,
 };
 
-enum LateralMode
+enum lateral_mode
 {
    LAT_MOD_NONE = 0,
    LAT_MOD_RWY = 1,
@@ -120,21 +120,21 @@ enum LateralMode
    LAT_MOD_LOC = 7,
 };
 
-enum StrobeLightSwitch
+enum strobe_light_switch
 {
    STROBE_OFF = 0,
    STROBE_AUTO = 1,
    STROBE_ON = 2,
 };
 
-enum CabinSignSwitch
+enum cabin_sign_switch
 {
    SIGN_OFF = 0,
    SIGN_AUTO = 1,
    SIGN_ON = 2,
 };
 
-enum ADIRSDisplayModeSwitch
+enum adirs_display_mode_switch
 {
    ADIRS_TEST = 0,
    ADIRS_TK_GS = 1,
@@ -145,7 +145,7 @@ enum ADIRSDisplayModeSwitch
    ADIRS_STS = 6,
 };
 
-enum ADIRSDisplaySysSwitch
+enum adirs_display_sys_switch
 {
    ADIRS_OFF = 0,
    ADIRS_1 = 1,
@@ -153,7 +153,7 @@ enum ADIRSDisplaySysSwitch
    ADIRS_2 = 3,
 };
 
-enum CockpitTemperatureSwitch
+enum cockpit_temp_switch
 {
    TEMP_MINUS_3 = 0,
    TEMP_MINUS_2 = 1,
@@ -164,53 +164,53 @@ enum CockpitTemperatureSwitch
    TEMP_PLUS_3 = 6,
 };
 
-enum PackFlowSwitch
+enum packflow_switch
 {
    PACK_FLOW_LOW = 0,
    PACK_FLOW_NORM = 1,
    PACK_FLOW_HIGH = 2,
 };
 
-enum AirCondXBleedSwitch
+enum aircond_xbleed_switch
 {
    AC_XBLEED_SHUTDOWN = 0,
    AC_XBLEED_AUTO = 1,
    AC_XBLEED_OPEN = 2,
 };
 
-enum ProbeWindowHeatSwitch
+enum probe_window_head_switch
 {
    PROBE_WINHEAT_AUTO = 0,
    PROBE_WINHEAT_ON = 1,
 };
 
-enum GPUSwitch 
+enum gpu_switch
 {
    GPU_OFF,
    GPU_AVAILABLE,
    GPU_ON,
 };
 
-enum APUMasterSwitch
+enum apu_master_switch
 {
    APU_MASTER_OFF,
    APU_MASTER_ON,
 };
 
-enum APUStartSwitch
+enum apu_start_switch
 {
    APU_START_OFF,
    APU_START_ON,
    APU_START_AVAILABLE,
 };
 
-struct APUSwitches
+struct apu_switches
 {
-   APUMasterSwitch master;
-   APUStartSwitch start;
+   apu_master_switch master;
+   apu_start_switch start;
 };
 
-enum SDPageButton {
+enum sd_page_button {
    SD_PAGE_NONE,
    SD_PAGE_ENGINE,
    SD_PAGE_BLEED,
@@ -227,58 +227,58 @@ enum SDPageButton {
    SD_PAGE_STS,
 };
 
-struct Aircraft {
-
-   enum Type
-   {
-      A320_CFM,
-   };
-
-   typedef std::string Title;
-
-   DECL_ERROR(InvalidTitle, InvalidInputError);
-   DECL_ERROR_INFO(TitleInfo, Title);
-
-   const Type type;
-   const Title title;
-
-   Aircraft(const Type& type);
-
-   Aircraft(const std::string& title) throw (InvalidTitle);
+enum aircraft_type
+{
+   A320_CFM,
 };
 
-class WilcoCockpit : public CockpitFront
+typedef std::string aircraft_title;
+
+struct aircraft {
+
+   OAC_DECL_ERROR(invalid_title, invalid_input_error);
+   OAC_DECL_ERROR_INFO(title_info, aircraft_title);
+
+   const aircraft_type type;
+   const aircraft_title title;
+
+   aircraft(const aircraft_type& type);
+
+   aircraft(const aircraft_title& title) throw (invalid_title);
+};
+
+class wilco_cockpit : public cockpit_front
 {
 public:
 
-   DECL_ERROR(InvalidAircraftError, InvalidInputError);
-   DECL_ERROR_INFO(AircraftInfo, Aircraft);
-   DECL_ERROR_INFO(AircraftTitleInfo, std::string);
+   OAC_DECL_ERROR(invalid_aircraft_error, invalid_input_error);
+   OAC_DECL_ERROR_INFO(aircraft_info, aircraft);
+   OAC_DECL_ERROR_INFO(aircraft_title_info, std::string);
 
-   static WilcoCockpit* newCockpit(
-         const Aircraft& aircraft) throw (InvalidAircraftError);
+   static wilco_cockpit* new_cockpit(
+         const aircraft& aircraft) throw (invalid_aircraft_error);
 
-   inline virtual ~WilcoCockpit() {}
+   inline virtual ~wilco_cockpit() {}
 
-   virtual const Aircraft& aircraft() const = 0;
+   virtual const aircraft& get_aircraft() const = 0;
 
-   virtual GPUSwitch getGpuSwitch() const = 0;
+   virtual gpu_switch get_gpu_switch() const = 0;
 
-   virtual void getAPUSwitches(APUSwitches& sw) const = 0;
+   virtual void get_apu_switches(apu_switches& sw) const = 0;
 
-   virtual SDPageButton getSDPageButton() const = 0;
+   virtual sd_page_button get_sd_page_button() const = 0;
 
-   virtual const FlightControlUnit& getFlightControlUnit() const = 0;
-   virtual FlightControlUnit& getFlightControlUnit() = 0;
+   virtual const flight_control_unit& get_flight_control_unit() const = 0;
+   virtual flight_control_unit& get_flight_control_unit() = 0;
 
-   virtual const EFISControlPanel& getEFISControlPanel() const = 0;
-   virtual EFISControlPanel& getEFISControlPanel() = 0;
+   virtual const efis_control_panel& get_efis_control_panel() const = 0;
+   virtual efis_control_panel& get_efis_control_panel() = 0;
 
    virtual void debug() const = 0;
 
 protected:
 
-   inline WilcoCockpit() {}
+   inline wilco_cockpit() {}
 };
 
 }}; // namespace oac
