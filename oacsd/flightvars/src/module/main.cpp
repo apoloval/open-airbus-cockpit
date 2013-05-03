@@ -16,6 +16,9 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+// Must be included first to avoid including issues in Boost::asio
+#include "server.h"
+
 #include <Windows.h>
 
 #include <liboac/filesystem.h>
@@ -29,28 +32,38 @@
 using namespace oac;
 using namespace oac::fv;
 
+namespace {
+
+ptr<flight_vars_server> server(nullptr);
+
+}
+
 void __stdcall DLLStart(void)
 {
    file log_file(LOG_FILE);
-   Logger::setMain(new Logger(LogLevel::INFO, log_file.append()));
+   logger::set_main(new logger(log_level::INFO, log_file.append()));
    try
    {
-      Log(oac::INFO, "flight_vars module is starting");
+      log(oac::INFO, "flight_vars module is starting");
+
       auto core = flight_vars_core::instance();
       core->register_group_master(
             fsuipc_flight_vars::VAR_GROUP, new fsuipc_flight_vars());
-      Log(oac::INFO, "flight_vars module has been started");
+
+      server = new flight_vars_server();
+
+      log(oac::INFO, "flight_vars module has been started");
    } catch (error& e)
    {
-      Log(oac::FAIL, boost::format("Unexpected error: %s") %
+      log(oac::FAIL, boost::format("Unexpected error: %s") %
           boost::diagnostic_information(e));
    }
 }
 
 void __stdcall DLLStop(void)
 {
-   Log(oac::INFO, "flight_vars module is stopping");
+   log(oac::INFO, "flight_vars module is stopping");
    // Destroy core here
-   Log(oac::INFO, "flight_vars module has been stopped");
-   Logger::setMain(nullptr); // close the main logger
+   log(oac::INFO, "flight_vars module has been stopped");
+   logger::set_main(nullptr); // close the main logger
 }

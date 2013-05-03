@@ -6,6 +6,7 @@ set(liboac-commons_HEADERS
    include/liboac/buffer.h
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
+   include/liboac/endian.h
    include/liboac/exception.h
    include/liboac/filesystem.h
    include/liboac/fsuipc.h

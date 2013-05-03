@@ -4,6 +4,7 @@ project(FlightVars)
 
 set(libflightvars_HEADERS
    include/flightvars/api.h
+   include/flightvars/protocol.h
 )
 
 set(libflightvars_SOURCES
@@ -20,6 +21,8 @@ set(flightvars_SOURCES
    src/module/dllmain.cpp
    src/module/fsuipc.cpp
    src/module/main.cpp
+   src/module/protocol.cpp
+   src/module/server.cpp
 )
 
 include_directories(
@@ -53,6 +56,8 @@ test_link_libraries(
 )
 
 add_unit_test(api-test)
+add_unit_test(protocol-test)
 
 add_integration_test(fsuipc-itest)
+add_integration_test(server-itest)
 

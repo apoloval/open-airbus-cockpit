@@ -35,9 +35,13 @@ class ptr : public std::shared_ptr<T>
 public:
 
    inline ptr() : std::shared_ptr<T>() {}
-   inline ptr(const ptr& ptr) : std::shared_ptr<T>(ptr) {}
-   inline ptr(const shared_ptr<T>& ptr) : std::shared_ptr<T>(ptr) {}
+   inline ptr(const ptr& p) : std::shared_ptr<T>(p) {}
+   inline ptr(const shared_ptr<T>& p) : std::shared_ptr<T>(p) {}
    inline ptr(T* t) : std::shared_ptr<T>(std::shared_ptr<T>(t)) {}
+
+   template <typename U>
+     inline ptr(const ptr<U>& p)
+       : std::shared_ptr<T>(std::static_pointer_cast<T>(p)) {}
 };
 
 /**

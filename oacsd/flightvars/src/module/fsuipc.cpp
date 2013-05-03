@@ -52,7 +52,7 @@ fsuipc_flight_vars::fsuipc_flight_vars(const ptr<buffer>& fsuipc)
     * Register a timed callback on SimConnect to check var changes
     * every 1/6 seconds.
     */
-   Log(INFO, "@FSUIPC; Registering 6HZ event in SimConnect...");
+   log(INFO, "@FSUIPC; Registering 6HZ event in SimConnect...");
    _sc.register_on_event_callback(
             [this](simconnect_client&, const SIMCONNECT_RECV_EVENT&) {
       // We only register SYSTEM_EVENT_6HZ event, so args check is not needed
@@ -60,14 +60,14 @@ fsuipc_flight_vars::fsuipc_flight_vars(const ptr<buffer>& fsuipc)
    });
    _sc.subscribe_to_system_event(simconnect_client::SYSTEM_EVENT_6HZ);
    _sc.dispatch_message();
-   Log(INFO, "@FSUIPC; 6HZ event successfully registered!");
+   log(INFO, "@FSUIPC; 6HZ event successfully registered!");
 
    // Initialize FSUIPC interface
    if (!_fsuipc)
    {
-      Log(INFO, "@FSUIPC; Initializing FSUIPC interface... ");
+      log(INFO, "@FSUIPC; Initializing FSUIPC interface... ");
       _fsuipc = new local_fsuipc();
-      Log(INFO, "@FSUIPC; FSUIPC interface successfully initialized!");
+      log(INFO, "@FSUIPC; FSUIPC interface successfully initialized!");
    }
 }
 
@@ -78,12 +78,12 @@ fsuipc_flight_vars::subscribe(
       const subscription& subs)
 throw (unknown_variable_error)
 {
-   Log(INFO, boost::format("@FSUIPC; Subscribing on %s -> %s...")
+   log(INFO, boost::format("@FSUIPC; Subscribing on %s -> %s...")
        % grp.get_tag() % name.get_tag());
    check_group(grp);
    offset offset(name);
    subscribe(offset, subs);
-   Log(INFO, "@FSUIPC; Subscribed successfully!");
+   log(INFO, "@FSUIPC; Subscribed successfully!");
 }
 
 void

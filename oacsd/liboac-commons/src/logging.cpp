@@ -44,10 +44,10 @@ std::string GetTime()
 } // anonymous namespace
 
 
-ptr<Logger> Logger::_main;
+ptr<logger> logger::_main;
 
 void
-Logger::log(LogLevel level, const std::string& msg)
+logger::log(log_level level, const std::string& msg)
 {
    if (_level <= level)
    {
@@ -59,15 +59,15 @@ Logger::log(LogLevel level, const std::string& msg)
 }
 
 void
-Log(LogLevel level, const std::string& msg)
+log(log_level level, const std::string& msg)
 {
-   auto main = Logger::main();
+   auto main = logger::get_main();
    if (main)
       main->log(level, msg);
 }
 
 void
-Log(LogLevel level, const boost::format& fmt)
-{ Log(level, str(fmt)); }
+log(log_level level, const boost::format& fmt)
+{ log(level, str(fmt)); }
 
 } // namespace oac

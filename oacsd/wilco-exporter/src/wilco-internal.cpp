@@ -92,7 +92,7 @@ void
 free_dll(HINSTANCE lib)
 {
    if (!FreeLibrary(lib))
-      Log(WARN, "cannot free DLL instance");
+      log(WARN, "cannot free DLL instance");
 }
 
 void
@@ -105,7 +105,7 @@ track_changes_on_memory(void* mem, size_t len) {
       for (unsigned int i = 0; i < len / size_t(4); i++)
       {
          if (src[i] != dst[i]) {
-            Log(INFO, str(boost::format(
+            log(INFO, str(boost::format(
                   "word %d (+0x%X) changes from %d to %d")
                   % i % i % dst[i] % src[i]));
          }
@@ -113,7 +113,7 @@ track_changes_on_memory(void* mem, size_t len) {
    }
    else
    {
-      Log(INFO, str(boost::format("Tracking %d bytes on 0x%X")
+      log(INFO, str(boost::format("Tracking %d bytes on 0x%X")
             % len % mem));
       buf = new uint8_t[len];
    }

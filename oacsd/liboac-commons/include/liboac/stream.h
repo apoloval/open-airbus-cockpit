@@ -19,6 +19,8 @@
 #ifndef OAC_STREAM_H
 #define OAC_STREAM_H
 
+#include <cstdint>
+
 #include <Windows.h>
 
 #include "exception.h"
@@ -59,16 +61,48 @@ public:
    virtual DWORD read(void* buffer, DWORD count) throw (read_error) = 0;
 
    /**
+    * Read count bytes from the stream, waiting for new data to arrive if
+    * there are no enough bytes. While read() returns even when less bytes
+    * than requested have arrived, read_all() waits until every requested
+    * byte is available. If the stream is closed before that, a eof_error
+    * is thrown.
+    *
+    * @param buffer the buffer where store the read elements. It must
+    *               have at least count allocated bytes
+    * @param count the count of bytes to read
+    */
+   inline void read_all(void* buffer, DWORD count) throw (read_error)
+   {
+      auto p = (std::uint8_t*) buffer;
+      while (count)
+      {
+         auto nread = read(p, count);
+         if (nread == 0)
+            BOOST_THROW_EXCEPTION(eof_error());
+         p += nread;
+         count -= nread;
+      }
+   }
+
+   /**
     * Read one element of type T from the stream and return it. If the
-    * stream is closed andthere are no enough bytes left to read an element
+    * stream is closed and there are no enough bytes left to read an element
     * of type T, a eof_error is thrown.
     */
    template <typename T>
    inline T read_as() throw (read_error)
    {
       T r;
-      if (read(&r, sizeof(T)) < sizeof(T))
-         BOOST_THROW_EXCEPTION(eof_error());
+      read_all(&r, sizeof(T));
+      return r;
+   }
+
+   inline std::string read_as_string(unsigned int len) throw (read_error)
+   {
+      char* buff = new char[len];
+      read_all(buff, len);
+      std::string r(buff, len);
+      delete buff;
       return r;
    }
 };
@@ -104,6 +138,9 @@ public:
 
    template <>
    inline void write_as<std::string>(const std::string& str) throw (write_error)
+   { write_as_string(str); }
+
+   inline void write_as_string(const std::string& str) throw (write_error)
    { write(str.c_str(), str.length()); }
 };
 

@@ -152,6 +152,8 @@ public:
    OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
    OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
+   virtual ~flight_vars() {}
+
    /**
     * A callback representing a subscription to a variable.
     */

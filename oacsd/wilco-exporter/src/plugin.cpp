@@ -64,7 +64,7 @@ void
 plugin::on_simconnect_open(
       simconnect_client& client, const SIMCONNECT_RECV_OPEN& msg)
 {
-   Log(INFO, "Connection to SimConnect successfully open.");
+   log(INFO, "Connection to SimConnect successfully open.");
    this->request_aircraft_title();
    this->request_on_aircraft_loaded_callback();
 }
@@ -72,14 +72,14 @@ plugin::on_simconnect_open(
 void
 plugin::on_simconnect_quit(simconnect_client& client, const SIMCONNECT_RECV& msg)
 {
-   Log(INFO, "Connection to SimConnect closed.");
+   log(INFO, "Connection to SimConnect closed.");
 }
 
 void
 plugin::on_simconnect_exception(
       simconnect_client& client, const SIMCONNECT_RECV_EXCEPTION& msg)
 {
-   Log(WARN, boost::format("unexpected exception raised: code %d")
+   log(WARN, boost::format("unexpected exception raised: code %d")
          % msg.dwException);
 }
 
@@ -105,7 +105,7 @@ plugin::on_simconnect_event_filename(simconnect_client& client,
          this->request_aircraft_title();
          break;
       case EVENT_FLIGHT_LOADED:
-         Log(INFO, "New flight is loaded, reset and check the new aircraft");
+         log(INFO, "New flight is loaded, reset and check the new aircraft");
          this->reset_cockpit();
          this->request_aircraft_title();
          break;
@@ -133,12 +133,12 @@ void plugin::on_1sec_elapsed()
 void
 plugin::on_new_aircraft(const aircraft_title& title)
 {
-   Log(INFO, boost::format("New aircraft loaded: %s") % title);
+   log(INFO, boost::format("New aircraft loaded: %s") % title);
    try
    {
       this->reset_cockpit(aircraft(title));
    } catch (aircraft::invalid_title& e) {
-      Log(INFO, boost::format(
+      log(INFO, boost::format(
             "No Wilco Airbus aircraft resolved for title '%s'") %
                   GetErrorInfo<aircraft::title_info>(e));
       this->reset_cockpit();
@@ -167,7 +167,7 @@ plugin::request_on_aircraft_loaded_callback()
 void
 plugin::reset_cockpit()
 {
-   Log(INFO, "Wilco cockpit reset");
+   log(INFO, "Wilco cockpit reset");
    _wilco.reset();
    _fsuipc.reset();
 }
@@ -177,13 +177,13 @@ plugin::reset_cockpit(const aircraft& aircraft)
 {
    try
    {
-      Log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
+      log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
             % aircraft.title);
       _wilco = wilco_cockpit::new_cockpit(aircraft);
       _fsuipc = new fsuipc_cockpit_back(new local_fsuipc::factory());
-      Log(INFO, "Wilco Cockpit successfully initialized");
+      log(INFO, "Wilco Cockpit successfully initialized");
    } catch (std::exception& ex) {
-      Log(WARN, ex.what());
+      log(WARN, ex.what());
       this->reset_cockpit();
    }   
 }

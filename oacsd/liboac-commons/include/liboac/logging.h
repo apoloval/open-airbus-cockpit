@@ -28,50 +28,50 @@
 
 namespace oac { 
 
-enum LogLevel
+enum log_level
 {
 	INFO,
    WARN,
 	FAIL,
 };
 
-class Logger
+class logger
 {
 public:
 
-   inline static void setMain(const ptr<Logger>& logger)
+   inline static void set_main(const ptr<logger>& logger)
    { _main = logger; }
 
-   inline static ptr<Logger> main()
+   inline static ptr<logger> get_main()
    { return _main; }
 
-   inline Logger(const LogLevel& level, const ptr<output_stream>& output)
+   inline logger(const log_level& level, const ptr<output_stream>& output)
       : _output(output), _level(level) {}
 
    /**
     * Log a message to indicated log level.
     */
-   void log(LogLevel level, const std::string& msg);
+   void log(log_level level, const std::string& msg);
 
 private:
 
    ptr<output_stream> _output;
-   LogLevel _level;
+   log_level _level;
 
-   static ptr<Logger> _main;
+   static ptr<logger> _main;
 };
 
 /**
  * Log a message to indicated log level in main logger. If no main logger
  * was registered, nothing is done.
  */
-void Log(LogLevel level, const std::string& msg);
+void log(log_level level, const std::string& msg);
 
 /**
  * Convenient function for logging Boost format objects in main logger.
  * If no main logger was registered, nothing is done.
  */
-void Log(LogLevel level, const boost::format& fmt);
+void log(log_level level, const boost::format& fmt);
 
 }; // namespace oac
 

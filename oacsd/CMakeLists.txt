@@ -18,7 +18,13 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/" ${CMAKE_MODULE_PATH})
 set(Boost_USE_STATIC_LIBS ON)
 
 include(Testing)
-find_package(Boost COMPONENTS system unit_test_framework filesystem REQUIRED)
+find_package(Boost COMPONENTS
+   system
+   unit_test_framework
+   filesystem
+   date_time
+   regex
+REQUIRED)
 find_package(SimConnect REQUIRED)
 find_package(FSUIPC_Internal REQUIRED)
 
