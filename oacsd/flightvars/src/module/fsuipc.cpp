@@ -29,23 +29,23 @@ namespace oac { namespace fv {
 
 namespace {
 
-DWORD parseHexadecimal(const std::string& str)
+std::uint16_t parse_address(const std::string& str)
 {
    std::stringstream ss;
-   DWORD r;
+   std::uint16_t r;
    ss << std::hex << str;
    ss >> r;
    return r;
 }
 
-}
+} // anonymous namespace
 
 const variable_group fsuipc_flight_vars::VAR_GROUP("fsuipc/offset");
 
-fsuipc_flight_vars::fsuipc_flight_vars(const ptr<buffer>& fsuipc)
+fsuipc_flight_vars::fsuipc_flight_vars()
    : _sc("flight_vars - FSUIPC"),
-     _fsuipc(fsuipc),
-     _buffer(double_buffer::factory(
+     _fsuipc(new local_fsuipc()),
+     _buffer(double_buffer<>::factory(
                 new fixed_buffer::factory(0xffff)).create_buffer())
 {
    /**
@@ -61,14 +61,6 @@ fsuipc_flight_vars::fsuipc_flight_vars(const ptr<buffer>& fsuipc)
    _sc.subscribe_to_system_event(simconnect_client::SYSTEM_EVENT_6HZ);
    _sc.dispatch_message();
    log(INFO, "@FSUIPC; 6HZ event successfully registered!");
-
-   // Initialize FSUIPC interface
-   if (!_fsuipc)
-   {
-      log(INFO, "@FSUIPC; Initializing FSUIPC interface... ");
-      _fsuipc = new local_fsuipc();
-      log(INFO, "@FSUIPC; FSUIPC interface successfully initialized!");
-   }
 }
 
 void
@@ -91,7 +83,8 @@ fsuipc_flight_vars::check_group(const variable_group& grp)
 throw (unknown_variable_group_error)
 {
    if (grp != VAR_GROUP)
-      BOOST_THROW_EXCEPTION(unknown_variable_group_error() << variable_group_info(grp));
+      BOOST_THROW_EXCEPTION(unknown_variable_group_error() <<
+            variable_group_info(grp));
 }
 
 void
@@ -115,7 +108,7 @@ fsuipc_flight_vars::notify_changes()
    {
       auto offset = entry.first;
       sync_offset(offset);
-      if (offset.isUpdated(*_buffer))
+      if (offset.is_updated(*_buffer))
          for (auto subs : entry.second)
          {
             subs(VAR_GROUP, offset.var_name, offset.read(*_buffer));
@@ -145,8 +138,8 @@ throw (unknown_variable_name_error)
          if (parts.size() == 1)
             parts.push_back("1");
 
-         address = parseHexadecimal(parts[0]);
-         length = boost::lexical_cast<DWORD>(parts[1]);
+         address = parse_address(parts[0]);
+         length = boost::lexical_cast<std::uint32_t>(parts[1]);
          if (length == 1 || length == 2 || length == 4)
             return; // Valid len, otherwise continue to throw
       }
@@ -154,30 +147,38 @@ throw (unknown_variable_name_error)
    catch(boost::bad_lexical_cast&) {
       // Let's continue and throw below
    }
-   BOOST_THROW_EXCEPTION(unknown_variable_name_error() << variable_name_info(var_name));
+   BOOST_THROW_EXCEPTION(unknown_variable_name_error() <<
+         variable_name_info(var_name));
 }
 
 bool
-fsuipc_flight_vars::offset::isUpdated(double_buffer& buf)
+fsuipc_flight_vars::offset::is_updated(double_buffer<>& buf)
 {
    switch (length)
    {
-      case 1: return buf.is_modified_as<BYTE>(address);
-      case 2: return buf.is_modified_as<WORD>(address);
-      case 4: return buf.is_modified_as<DWORD>(address);
+      case 1: return buf.is_modified_as<std::uint8_t>(address);
+      case 2: return buf.is_modified_as<std::uint16_t>(address);
+      case 4: return buf.is_modified_as<std::uint32_t>(address);
       default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
    }
 }
 
 variable_value
-fsuipc_flight_vars::offset::read(double_buffer& buf)
+fsuipc_flight_vars::offset::read(double_buffer<>& buff)
 {
    switch (length)
    {
-      case 1: return variable_value::from_byte(buf.read_as<BYTE>(address));
-      case 2: return variable_value::from_word(buf.read_as<WORD>(address));
-      case 4: return variable_value::from_dword(buf.read_as<DWORD>(address));
-      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
+      case 1:
+         return variable_value::from_byte(
+               buffer::read_as<std::uint8_t>(buff, address));
+      case 2:
+         return variable_value::from_word(
+               buffer::read_as<std::uint16_t>(buff, address));
+      case 4:
+         return variable_value::from_dword(
+               buffer::read_as<std::uint32_t>(buff, address));
+      default:
+         BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
    }
 
 }

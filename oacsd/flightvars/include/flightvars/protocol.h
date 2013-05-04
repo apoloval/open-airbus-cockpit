@@ -29,6 +29,16 @@
 
 namespace oac { namespace fv { namespace proto {
 
+/**
+ * Thrown when a protocol error is found. Contains:
+ *  - expected_input_info, indicating the expected protocol element
+ *  - actual_input_info, indicating the actual protocol element found
+ */
+OAC_DECL_ERROR(protocol_error, invalid_input_error);
+
+OAC_DECL_ERROR_INFO(expected_input_info, std::string);
+OAC_DECL_ERROR_INFO(actual_input_info, std::string);
+
 typedef std::uint16_t protocol_version;
 
 typedef std::string endpoint_name;
@@ -66,119 +76,125 @@ struct message_internals
 };
 
 /**
- * An abstraction for an object able to serialize messages.
+ * Serialize given message into given output stream.
  */
-class message_serializer
+template <typename Serializer, typename OutputStream>
+inline void serialize(const message& msg, OutputStream& output)
 {
-public:
-
-   inline virtual ~message_serializer() {}
-
-   /**
-    * Serialize given message into given output stream.
-    */
-   void serialize(const message& msg, output_stream& output);
-
-protected:
-
-   virtual void write_msg_begin(
-         output_stream& output,
-         message_internals::message_type msg_type) = 0;
-
-   virtual void write_msg_end(output_stream& output) = 0;
-
-   virtual void write_string_value(
-         output_stream& output, const std::string& value) = 0;
-
-   virtual void write_uint16_value(
-         output_stream& output, std::uint16_t value) = 0;
-
-private:
-
    struct visitor : public boost::static_visitor<void>
    {
-      message_serializer& serializer;
-      output_stream& output;
+      OutputStream& output;
 
-      inline visitor(message_serializer& serializer,
-                     output_stream& output)
-         : serializer(serializer), output(output)
-      {}
+      inline visitor(OutputStream& os) : output(os) {}
 
-      void operator()(const begin_session_message& msg) const;
-   };
+      void operator()(const begin_session_message& msg) const
+      {
+         Serializer::write_msg_begin(
+                  output, message_internals::MSG_BEGIN_SESSION);
+         Serializer::write_string_value(output, msg.ep_name);
+         Serializer::write_uint16_value(output, msg.proto_ver);
+         Serializer::write_msg_end(output);
+      }
+   } visit(output);
+   boost::apply_visitor(visit, msg);
+}
+
+template <typename Deserializer, typename InputStream>
+begin_session_message
+deserialize_begin_session(InputStream& input)
+throw (protocol_error)
+{
+   auto ep_name = Deserializer::read_string_value(input);
+   auto proto_ver = Deserializer::read_uint16_value(input);
+   return begin_session_message(ep_name, proto_ver);
+}
+
+template <typename Deserializer, typename InputStream>
+message
+deserialize(InputStream& input)
+throw (protocol_error)
+{
+   auto msg_begin = Deserializer::read_msg_begin(input);
+   switch (msg_begin)
+   {
+      case message_internals::MSG_BEGIN_SESSION:
+         return deserialize_begin_session<Deserializer>(input);
+      default:
+         BOOST_THROW_EXCEPTION(illegal_state_error() <<
+               message_info("received an unknown value for message type"));
+   }
+   Deserializer::read_msg_end(input);
+}
+
+struct binary_message_serializer
+{
+
+   template <typename OutputStream>
+   inline static void write_msg_begin(
+         OutputStream& output,
+         message_internals::message_type msg_type)
+   {
+      stream::write_as(output, native_to_big<std::uint16_t>(msg_type));
+   }
+
+   template <typename OutputStream>
+   inline static void write_msg_end(OutputStream& output)
+   {
+      stream::write_as(output, native_to_big<std::uint16_t>(0x0d0a));
+   }
+
+   template <typename OutputStream>
+   inline static void write_string_value(
+         OutputStream& output, const std::string& value)
+   {
+      stream::write_as(output, native_to_big<std::uint16_t>(value.length()));
+      stream::write_as_string(output, value);
+   }
+
+   template <typename OutputStream>
+   inline static void write_uint16_value(
+         OutputStream& output, std::uint16_t value)
+   {
+      stream::write_as(output, native_to_big<std::uint16_t>(value));
+   }
 };
 
-class message_deserializer
+struct binary_message_deserializer
 {
-public:
+   template <typename InputStream>
+   inline static message_internals::message_type read_msg_begin(
+         InputStream& input)
+   throw (protocol_error)
+   {
+      return message_internals::message_type(
+               big_to_native(stream::read_as<std::uint16_t>(input)));
+   }
 
-   /**
-    * Thrown when a protocol error is found. Contains:
-    *  - expected_input_info, indicating the expected protocol element
-    *  - actual_input_info, indicating the actual protocol element found
-    */
-   OAC_DECL_ERROR(protocol_error, invalid_input_error);
+   template <typename InputStream>
+   inline static void read_msg_end(InputStream& input)
+   throw (protocol_error)
+   {
+      auto eol = native_to_big(stream::read_as<uint16_t>(input));
+      if (eol != 0x0d0a)
+         BOOST_THROW_EXCEPTION(protocol_error() <<
+            expected_input_info("a message termination mark 0x0D0A") <<
+            actual_input_info(str(boost::format("bytes 0x%x") % eol)));
+   }
 
-   OAC_DECL_ERROR_INFO(expected_input_info, std::string);
-   OAC_DECL_ERROR_INFO(actual_input_info, std::string);
+   template <typename InputStream>
+   inline static std::string read_string_value(InputStream& input)
+   throw (protocol_error)
+   {
+      auto str_len = big_to_native(stream::read_as<std::uint16_t>(input));
+      return stream::read_as_string(input, str_len);
+   }
 
-   inline virtual ~message_deserializer() {}
-
-   message deserialize(input_stream& input) throw(protocol_error);
-
-protected:
-
-   virtual message_internals::message_type read_msg_begin(
-         input_stream& input) throw (protocol_error) = 0;
-
-   virtual void read_msg_end(
-         input_stream& input) throw (protocol_error) = 0;
-
-   virtual std::string read_string_value(
-         input_stream& input) throw (protocol_error) = 0;
-
-   virtual std::uint16_t read_uint16_value(
-         input_stream& input) throw (protocol_error) = 0;
-
-private:
-
-   begin_session_message deserialize_begin_session(
-         input_stream& input) throw(protocol_error);
-};
-
-class binary_message_serializer : public message_serializer
-{
-protected:
-
-   virtual void write_msg_begin(
-         output_stream& output,
-         message_internals::message_type msg_type);
-
-   virtual void write_msg_end(output_stream& output);
-
-   virtual void write_string_value(
-         output_stream& output, const std::string& value);
-
-   virtual void write_uint16_value(
-         output_stream& output, std::uint16_t value);
-};
-
-class binary_message_deserializer : public message_deserializer
-{
-protected:
-
-   virtual message_internals::message_type read_msg_begin(
-         input_stream& input) throw (protocol_error);
-
-   virtual void read_msg_end(
-         input_stream& input) throw (protocol_error);
-
-   virtual std::string read_string_value(
-         input_stream& input) throw (protocol_error);
-
-   virtual std::uint16_t read_uint16_value(
-         input_stream& input) throw (protocol_error);
+   template <typename InputStream>
+   inline static std::uint16_t read_uint16_value(InputStream& input)
+   throw (protocol_error)
+   {
+      return big_to_native(stream::read_as<std::uint16_t>(input));
+   }
 };
 
 }}} // namespace oac::fv::proto

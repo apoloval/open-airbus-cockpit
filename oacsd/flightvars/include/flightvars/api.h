@@ -100,29 +100,31 @@ public:
    OAC_DECL_ERROR_INFO(actual_type_info, variable_type);
 
    static variable_value from_bool(bool value);
-   static variable_value from_byte(BYTE value);
-   static variable_value from_word(WORD value);
-   static variable_value from_dword(DWORD value);
+   static variable_value from_byte(std::uint8_t value);
+   static variable_value from_word(std::uint16_t value);
+   static variable_value from_dword(std::uint32_t value);
    static variable_value from_float(float value);
 
    inline variable_type get_type() const { return _type; }
 
    bool as_bool() const throw (invalid_type_error);
-   BYTE as_byte() const throw (invalid_type_error);
-   WORD as_word() const throw (invalid_type_error);
-   DWORD as_dword() const throw (invalid_type_error);
+   std::uint8_t as_byte() const throw (invalid_type_error);
+   std::uint16_t as_word() const throw (invalid_type_error);
+   std::uint32_t as_dword() const throw (invalid_type_error);
    float as_float() const throw (invalid_type_error);
 
 private:
 
    variable_type _type;
-   ptr<buffer> _buffer;
+   ptr<fixed_buffer> _buffer;
 
    inline variable_value(
          const variable_type& type,
-         const ptr<buffer>& buffer) : _type(type), _buffer(buffer) {}
+         const ptr<fixed_buffer>& buffer)
+      : _type(type), _buffer(buffer) {}
 
-   void checkType(const variable_type& get_type) const throw (invalid_type_error);
+   void checkType(
+         const variable_type& get_type) const throw (invalid_type_error);
 };
 
 /**

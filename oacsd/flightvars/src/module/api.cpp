@@ -25,11 +25,11 @@ namespace oac { namespace fv {
 namespace {
 
 template <typename T>
-ptr<buffer> MakeBufferOf(const T& value)
+ptr<fixed_buffer> make_buffer_of(const T& value)
 {
-   auto buffer = new fixed_buffer(sizeof(T));
-   buffer->write_as<T>(0, value);
-   return buffer;
+   auto buff = new fixed_buffer(sizeof(T));
+   buffer::write_as(*buff, 0, value);
+   return buff;
 }
 
 } // anonymous namespace
@@ -41,54 +41,54 @@ tagged_element::tagged_element(const tag& tag) : _tag(tag)
 
 variable_value
 variable_value::from_bool(bool value)
-{ return variable_value(VAR_BOOLEAN, MakeBufferOf<bool>(value)); }
+{ return variable_value(VAR_BOOLEAN, make_buffer_of<bool>(value)); }
 
 variable_value
-variable_value::from_byte(BYTE value)
-{ return variable_value(VAR_BYTE, MakeBufferOf<BYTE>(value)); }
+variable_value::from_byte(std::uint8_t value)
+{ return variable_value(VAR_BYTE, make_buffer_of(value)); }
 
 variable_value
-variable_value::from_word(WORD value)
-{ return variable_value(VAR_WORD, MakeBufferOf<WORD>(value)); }
+variable_value::from_word(std::uint16_t value)
+{ return variable_value(VAR_WORD, make_buffer_of(value)); }
 
 variable_value
-variable_value::from_dword(DWORD value)
-{ return variable_value(VAR_DWORD, MakeBufferOf<DWORD>(value)); }
+variable_value::from_dword(std::uint32_t value)
+{ return variable_value(VAR_DWORD, make_buffer_of(value)); }
 
 variable_value
 variable_value::from_float(float value)
-{ return variable_value(VAR_FLOAT, MakeBufferOf<float>(value)); }
+{ return variable_value(VAR_FLOAT, make_buffer_of(value)); }
 
 bool
 variable_value::as_bool() const
 throw (invalid_type_error)
 {
    checkType(VAR_BOOLEAN);
-   return _buffer->read_as<bool>(0);
+   return buffer::read_as<bool>(*_buffer, 0);
 }
 
-BYTE
+std::uint8_t
 variable_value::as_byte() const
 throw (invalid_type_error)
 {
    checkType(VAR_BYTE);
-   return _buffer->read_as<BYTE>(0);
+   return buffer::read_as<std::uint8_t>(*_buffer, 0);
 }
 
-WORD
+std::uint16_t
 variable_value::as_word() const
 throw (invalid_type_error)
 {
    checkType(VAR_WORD);
-   return _buffer->read_as<WORD>(0);
+   return buffer::read_as<std::uint16_t>(*_buffer, 0);
 }
 
-DWORD
+std::uint32_t
 variable_value::as_dword() const
 throw (invalid_type_error)
 {
    checkType(VAR_DWORD);
-   return _buffer->read_as<DWORD>(0);
+   return buffer::read_as<std::uint32_t>(*_buffer, 0);
 }
 
 float
@@ -96,7 +96,7 @@ variable_value::as_float() const
 throw (invalid_type_error)
 {
    checkType(VAR_FLOAT);
-   return _buffer->read_as<float>(0);
+   return buffer::read_as<float>(*_buffer, 0);
 }
 
 void

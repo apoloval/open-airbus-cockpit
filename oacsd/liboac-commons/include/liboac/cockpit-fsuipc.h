@@ -30,7 +30,8 @@ class fsuipc_cockpit_back : public cockpit_back
 {
 public:
 
-   inline fsuipc_cockpit_back(const ptr<fsuipc::factory>& fsuipc_fact) :
+   inline fsuipc_cockpit_back(
+         const ptr<local_fsuipc::factory>& fsuipc_fact) :
       _fsuipc_fact(fsuipc_fact)
    {}
 
@@ -41,9 +42,9 @@ public:
 
 private:
 
-   ptr<double_buffer> _buffer;
-   ptr<fsuipc::factory> _fsuipc_fact;
-   ptr<fsuipc> _fsuipc;
+   ptr<double_buffer<shifted_buffer<fixed_buffer>>> _buffer;
+   ptr<local_fsuipc::factory> _fsuipc_fact;
+   ptr<local_fsuipc> _fsuipc;
    ptr<flight_control_unit> _fcu;
    ptr<efis_control_panel> _efis_ctrl_panel;
 

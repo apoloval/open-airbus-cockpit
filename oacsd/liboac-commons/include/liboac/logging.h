@@ -35,31 +35,74 @@ enum log_level
 	FAIL,
 };
 
-class logger
+class abstract_logger
 {
 public:
 
-   inline static void set_main(const ptr<logger>& logger)
-   { _main = logger; }
+   inline virtual ~abstract_logger() {}
 
-   inline static ptr<logger> get_main()
-   { return _main; }
+   virtual void log(log_level level, const std::string& msg) = 0;
 
-   inline logger(const log_level& level, const ptr<output_stream>& output)
+protected:
+
+   const char* level_str(log_level level);
+
+   std::string get_time();
+};
+
+template <typename OutputStream>
+class logger : public abstract_logger
+{
+public:
+
+   inline logger(const log_level& level, const ptr<OutputStream>& output)
       : _output(output), _level(level) {}
 
    /**
     * Log a message to indicated log level.
     */
-   void log(log_level level, const std::string& msg);
+   inline virtual void log(log_level level, const std::string& msg)
+   {
+      if (_level <= level)
+      {
+         auto line = str(boost::format("[%s] %s : %s\n") %
+                         level_str(level) % get_time() % msg);
+         stream::write_as_string(*_output, line);
+         _output->flush();
+      }
+   }
 
 private:
 
-   ptr<output_stream> _output;
+   ptr<OutputStream> _output;
    log_level _level;
 
    static ptr<logger> _main;
 };
+
+/**
+ * Create a new logger for given level and output stream.
+ */
+template <typename OutputStream>
+ptr<logger<OutputStream>> make_logger(
+      const log_level& level, const ptr<OutputStream>& output)
+{ return new logger<OutputStream>(level, output); }
+
+/**
+ * Set the main abstract logger.
+ */
+void set_main_logger(const ptr<abstract_logger>& logger);
+
+/**
+ * Close the main logger.
+ */
+inline void close_main_logger()
+{ set_main_logger(nullptr); }
+
+/**
+ * Obtain the main abstract logger.
+ */
+ptr<abstract_logger> get_main_logger();
 
 /**
  * Log a message to indicated log level in main logger. If no main logger

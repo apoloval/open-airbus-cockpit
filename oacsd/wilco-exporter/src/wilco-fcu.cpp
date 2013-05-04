@@ -151,7 +151,7 @@ flight_control_unit_impl::get_vertical_mode() const
 knots
 flight_control_unit_impl::get_speed_value() const
 {
-   return _fsuipc->read_as<WORD>(0x07E2);
+   return buffer::read_as<WORD>(*_fsuipc, 0x07E2);
 }
 
 void
@@ -163,7 +163,7 @@ flight_control_unit_impl::set_speed_value(knots value)
 mach100
 flight_control_unit_impl::get_mach_value() const
 {
-   auto v = _fsuipc->read_as<DWORD>(0x07E8);
+   auto v = buffer::read_as<DWORD>(*_fsuipc, 0x07E8);
    return boost::math::iround<double>(v / 655.36);
 }
 
@@ -171,13 +171,13 @@ void
 flight_control_unit_impl::set_mach_value(mach100 value)
 {
    DWORD v = boost::math::iround(value * 655.36);
-   _fsuipc->write_as<DWORD>(0x07E8, v);
+   buffer::write_as<DWORD>(*_fsuipc, 0x07E8, v);
 }
 
 degrees
 flight_control_unit_impl::get_heading_value() const
 {
-   auto v = _fsuipc->read_as<DWORD>(0x07CC);
+   auto v = buffer::read_as<DWORD>(*_fsuipc, 0x07CC);
    return boost::math::iround<double>(v * 360.0 / 65536.0);
 }
 

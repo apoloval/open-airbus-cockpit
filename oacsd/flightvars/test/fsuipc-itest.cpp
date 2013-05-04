@@ -28,7 +28,7 @@ using namespace oac::fv;
 
 BOOST_AUTO_TEST_CASE(ShouldRegister)
 {
-   ptr<flight_vars> fsuipc = new fsuipc_flight_vars(new fixed_buffer(0xffff));
+   ptr<flight_vars> fsuipc = new fsuipc_flight_vars();
    fsuipc->subscribe(
             variable_group("fsuipc/offset"),
             variable_name("0x200:2"),

@@ -41,7 +41,7 @@ ptr<flight_vars_server> server(nullptr);
 void __stdcall DLLStart(void)
 {
    file log_file(LOG_FILE);
-   logger::set_main(new logger(log_level::INFO, log_file.append()));
+   set_main_logger(make_logger(log_level::INFO, log_file.append()));
    try
    {
       log(oac::INFO, "flight_vars module is starting");
@@ -65,5 +65,5 @@ void __stdcall DLLStop(void)
    log(oac::INFO, "flight_vars module is stopping");
    // Destroy core here
    log(oac::INFO, "flight_vars module has been stopped");
-   logger::set_main(nullptr); // close the main logger
+   close_main_logger();
 }

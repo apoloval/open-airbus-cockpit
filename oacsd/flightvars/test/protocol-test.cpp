@@ -31,23 +31,21 @@ using namespace oac::fv::proto;
 template <typename Serializer, typename Deserializer>
 struct protocol_test
 {
-   ptr<input_stream> input;
-   ptr<output_stream> output;
-   Serializer serializer;
-   Deserializer deserializer;
+   ptr<buffer_input_stream<fixed_buffer>> input;
+   ptr<buffer_output_stream<fixed_buffer>> output;
 
    inline protocol_test()
    {
-      ptr<fixed_buffer> buff = new fixed_buffer(1024);
-      input = new buffer_input_stream(buff);
-      output = new buffer_output_stream(buff);
+      auto buff = make_ptr(new fixed_buffer(1024));
+      input = buffer::make_input_stream(buff);
+      output = buffer::make_output_stream(buff);
    }
 
    void serialize(const message& msg)
-   { serializer.serialize(msg, *output); }
+   { proto::serialize<Serializer>(msg, *output); }
 
    message deserialize()
-   { return deserializer.deserialize(*input); }
+   { return proto::deserialize<Deserializer>(*input); }
 };
 
 
@@ -61,26 +59,26 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSessionBegin)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x700, big_to_native(test.input->read_as<std::uint16_t>()));
+            0x700, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
    BOOST_CHECK_EQUAL(
-            15, big_to_native(test.input->read_as<std::uint16_t>()));
+            15, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
    BOOST_CHECK_EQUAL(
-            "FlightVars Test", test.input->read_as_string(15));
+            "FlightVars Test", stream::read_as_string(*test.input, 15));
    BOOST_CHECK_EQUAL(
-            0x0100, big_to_native(test.input->read_as<std::uint16_t>()));
+            0x0100, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
    BOOST_CHECK_EQUAL(
-            0x0d0a, big_to_native(test.input->read_as<std::uint16_t>()));
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldDeserializeSessionBegin)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   test.output->write_as(native_to_big<std::uint16_t>(0x700));
-   test.output->write_as(native_to_big<std::uint16_t>(15));
-   test.output->write_as_string("FlightVars Test");
-   test.output->write_as(native_to_big<std::uint16_t>(0x0115));
-   test.output->write_as(native_to_big<std::uint16_t>(0x0d0a));
+   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x700));
+   stream::write_as(*test.output, native_to_big<std::uint16_t>(15));
+   stream::write_as_string(*test.output, "FlightVars Test");
+   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0115));
+   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0d0a));
    message msg = test.deserialize();
    begin_session_message& bs_msg = boost::get<begin_session_message>(msg);
 

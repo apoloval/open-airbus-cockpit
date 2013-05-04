@@ -32,72 +32,89 @@
 namespace oac {
 
 /**
- * Buffer class. This class provides an abstraction for a data buffer. 
+ * @concept Buffer
+ *
+ * A class that may be used as data storage, allowing reading from and
+ * writing to bytes. It should provide the following members.
+ *
+ * typedef BufferFactory factory_type;
+ *
+ * std::size_t Buffer::capacity() const;
+ *
+ * void Buffer::read(void* dst, std::uint32_t offset, std::size_t length) const
+ *       throw (out_of_bounds_error);
+ *
+ * template <typename OutputStream>
+ * void Buffer::read_to(
+ *    OutputStream& dst, std::uint32_t offset, std::size_t length) const
+ *       throw (out_of_bounds_error, read_error, stream::write_error);
+ *
+ * void Buffer::write(const void* src, std::uint32_t offset, std::size_t length)
+ *       throw (out_of_bounds_error, write_error);
+ *
+ * template <typename InputStream>
+ * std::size_t Buffer::write_from(
+ *       InputStream& src, std::uint32_t offset, std::size_t length)
+ *       throw (out_of_bounds_error, stream::read_error, write_error);
+ *
+ * template <typename Buffer>
+ * void copy(const Buffer& src, std::uint32_t src_offset,
+ *           std::uint32_t dst_offset, std::size_t length)
+ *    throw (out_of_bounds_error, read_error, write_error);
  */
-class buffer
+
+/**
+ * @concept BufferFactory
+ *
+ * A class that may be used to create buffer objects. It provides the
+ * following members, where T is the type of buffer objects it creates.
+ *
+ * typedef T value_type;
+ *
+ * T* create_buffer();
+ *
+ */
+
+namespace buffer
 {
-public:
 
    OAC_DECL_ERROR(out_of_bounds_error, invalid_input_error);
    OAC_DECL_ERROR(read_error, io_error);
    OAC_DECL_ERROR(write_error, io_error);
 
+   template <typename T, typename Buffer>
+   inline static T read_as(Buffer& b, std::uint32_t offset)
+   throw (out_of_bounds_error, read_error)
+   {
+      T result;
+      b.read(&result, offset, sizeof(T));
+      return result;
+   }
+
+   template <typename T, typename Buffer>
+   inline static void write_as(Buffer& b, std::uint32_t offset, const T& t)
+   throw (out_of_bounds_error, write_error)
+   {
+      b.write(&t, offset, sizeof(T));
+   }
+}
+
+/**
+ * Buffer of fixed capacity. This is buffer implementation of
+ * fixed capacity set at object construction. It conforms Buffer concept.
+ */
+class fixed_buffer
+{
+public:
+
+   /**
+    * A factory class conforming to BufferFactory.
+    */
    class factory
    {
    public:
 
-      virtual ~factory() {}
-      virtual buffer* create_buffer() const = 0;
-   };
-
-   virtual ~buffer() {}
-
-   virtual DWORD capacity() const = 0;
-
-   virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (out_of_bounds_error, read_error) = 0;
-
-   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error, output_stream::write_error) = 0;
-
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error) = 0;
-
-   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, input_stream::read_error, write_error) = 0;
-
-   virtual void copy(
-         const buffer& src,
-         DWORD src_offset,
-         DWORD dst_offset,
-         DWORD length) throw (out_of_bounds_error, io_error) = 0;
-
-   template <typename T>
-   inline T read_as(DWORD offset) const
-   throw (out_of_bounds_error, read_error)
-   {
-      T result;
-      this->read(&result, offset, sizeof(T));
-      return result;
-   }
-
-   template <typename T>
-   inline void write_as(DWORD offset, const T& t)
-   throw (out_of_bounds_error, write_error)
-   { this->write(&t, offset, sizeof(T)); }
-};
-
-/**
- * Buffer of fixed capacity. This is an actual implementation of buffer of
- * fixed capacity set at object construction. 
- */
-class fixed_buffer : public buffer
-{
-public:
-
-   class factory : public buffer::factory
-   {
-   public:
+      typedef fixed_buffer value_type;
 
       inline factory(size_t capacity) : _capacity(capacity) {}
       inline virtual fixed_buffer* create_buffer() const
@@ -107,34 +124,59 @@ public:
       size_t _capacity;
    };
 
+   typedef factory factory_type;
+
    fixed_buffer(size_t capacity);
 
-   virtual ~fixed_buffer();
+   ~fixed_buffer();
 
-   inline virtual DWORD capacity() const
+   inline std::size_t capacity() const
    { return _capacity; }
 
-   virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error);
+   void read(void* dst, std::uint32_t offset, std::uint32_t length) const
+         throw (buffer::out_of_bounds_error);
 
-   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error, output_stream::write_error);
+   template <typename OutputStream>
+   inline void read_to(
+         OutputStream& dst,
+         std::uint32_t offset,
+         std::uint32_t length) const
+   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
+   {
+      check_bounds(offset, length);
+      dst.write(&(_data[offset]), length);
+   }
 
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
+   void write(const void* src, std::uint32_t offset, std::uint32_t length)
+         throw (buffer::out_of_bounds_error, buffer::write_error);
 
-   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, input_stream::read_error, write_error);
+   template <typename InputStream>
+   inline std::size_t write_from(
+         InputStream& src,
+         std::uint32_t offset,
+         std::uint32_t length)
+   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error)
+   {
+      check_bounds(offset, length);
+      return src.read(&(_data[offset]), length);
+   }
 
-   virtual void copy(const buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (out_of_bounds_error);
+   template <typename Buffer>
+   inline void copy(const Buffer& src, std::uint32_t src_offset,
+                    std::uint32_t dst_offset, std::size_t length)
+   throw (buffer::out_of_bounds_error)
+   {
+      this->check_bounds(dst_offset, length);
+      src.read(&(_data[dst_offset]), src_offset, length);
+   }
 
 private:
 
-   BYTE *_data;
+   BYTE* _data;
    size_t _capacity;
 
-   void check_bounds(DWORD offset, DWORD length) const throw (out_of_bounds_error);
+   void check_bounds(std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error);
 };
 
 /**
@@ -144,18 +186,20 @@ private:
  * or write are shifted. E.g., for shift 0x5600, a read/write on offset
  * 0x5678 would be made on decorated buffer on 0x0078. 
  */
-class shifted_buffer : public buffer
+template <typename Buffer>
+class shifted_buffer
 {
 public:
 
-   class factory : public buffer::factory
+   class factory
    {
    public:
 
-      inline factory(const ptr<buffer::factory>& backed_buffer_fact,
-            DWORD shift) : 
-         _backed_buffer_fact(backed_buffer_fact),
-         _shift(shift)
+      typedef shifted_buffer value_type;
+
+      inline factory(const ptr<typename Buffer::factory_type>& backed_buffer_fact,
+                     std::uint32_t shift)
+         : _backed_buffer_fact(backed_buffer_fact), _shift(shift)
       {}
       
       inline virtual shifted_buffer* create_buffer() const
@@ -165,39 +209,80 @@ public:
       
    private:
 
-      ptr<buffer::factory> _backed_buffer_fact;
-      DWORD _shift;
+      ptr<typename Buffer::factory_type> _backed_buffer_fact;
+      std::uint32_t _shift;
    };
 
-   shifted_buffer(const ptr<buffer>& backed_buffer, DWORD offset_shift);
+   typedef factory factory_type;
 
-   virtual DWORD capacity() const
+   inline shifted_buffer(const ptr<Buffer>& backed_buffer,
+                         std::uint32_t offset_shift)
+      : _backed_buffer(backed_buffer),
+        _backed_capacity(backed_buffer->capacity()),
+        _offset_shift(offset_shift)
+   {}
+
+   inline std::size_t capacity() const
    { return _backed_buffer->capacity(); }
 
-   virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error);
+   inline void read(void* dst, std::uint32_t offset, std::size_t length) const
+   throw (buffer::out_of_bounds_error, buffer::read_error)
+   {
+      check_bounds(offset, length);
+      _backed_buffer->read(dst, shift(offset), length);
+   }
 
-   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error, output_stream::write_error);
+   template <typename OutputStream>
+   inline void read(
+         OutputStream& dst, std::uint32_t offset, std::size_t length) const
+   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
+   {
+      check_bounds(offset, length);
+      _backed_buffer->read(dst, shift(offset), length);
+   }
 
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
+   inline void write(const void* src, std::uint32_t offset, std::size_t length)
+   throw (buffer::out_of_bounds_error, buffer::write_error)
+   {
+      check_bounds(offset, length);
+      _backed_buffer->write(src, shift(offset), length);
+   }
 
-   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, input_stream::read_error, write_error);
+   template <typename InputStream>
+   inline std::size_t write(
+         InputStream& src, std::uint32_t offset, std::size_t length)
+   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error)
+   {
+      check_bounds(offset, length);
+      return _backed_buffer->write(src, shift(offset), length);
+   }
 
-   virtual void copy(const buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (out_of_bounds_error, io_error);
+   template <typename Buffer>
+   inline void copy(const Buffer& src, std::uint32_t src_offset,
+         std::uint32_t dst_offset, std::size_t length)
+   throw (buffer::out_of_bounds_error, buffer::read_error, buffer::write_error)
+   {
+      check_bounds(dst_offset, length);
+      _backed_buffer->copy(src, src_offset, shift(dst_offset), length);
+   }
 
 private:
 
-   ptr<buffer> _backed_buffer;
-   DWORD _backed_capacity;
-   DWORD _offset_shift;
+   ptr<Buffer> _backed_buffer;
+   std::size_t _backed_capacity;
+   std::uint32_t _offset_shift;
 
-   void check_bounds(DWORD offset, DWORD length) const throw (out_of_bounds_error);
+   inline void check_bounds(std::uint32_t offset, std::uint32_t length) const
+   throw (buffer::out_of_bounds_error)
+   {
+      if (offset < _offset_shift || shift(offset) + length > _backed_capacity)
+         BOOST_THROW_EXCEPTION(buffer::out_of_bounds_error() <<
+               lower_bound_info(0) <<
+               upper_bound_info(_backed_capacity - 1) <<
+               index_info(offset + length));
+   }
 
-   inline DWORD shift(DWORD offset) const
+   inline std::uint32_t shift(std::uint32_t offset) const
    { return offset - _offset_shift; }
 };
 
@@ -205,15 +290,18 @@ private:
  * Double buffer class. This class decorates a couple of buffers, 
  * making it possible to detect modifications among them. 
  */
-class double_buffer : public buffer
+template <typename Buffer = fixed_buffer>
+class double_buffer
 {
 public:
 
-   class factory : public buffer::factory
+   class factory
    {
    public:
 
-      inline factory(const ptr<buffer::factory>& backed_buffer_fact) :
+      typedef double_buffer value_type;
+
+      inline factory(const ptr<typename Buffer::factory_type>& backed_buffer_fact) :
          _backed_buffer_fact(backed_buffer_fact)
       {}
       
@@ -226,94 +314,173 @@ public:
       
    private:
 
-      ptr<buffer::factory> _backed_buffer_fact;
+      ptr<typename Buffer::factory_type> _backed_buffer_fact;
       DWORD _shift;
    };
 
-   double_buffer(const ptr<buffer>& backed_buffer_0,
-         const ptr<buffer>& backed_buffer_1);
+   typedef factory factory_type;
 
-   virtual DWORD capacity() const
+   inline double_buffer(
+         const ptr<Buffer>& backed_buffer_0,
+         const ptr<Buffer>& backed_buffer_1) :
+      _current_buffer(0)
+   {
+      _backed_buffer[0] = ptr<Buffer>(backed_buffer_0);
+      _backed_buffer[1] = ptr<Buffer>(backed_buffer_1);
+   }
+
+   inline std::size_t capacity() const
    { return _backed_buffer[_current_buffer]->capacity(); }
 
-   virtual void read(void* dst, DWORD offset, DWORD length) const 
-         throw (out_of_bounds_error, read_error);
+   inline void read(void* dst, std::uint32_t offset, std::size_t length) const
+   throw (buffer::out_of_bounds_error)
+   { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
-   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error, output_stream::write_error);
+   template <typename OutputStream>
+   inline void read(OutputStream& dst,
+                    std::uint32_t offset,
+                    std::size_t length) const
+   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
+   { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
+   inline void write(const void* src, std::uint32_t offset, std::size_t length)
+   throw (buffer::out_of_bounds_error)
+   { _backed_buffer[_current_buffer]->write(src, offset, length); }
 
-   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, input_stream::read_error, write_error);
+   template <typename InputStream>
+   inline std::size_t write(InputStream& src,
+                            std::uint32_t offset,
+                            std::size_t length)
+   throw (buffer::out_of_bounds_error)
+   { return _backed_buffer[_current_buffer]->write(src, offset, length); }
 
-   virtual void copy(const buffer& src, DWORD src_offset,
-         DWORD dst_offset, DWORD length) throw (out_of_bounds_error);
-
-   void swap();
-
-   template <DWORD length>
-   inline bool is_modified(DWORD offset)
+   template <typename Buffer>
+   void copy(const Buffer& src,
+             std::uint32_t src_offset,
+             std::uint32_t dst_offset,
+             std::size_t length)
+   throw (buffer::out_of_bounds_error)
    {
-      BYTE data0[length];
-      BYTE data1[length];
+      _backed_buffer[_current_buffer]->copy(
+               src, src_offset, dst_offset, length);
+   }
+
+   inline void swap()
+   { _current_buffer ^= 1; }
+
+   template <std::size_t length>
+   inline bool is_modified(std::uint32_t offset)
+   {
+      std::uint8_t data0[length];
+      std::uint8_t data1[length];
       _backed_buffer[0]->read(&data0, offset, length);
       _backed_buffer[1]->read(&data1, offset, length);
       return memcmp(data0, data1, length) != 0;
    }
 
    template <typename T>
-   inline bool is_modified_as(DWORD offset)
-   { return this->is_modified<sizeof(T)>(offset); }
+   inline bool is_modified_as(std::uint32_t offset)
+   { return is_modified<sizeof(T)>(offset); }
 
 private:
 
-   ptr<buffer> _backed_buffer[2];
+   ptr<Buffer> _backed_buffer[2];
    BYTE _current_buffer;
 };
 
-class buffer_input_stream : public input_stream {
+template <typename Buffer>
+class buffer_input_stream {
 public:
 
    inline buffer_input_stream(
-         const ptr<buffer>& buffer) : _buffer(buffer), _index(0) {}
+         const ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
 
-   virtual DWORD read(void* buffer, DWORD count);
+   inline std::size_t read(void* buffer, std::size_t count)
+   {
+      auto remain = _buffer->capacity() - _index;
+      if (count > remain)
+         count = remain;
+      _buffer->read(buffer, _index, count);
+      _index += count;
+      return count;
+   }
 
-   inline ptr<buffer> get_buffer() const { return _buffer; }
+   inline ptr<Buffer> get_buffer() const { return _buffer; }
 
 private:
 
-   ptr<buffer> _buffer;
+   ptr<Buffer> _buffer;
    DWORD _index;
 };
 
-class buffer_output_stream : public output_stream {
+template <typename Buffer>
+class buffer_output_stream {
 public:
 
-   OAC_DECL_ERROR(capacity_exhausted_error, write_error);
-
-   OAC_DECL_ERROR_INFO(remaining_bytes_info, DWORD);
-   OAC_DECL_ERROR_INFO(requested_bytes_info, DWORD);
-
    inline buffer_output_stream(
-         const ptr<buffer>& buffer) : _buffer(buffer), _index(0) {}
+         const ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
 
-   virtual void write(
-         const void* buffer, DWORD count) throw (capacity_exhausted_error);
+   inline void write(const void* buffer, DWORD count)
+   throw (buffer::out_of_bounds_error)
+   {
+      auto remain = _buffer->capacity() - _index;
+      if (count > remain)
+         BOOST_THROW_EXCEPTION(buffer::out_of_bounds_error());
+      _buffer->write(buffer, _index, count);
+      _index += count;
+   }
 
-   virtual void flush();
+   inline void flush()
+   { /* Well, it's a buffer. Nothing to be done here */ }
 
-   inline ptr<buffer> get_buffer() const { return _buffer; }
+   inline ptr<Buffer> get_buffer() const { return _buffer; }
 
 private:
 
-   ptr<buffer> _buffer;
+   ptr<Buffer> _buffer;
    DWORD _index;
 
 };
 
-}; // namespace oac
+namespace buffer {
+
+   template <typename Buffer>
+   inline ptr<shifted_buffer<Buffer>> shift_buffer(
+         const ptr<Buffer>& b, std::uint32_t shift)
+   { return new shifted_buffer<Buffer>(b, shift); }
+
+   template <typename BufferFactory>
+   inline ptr<typename shifted_buffer<typename BufferFactory::value_type>::factory> shift_factory(
+         const ptr<BufferFactory>& fact,
+         std::uint32_t shift)
+   {
+      return new shifted_buffer<typename BufferFactory::value_type>::factory(
+            fact, shift);
+   }
+
+   template <typename Buffer>
+   inline ptr<double_buffer<Buffer>> dup_buffers(
+         const ptr<Buffer>& b1, const ptr<Buffer>& b2)
+   { return new double_buffer<Buffer>(b1, b2); }
+
+   template <typename BufferFactory>
+   inline ptr<typename double_buffer<typename BufferFactory::value_type>::factory> dup_factory(
+         const ptr<BufferFactory>& fact)
+   {
+      return new double_buffer<typename BufferFactory::value_type>::factory(fact);
+   }
+
+   template <typename Buffer>
+   inline ptr<buffer_input_stream<Buffer>> make_input_stream(
+         const ptr<Buffer>& b)
+   { return new buffer_input_stream<Buffer>(b); }
+
+   template <typename Buffer>
+   inline ptr<buffer_output_stream<Buffer>> make_output_stream(
+         const ptr<Buffer>& b)
+   { return new buffer_output_stream<Buffer>(b); }
+}
+
+} // namespace oac
 
 #endif

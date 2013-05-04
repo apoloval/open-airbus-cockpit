@@ -37,7 +37,7 @@ ptr<plugin> plug;
 void __stdcall DLLStart(void)
 {
    file log_file(LOG_FILE);
-   logger::set_main(new logger(log_level::INFO, log_file.append()));
+   set_main_logger(make_logger(log_level::INFO, log_file.append()));
 	log(oac::INFO, "The Wilco Exporter module is starting");
    plug = new plugin();
 	log(oac::INFO, "The Wilco Exporter module has been started");
@@ -48,5 +48,5 @@ void __stdcall DLLStop(void)
 	log(oac::INFO, "The Wilco Exporter module is stopping");
    plug.reset();
 	log(oac::INFO, "The Wilco Exporter module has been stopped");
-   logger::set_main(nullptr); // close the main logger
+   close_main_logger(); // close the main logger
 }

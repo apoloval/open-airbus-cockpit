@@ -37,7 +37,7 @@ namespace oac { namespace fv {
  * For this implementation, each FSUIPC offset represents a variable. It may
  * be named as <offset>:<size>, where <offset> is the numerical representation
  * (decimal, hexadecimal...) of the offset and <size> is one of 1, 2 or 4,
- * indicating a value in bytes (BYTE, WORD and DWORD, respectively). E.g.,
+ * indicating a value in bytes (BYTE, WORD and std::uint32_t, respectively). E.g.,
  * 0x0354:2 means a WORD variable at offset 0x0354 (transponder code).
  */
 class fsuipc_flight_vars : public flight_vars
@@ -46,7 +46,7 @@ public:
 
    static const variable_group VAR_GROUP;
 
-   fsuipc_flight_vars(const ptr<buffer>& fsuipc = nullptr);
+   fsuipc_flight_vars();
 
    virtual void subscribe(
          const variable_group& grp,
@@ -58,12 +58,12 @@ private:
    struct offset : tagged_element
    {
       variable_name var_name;
-      DWORD address;
-      DWORD length;
+      std::uint16_t address;
+      std::size_t length;
 
       offset(const variable_name& var_name) throw (unknown_variable_name_error);
-      virtual bool isUpdated(double_buffer& buf);
-      virtual variable_value read(double_buffer& buf);
+      virtual bool is_updated(double_buffer<>& buf);
+      virtual variable_value read(double_buffer<>& buf);
    };
 
    typedef std::list<subscription> subscriptionList;
@@ -71,8 +71,8 @@ private:
 
    offsetsubscriptionsDict _subscribers;
    simconnect_client _sc;
-   ptr<buffer> _fsuipc;
-   ptr<double_buffer> _buffer;
+   ptr<local_fsuipc> _fsuipc;
+   ptr<double_buffer<>> _buffer;
 
    /**
     * Check whether given var group corresponds to FSUIPC offset, and throw

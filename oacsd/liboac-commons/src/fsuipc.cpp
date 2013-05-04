@@ -66,159 +66,75 @@ IOErrorMessage(const std::string& action, DWORD result)
       action.c_str() % GetResultMessage(result));
 }
 
-class LocalFSUIPCHandler
+class local_fsuipc_handler
 {
 public:
 
-   inline static void Init()
-   throw (fsuipc::init_error)
+   inline static void init()
+   throw (local_fsuipc::init_error)
    {
       if (!_singleton)
-         _singleton = new LocalFSUIPCHandler();
+         _singleton = new local_fsuipc_handler();
    }
 
-   inline static void Reset()
+   inline static void reset()
    {
       _singleton.reset();
    }
 
-   inline ~LocalFSUIPCHandler()
+   inline ~local_fsuipc_handler()
    { FSUIPC_Close(); }
 
 private:
 
-   static ptr<LocalFSUIPCHandler> _singleton;
+   static ptr<local_fsuipc_handler> _singleton;
    BYTE _buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
-   inline LocalFSUIPCHandler()
-   throw (fsuipc::init_error)
+   inline local_fsuipc_handler()
+   throw (local_fsuipc::init_error)
    {
       DWORD result;
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
          BOOST_THROW_EXCEPTION(
-                  fsuipc::init_error() <<
+                  local_fsuipc::init_error() <<
                   message_info(GetResultMessage(result)));
    }
 
 };
 
-ptr<LocalFSUIPCHandler> LocalFSUIPCHandler::_singleton;
+ptr<local_fsuipc_handler> local_fsuipc_handler::_singleton;
 
 } // anonymous namespace
 
+local_fsuipc::local_fsuipc()
+{
+   local_fsuipc_handler::init();
+}
+
 void
-fsuipc::read(void* dst, DWORD offset, DWORD length) const 
-throw (out_of_bounds_error, read_error)
+local_fsuipc::read(void* dst, std::uint32_t offset, std::size_t length) const
+throw (buffer::out_of_bounds_error, buffer::read_error)
 {
    DWORD error;
    if (FSUIPC_Read(offset, length, dst, &error))
       if (FSUIPC_Process(&error))
          return;
-   BOOST_THROW_EXCEPTION(read_error() <<
+   BOOST_THROW_EXCEPTION(buffer::read_error() <<
          error_code_info(error) <<
          error_msg_info(GetResultMessage(error)));
 }
 
 void
-fsuipc::read(output_stream& dst, DWORD offset, DWORD length) const
-throw (out_of_bounds_error, read_error)
-{
-   fixed_buffer tmp(length);
-   tmp.copy(*this, offset, 0, length);
-   tmp.read(dst, 0, length);
-}
-
-void
-fsuipc::write(const void* src, DWORD offset, DWORD length) 
-throw (out_of_bounds_error, write_error)
+local_fsuipc::write(const void* src, std::uint32_t offset, std::size_t length)
+throw (buffer::out_of_bounds_error, buffer::write_error)
 {
    DWORD error;
    if (FSUIPC_Write(offset, length, (void*) src, &error))
       if (FSUIPC_Process(&error))
          return;
-   BOOST_THROW_EXCEPTION(write_error() <<
+   BOOST_THROW_EXCEPTION(buffer::write_error() <<
          error_code_info(error) <<
          error_msg_info(GetResultMessage(error)));
 }
-
-DWORD
-fsuipc::write(input_stream& src, DWORD offset, DWORD length)
-throw (out_of_bounds_error, write_error)
-{
-   fixed_buffer tmp(length);
-   auto nbytes = tmp.write(src, 0, length);
-   this->copy(tmp, 0, offset, length);
-   return nbytes;
-}
-
-void
-fsuipc::copy(const buffer& src, DWORD src_offset, 
-      DWORD dst_offset, DWORD length) 
-throw (out_of_bounds_error, io_error)
-{
-   BYTE tmp[1024];
-   auto sos = src_offset;
-   auto dos = dst_offset;
-   while (length)
-   {
-      auto l = length > 1024 ? 1024 : length;
-      src.read(tmp, sos, l);
-      this->write(tmp, dos, l);
-      dos += l;
-      sos += l;
-      length -= l;
-   }
-}
-
-local_fsuipc::local_fsuipc()
-throw (illegal_state_error)
-{ LocalFSUIPCHandler::Init(); }
-
-local_fsuipc::~local_fsuipc()
-{}
-
-void
-local_fsuipc::read(void* dst, DWORD offset, DWORD length) const
-throw (out_of_bounds_error, read_error)
-{
-   try
-   {
-      fsuipc::read(dst, offset, length);
-   } catch (std::exception&)
-   {
-      LocalFSUIPCHandler::Reset();
-      throw;
-   }
-}
-
-void
-local_fsuipc::write(const void* src, DWORD offset, DWORD length)
-throw (out_of_bounds_error, write_error)
-{
-   try
-   {
-      fsuipc::write(src, offset, length);
-   } catch (std::exception&)
-   {
-      LocalFSUIPCHandler::Reset();
-      throw;
-   }
-}
-
-void
-local_fsuipc::copy(const buffer& src, DWORD src_offset,
-                  DWORD dst_offset, DWORD length)
-throw (out_of_bounds_error, io_error)
-{
-   try
-   {
-      fsuipc::copy(src, src_offset, dst_offset, length);
-   } catch (io_error&)
-   {
-      LocalFSUIPCHandler::Reset();
-      throw;
-   }
-}
-
 
 } // namespace oac

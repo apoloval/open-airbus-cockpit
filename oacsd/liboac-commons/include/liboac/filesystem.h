@@ -25,7 +25,65 @@
 
 namespace oac {
 
-typedef boost::filesystem::path Path;
+/**
+ * A input stream which read bytes from a file. It conforms InputStream
+ * concept.
+ */
+class file_input_stream
+{
+public:
+
+   typedef std::string mode;
+
+   static mode OPEN_READ;
+
+   OAC_DECL_ERROR(open_error, io_error);
+
+   file_input_stream(const boost::filesystem::path& path, const mode& mode);
+
+   file_input_stream(file_input_stream&& s);
+
+   ~file_input_stream();
+
+   std::size_t read(void* dest,
+                    std::size_t count) throw (stream::read_error);
+
+private:
+
+   FILE* _fd;
+};
+
+/**
+ * An output stream which writes bytes to a file. It conforms OutputStream
+ * concept.
+ */
+class file_output_stream
+{
+public:
+
+   typedef std::string mode;
+
+   OAC_DECL_ERROR(open_error, io_error);
+
+   static mode OPEN_APPEND;
+   static mode OPEN_WRITE;
+
+
+   file_output_stream(const boost::filesystem::path& path, const mode& mode);
+
+   file_output_stream(file_output_stream&& s);
+
+   ~file_output_stream();
+
+   void write(const void* buffer,
+              std::size_t count) throw (stream::write_error);
+
+   void flush();
+
+private:
+
+   FILE* _fd;
+};
 
 class file {
 public:
@@ -35,7 +93,7 @@ public:
 
    static file makeTemp();
 
-   inline file(const Path& path) : _path(path) {}
+   inline file(const boost::filesystem::path& path) : _path(path) {}
 
    bool exists() const;
 
@@ -43,15 +101,15 @@ public:
 
    bool is_directory() const;
 
-   ptr<input_stream> read() const;
+   ptr<file_input_stream> read() const;
 
-   ptr<output_stream> append() const;
+   ptr<file_output_stream> append() const;
 
-   ptr<output_stream> write() const;
+   ptr<file_output_stream> write() const;
 
 private:
 
-   Path _path;
+   boost::filesystem::path _path;
 };
 
 } // namespace oac

@@ -29,34 +29,36 @@ namespace oac {
 
 namespace {
 
+typedef double_buffer<shifted_buffer<fixed_buffer>> buffer_type;
+
 template <DWORD offset, typename Data, typename event_type>
 inline void import_nullary_event(
-      double_buffer& buffer,
+      buffer_type& buff,
       std::list<cockpit_back::event<event_type>>& events,
       event_type ev_type,
       DWORD event_value = 0)
 {
-   auto push = buffer.read_as<Data>(offset);
+   auto push = buffer::read_as<Data>(buff, offset);
    if (push)
    {
       cockpit_back::event<event_type> ev = { ev_type, event_value };
       events.push_back(ev);
-      buffer.write_as<Data>(offset, 0);
+      buffer::write_as(buff, offset, Data(0));
    }
 }
 
 template <DWORD offset, typename Data, typename event_type>
 inline static void ImportUnaryEvent(
-      double_buffer& buffer,
+      buffer_type& buff,
       std::list<cockpit_back::event<event_type>>& events,
       event_type ev_type)
 {
-   if (buffer.is_modified_as<Data>(offset))
+   if (buff.is_modified_as<Data>(offset))
    {
       cockpit_back::event<event_type> ev =
       { 
          ev_type,
-         buffer.read_as<Data>(offset)
+         buffer::read_as<Data>(buff, offset)
       };
       events.push_back(ev);
    }
@@ -65,7 +67,7 @@ inline static void ImportUnaryEvent(
 class flight_control_unit_back : public cockpit_back::flight_control_unit {
 public:
 
-   inline flight_control_unit_back(const ptr<double_buffer>& buffer) :
+   inline flight_control_unit_back(const ptr<buffer_type>& buffer) :
       _buffer(buffer)
    {}
 
@@ -122,72 +124,72 @@ public:
    }
 
    virtual void set_speed_display_units(speed_units units)
-   { _buffer->write_as<BYTE>(0x562F, units); }
+   { buffer::write_as(*_buffer, 0x562F, BYTE(units)); }
 
    virtual void set_guidance_display_mode(guidance_display_mode mode)
-   { _buffer->write_as<BYTE>(0x5630, mode); }
+   { buffer::write_as(*_buffer, 0x5630, BYTE(mode)); }
    
    virtual void set_altitude_display_units(altitude_units units)
-   { _buffer->write_as<BYTE>(0x5631, units); }
+   { buffer::write_as(*_buffer, 0x5631, BYTE(units)); }
    
    virtual void set_switch(fcu_switch sw, binary_switch value)
    {
       switch (sw)
       {
          case FCU_SWITCH_LOC:
-            _buffer->write_as<BYTE>(0x5614, value); break;
+            buffer::write_as(*_buffer, 0x5614, BYTE(value)); break;
          case FCU_SWITCH_ATHR:
-            _buffer->write_as<BYTE>(0x5617, value); break;
+            buffer::write_as(*_buffer, 0x5617, BYTE(value)); break;
          case FCU_SWITCH_EXPE:
-            _buffer->write_as<BYTE>(0x5618, value); break;
+            buffer::write_as(*_buffer, 0x5618, BYTE(value)); break;
          case FCU_SWITCH_APPR:
-            _buffer->write_as<BYTE>(0x5619, value); break;
+            buffer::write_as(*_buffer, 0x5619, BYTE(value)); break;
          case FCU_SWITCH_AP1:
-            _buffer->write_as<BYTE>(0x5615, value); break;
+            buffer::write_as(*_buffer, 0x5615, BYTE(value)); break;
          case FCU_SWITCH_AP2:
-            _buffer->write_as<BYTE>(0x5616, value); break;
+            buffer::write_as(*_buffer, 0x5616, BYTE(value)); break;
       }
    }
    
    virtual void set_speed_mode(fcu_management_mode mode)
-   { _buffer->write_as<BYTE>(0x5632, mode); }
+   { buffer::write_as(*_buffer, 0x5632, BYTE(mode)); }
    
    virtual void set_lateral_mode(fcu_management_mode mode)
-   { _buffer->write_as<BYTE>(0x5633, mode); }
+   { buffer::write_as(*_buffer, 0x5633, BYTE(mode)); }
    
    virtual void set_vertical_mode(fcu_management_mode mode)
-   { _buffer->write_as<BYTE>(0x5634, mode); }
+   { buffer::write_as(*_buffer, 0x5634, BYTE(mode)); }
    
    virtual void set_speed_value(knots value)
-   { _buffer->write_as<DWORD>(0x5638, DWORD(value)); }
+   { buffer::write_as(*_buffer, 0x5638, DWORD(value)); }
 
    virtual void set_mach_value(mach100 value)
-   { _buffer->write_as<DWORD>(0x563C, DWORD(value)); }
+   { buffer::write_as(*_buffer, 0x563C, DWORD(value)); }
 
    virtual void set_heading_value(degrees value)
-   { _buffer->write_as<DWORD>(0x5640, DWORD(value)); }
+   { buffer::write_as(*_buffer, 0x5640, DWORD(value)); }
 
    virtual void set_track_value(degrees value)
-   { _buffer->write_as<DWORD>(0x5644, DWORD(value)); }
+   { buffer::write_as(*_buffer, 0x5644, DWORD(value)); }
    
    virtual void set_target_altitude(feet value)
-   { _buffer->write_as<DWORD>(0x5648, value); }
+   { buffer::write_as(*_buffer, 0x5648, DWORD(value)); }
    
    virtual void set_vertical_speed_value(feet_per_min value)
-   { _buffer->write_as<DWORD>(0x564C, value); }
+   { buffer::write_as(*_buffer, 0x564C, DWORD(value)); }
    
    virtual void set_fpa_value(degrees100 value)
-   { _buffer->write_as<DWORD>(0x5650, value); }
+   { buffer::write_as(*_buffer, 0x5650, DWORD(value)); }
 
 private:
 
-   ptr<double_buffer> _buffer;
+   ptr<buffer_type> _buffer;
 };
 
 class efis_control_panel_back : public cockpit_back::efis_control_panel {
 public:
 
-   inline efis_control_panel_back(const ptr<double_buffer>& buffer) :
+   inline efis_control_panel_back(const ptr<buffer_type>& buffer) :
       _buffer(buffer)
    {}
 
@@ -228,46 +230,46 @@ public:
    }
 
    virtual void set_barometric_mode(barometric_mode mode)
-   { _buffer->write_as<BYTE>(0x561F, mode); }
+   { buffer::write_as(*_buffer, 0x561F, BYTE(mode)); }
    
    virtual void set_barometric_format(barometric_format fmt)
-   { _buffer->write_as<BYTE>(0x561C, fmt); }
+   { buffer::write_as(*_buffer, 0x561C, BYTE(fmt)); }
    
    virtual void set_ils_button(binary_switch btn)
-   { _buffer->write_as<BYTE>(0x560E, btn); }
+   { buffer::write_as(*_buffer, 0x560E, BYTE(btn)); }
    
    virtual void set_mcp_switch(mcp_switch sw, binary_switch value)
    { 
       switch (sw)
       {
          case MCP_CONSTRAINT:
-            _buffer->write_as<BYTE>(0x560F, value); break;
+            buffer::write_as(*_buffer, 0x560F, BYTE(value)); break;
          case MCP_WAYPOINT:
-            _buffer->write_as<BYTE>(0x5610, value); break;
+            buffer::write_as(*_buffer, 0x5610, BYTE(value)); break;
          case MCP_VORD:
-            _buffer->write_as<BYTE>(0x5611, value); break;
+            buffer::write_as(*_buffer, 0x5611, BYTE(value)); break;
          case MCP_NDB:
-            _buffer->write_as<BYTE>(0x5612, value); break;
+            buffer::write_as(*_buffer, 0x5612, BYTE(value)); break;
          case MCP_AIRPORT:
-            _buffer->write_as<BYTE>(0x5613, value); break;
+            buffer::write_as(*_buffer, 0x5613, BYTE(value)); break;
       }
    }
    
    virtual void set_nd_mode_switch(nd_mode_switch mode)
-   { _buffer->write_as<BYTE>(0x5623, mode); }
+   { buffer::write_as(*_buffer, 0x5623, BYTE(mode)); }
    
    virtual void set_nd_range_switch(nd_range_switch range)
-   { _buffer->write_as<BYTE>(0x5624, range); }
+   { buffer::write_as(*_buffer, 0x5624, BYTE(range)); }
    
    virtual void set_nd_nav1_mode_switch(nd_nav_mode_switch value)
-   { _buffer->write_as<BYTE>(0x5625, value); }
+   { buffer::write_as(*_buffer, 0x5625, BYTE(value)); }
    
    virtual void set_nd_nav2_mode_switch(nd_nav_mode_switch value)
-   { _buffer->write_as<BYTE>(0x5626, value); }
+   { buffer::write_as(*_buffer, 0x5626, BYTE(value)); }
 
 private:
 
-   ptr<double_buffer> _buffer;   
+   ptr<buffer_type> _buffer;
 };
 
 }; // anonymous namespace
@@ -280,7 +282,7 @@ throw (sync_error)
       return;
    if (!_fsuipc)
       this->init_fsuipc();
-   _buffer->write_as<BYTE>(0x5600, 1);
+   buffer::write_as(*_buffer, 0x5600, BYTE(1));
    _fsuipc->copy(*_buffer, 0x5600, 0x5600, 512);
 }
 
@@ -328,9 +330,13 @@ throw (sync_error)
 void
 fsuipc_cockpit_back::init_buffer()
 {
-   ptr<double_buffer::factory> fact = new double_buffer::factory(
-         new shifted_buffer::factory(new fixed_buffer::factory(512), 0x5600));
-   _buffer = fact->create_buffer();
+   auto fb_fact = new fixed_buffer::factory(512);
+   auto sh_fact = new shifted_buffer<fixed_buffer>::factory(
+            fb_fact, 0x5600);
+   auto do_fact =
+         std::make_shared<double_buffer<shifted_buffer<fixed_buffer>>::factory>(
+               sh_fact);
+   _buffer = do_fact->create_buffer();
 }
 
 void

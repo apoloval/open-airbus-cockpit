@@ -64,13 +64,14 @@ efis_control_panel_impl::set_barometric_format(barometric_format fmt)
 binary_switch
 efis_control_panel_impl::get_fd_button() const
 {
-   return binary_switch(_fsuipc->read_as<DWORD>(0x2EE0));
+   return binary_switch(buffer::read_as<DWORD>(*_fsuipc, 0x2EE0));
 }
 
 void
 efis_control_panel_impl::push_fd_button()
 {
-   _fsuipc->write_as<DWORD>(0x2EE0, this->invert(this->get_fd_button()));
+   buffer::write_as<DWORD>(
+            *_fsuipc, 0x2EE0, this->invert(this->get_fd_button()));
 }
 
 binary_switch

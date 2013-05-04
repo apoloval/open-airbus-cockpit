@@ -37,7 +37,7 @@ namespace oac {
  * FSUIPC class. This class encapsulates the access to FSUIPC module. It 
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
-class fsuipc : public buffer
+class local_fsuipc
 {
 public:
 
@@ -51,63 +51,67 @@ public:
    {
    public:
 
-      virtual fsuipc* create_fsuipc() throw (init_error) = 0;
+      typedef local_fsuipc value_type;
+
+      local_fsuipc* create_fsuipc() throw (init_error)
+      { return new local_fsuipc(); }
    };
+
+   local_fsuipc();
 
    virtual DWORD capacity() const
    { return 0xffff; }
 
-   virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error);
+   void read(void* dst, std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error, buffer::read_error);
 
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
+   void write(const void* src, std::uint32_t offset, std::size_t length)
+         throw (buffer::out_of_bounds_error, buffer::write_error);
 
-   virtual void read(output_stream& dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error);
-
-   virtual DWORD write(input_stream& src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
-
-   virtual void copy(
-         const buffer& src,
-         DWORD src_offset,
-         DWORD dst_offset,
-         DWORD length) throw (out_of_bounds_error, io_error);
-
-protected:
-
-   inline fsuipc() {}
-};
-
-class local_fsuipc : public fsuipc
-{
-public:
-
-   class factory : public fsuipc::factory
+   template <typename OutputStream>
+   void read_to(OutputStream& dst,
+                std::uint32_t offset,
+                std::size_t length) const
+   throw (buffer::out_of_bounds_error, buffer::read_error)
    {
-   public:
-      
-      virtual local_fsuipc* create_fsuipc() throw (init_error)
-      { return new local_fsuipc(); }
-   };
+      fixed_buffer tmp(length);
+      tmp.copy(*this, offset, 0, length);
+      tmp.read(dst, 0, length);
+   }
 
-   local_fsuipc() throw (illegal_state_error);
+   template <typename InputStream>
+   std::size_t write_from(InputStream& src,
+                          std::uint32_t offset,
+                          std::size_t length)
+   throw (buffer::out_of_bounds_error, buffer::write_error)
+   {
+      fixed_buffer tmp(length);
+      auto nbytes = tmp.write(src, 0, length);
+      this->copy(tmp, 0, offset, length);
+      return nbytes;
+   }
 
-   virtual ~local_fsuipc();
-
-   virtual void read(void* dst, DWORD offset, DWORD length) const
-         throw (out_of_bounds_error, read_error);
-
-   virtual void write(const void* src, DWORD offset, DWORD length)
-         throw (out_of_bounds_error, write_error);
-
-   virtual void copy(
-         const buffer& src,
+   template <typename Buffer>
+   void copy(
+         const Buffer& src,
          DWORD src_offset,
          DWORD dst_offset,
-         DWORD length) throw (out_of_bounds_error, io_error);
-
+         DWORD length)
+   throw (buffer::out_of_bounds_error, buffer::read_error, buffer::write_error)
+   {
+      BYTE tmp[1024];
+      auto sos = src_offset;
+      auto dos = dst_offset;
+      while (length)
+      {
+         auto l = length > 1024 ? 1024 : length;
+         src.read(tmp, sos, l);
+         write(tmp, dos, l);
+         dos += l;
+         sos += l;
+         length -= l;
+      }
+   }
 };
 
 } // namespace oac

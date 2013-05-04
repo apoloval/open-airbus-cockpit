@@ -30,7 +30,16 @@ const char* LEVEL_STR[] =
    "INFO", "WARN", "FAIL"
 };
 
-std::string GetTime()
+ptr<abstract_logger> main_logger;
+
+} // anonymous namespace
+
+const char*
+abstract_logger::level_str(log_level level)
+{ return LEVEL_STR[level]; }
+
+std::string
+abstract_logger::get_time()
 {
    auto t = time(nullptr);
    char time_buf[26];
@@ -41,27 +50,21 @@ std::string GetTime()
    return time_buf;
 }
 
-} // anonymous namespace
-
-
-ptr<logger> logger::_main;
-
 void
-logger::log(log_level level, const std::string& msg)
+set_main_logger(const ptr<abstract_logger>& logger)
 {
-   if (_level <= level)
-   {
-      auto line = str(boost::format("[%s] %s : %s\n") %
-                      LEVEL_STR[level] % GetTime() % msg);
-      _output->write_as<std::string>(line);
-      _output->flush();
-   }
+   main_logger = logger;
 }
+
+ptr<abstract_logger>
+get_main_logger()
+{ return main_logger; }
+
 
 void
 log(log_level level, const std::string& msg)
 {
-   auto main = logger::get_main();
+   auto main = get_main_logger();
    if (main)
       main->log(level, msg);
 }

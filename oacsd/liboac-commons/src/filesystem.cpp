@@ -22,78 +22,71 @@
 
 namespace oac {
 
-namespace {
-
-class file_input_stream : public input_stream {
-public:
-
-   typedef std::string mode;
-
-   static mode OPEN_READ;
-
-   OAC_DECL_ERROR(open_error, io_error);
-
-   file_input_stream(const Path& path, const mode& mode)
-      : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
-   {
-      if (!_fd)
-         BOOST_THROW_EXCEPTION(open_error());
-   }
-
-   inline virtual ~file_input_stream()
-   { fclose(_fd); }
-
-   virtual DWORD read(void* buffer, DWORD count) throw (read_error)
-   { return fread(buffer, 1, count, _fd); }
-
-private:
-
-   FILE* _fd;
-};
-
 file_input_stream::mode file_input_stream::OPEN_READ("r");
 
-class file_output_stream : public output_stream {
-public:
+file_input_stream::file_input_stream(
+      const boost::filesystem::path& path, const mode& mode)
+   : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
+{
+   if (!_fd)
+      BOOST_THROW_EXCEPTION(open_error());
+}
 
-   typedef std::string mode;
+file_input_stream::file_input_stream(file_input_stream&& s)
+   : _fd(s._fd)
+{
+   s._fd = nullptr;
+}
 
-   OAC_DECL_ERROR(open_error, io_error);
-
-   static mode OPEN_APPEND;
-   static mode OPEN_WRITE;
-
-
-   file_output_stream(const Path& path, const mode& mode)
-      : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
-   {
-      if (!_fd)
-         BOOST_THROW_EXCEPTION(open_error());
-   }
-
-   inline virtual ~file_output_stream()
-   {
-      fflush(_fd);
+file_input_stream::~file_input_stream()
+{
+   if (_fd)
       fclose(_fd);
-   }
+}
 
-   virtual void write(const void* buffer, DWORD count)
-   throw (write_error)
-   { fwrite(buffer, 1, count, _fd); }
+std::size_t
+file_input_stream::read(void* dest, std::size_t count)
+throw (stream::read_error)
+{ return fread(dest, 1, count, _fd); }
 
-   virtual void flush()
-   { fflush(_fd); }
 
-private:
-
-   FILE* _fd;
-};
 
 file_output_stream::mode file_output_stream::OPEN_APPEND("a");
 file_output_stream::mode file_output_stream::OPEN_WRITE("w");
 
+file_output_stream::file_output_stream(
+      const boost::filesystem::path& path, const mode& mode)
+   : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
+{
+   if (!_fd)
+      BOOST_THROW_EXCEPTION(open_error());
+}
 
-} // anonymous namespace
+file_output_stream::file_output_stream(file_output_stream&& s)
+   : _fd(s._fd)
+{
+   s._fd = nullptr;
+}
+
+file_output_stream::~file_output_stream()
+{
+   if (_fd)
+   {
+      fflush(_fd);
+      fclose(_fd);
+   }
+}
+
+void
+file_output_stream::write(const void* buffer, std::size_t count)
+throw (stream::write_error)
+{ fwrite(buffer, 1, count, _fd); }
+
+void
+file_output_stream::flush()
+{ fflush(_fd); }
+
+
 
 file
 file::makeTemp()
@@ -111,15 +104,15 @@ bool
 file::is_directory() const
 { return boost::filesystem::is_directory(_path); }
 
-ptr<input_stream>
+ptr<file_input_stream>
 file::read() const
 { return new file_input_stream(_path, file_input_stream::OPEN_READ); }
 
-ptr<output_stream>
+ptr<file_output_stream>
 file::append() const
 { return new file_output_stream(_path, file_output_stream::OPEN_APPEND); }
 
-ptr<output_stream>
+ptr<file_output_stream>
 file::write() const
 { return new file_output_stream(_path, file_output_stream::OPEN_WRITE); }
 

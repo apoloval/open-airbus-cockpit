@@ -44,6 +44,10 @@ public:
        : std::shared_ptr<T>(std::static_pointer_cast<T>(p)) {}
 };
 
+template <typename T>
+inline ptr<T> make_ptr(T* p)
+{ return ptr<T>(p); }
+
 /**
  * Maybe-monad template class. This template provides an object that wraps
  * a determined value that maybe or not. In other words, it extends the value

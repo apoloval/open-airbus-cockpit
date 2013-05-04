@@ -61,31 +61,31 @@ BOOST_AUTO_TEST_CASE(ShouldWriteAndRead)
 {
    file f(file::makeTemp());
    auto output = f.append();
-   output->write_as<DWORD>(100);
-   output->write_as<DWORD>(200);
-   output->write_as<DWORD>(300);
+   stream::write_as<DWORD>(*output, 100);
+   stream::write_as<DWORD>(*output, 200);
+   stream::write_as<DWORD>(*output, 300);
    output.reset(); // stream close
 
    auto input = f.read();
-   BOOST_CHECK_EQUAL(100, input->read_as<DWORD>());
-   BOOST_CHECK_EQUAL(200, input->read_as<DWORD>());
-   BOOST_CHECK_EQUAL(300, input->read_as<DWORD>());
+   BOOST_CHECK_EQUAL(100, stream::read_as<DWORD>(*input));
+   BOOST_CHECK_EQUAL(200, stream::read_as<DWORD>(*input));
+   BOOST_CHECK_EQUAL(300, stream::read_as<DWORD>(*input));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldNotReadBehindEndOffile)
 {
    file f(file::makeTemp());
    auto output = f.append();
-   output->write_as<DWORD>(100);
-   output->write_as<DWORD>(200);
-   output->write_as<DWORD>(300);
+   stream::write_as<DWORD>(*output, 100);
+   stream::write_as<DWORD>(*output, 200);
+   stream::write_as<DWORD>(*output, 300);
    output.reset(); // stream close
 
    auto input = f.read();
    BYTE buff[4];
-   input->read_as<DWORD>();
-   input->read_as<DWORD>();
-   input->read_as<DWORD>();
+   stream::read_as<DWORD>(*input);
+   stream::read_as<DWORD>(*input);
+   stream::read_as<DWORD>(*input);
    BOOST_CHECK_EQUAL(0, input->read(buff, 4));
 }
 

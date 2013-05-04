@@ -28,37 +28,37 @@
 
 namespace oac {
 
-class buffer;
+/**
+ * @concept InputStream
+ *
+ * A class which provides a member to read bytes from with the signature:
+ *
+ * size_t InputStream::read(void* dest, size_t count);
+ *
+ * This operation is synchronous, so the caller may be blocked if no data
+ * is available in the stream. It shall return 0 on any pending and subsequent
+ * call if the stream is closed. It might occur that less bytes than requested
+ * are read. In such a case, return value shall be less than count. For
+ * blocking the caller until all bytes are available, use read_all() function
+ * instead.
+ */
 
 /**
- * Pure abstract class for a stream of data which may be read from.
+ * @concept OutputStream
  *
+ * A class which provides a member to write bytes to, with the signature:
+ *
+ * void OutputStream::write(const void* src, size_t count);
+ *
+ * void flush();
  */
-class input_stream
+
+struct stream
 {
-public:
-
    OAC_DECL_ERROR(read_error, io_error);
-
    OAC_DECL_ERROR(eof_error, read_error);
 
-   virtual ~input_stream() {}
-
-   /**
-    * Read count bytes from the stream and store them in given buffer.
-    * This is a synchronous operation. If there are still no bytes in
-    * the stream, the caller may be blocked until new data arrive. Then,
-    * it's possible that there wasn't enough bytes to satisfy the requested
-    * count, so the return value of the function would be less than count.
-    * When stream closes, it shall return 0.
-    *
-    * @param buffer the buffer where store the read elements. It must
-    *               have at least count allocated bytes
-    * @param count the count of bytes to read
-    * @return the number of bytes actually read (might be less than count, or
-    *         0 when the stream is closed)
-    */
-   virtual DWORD read(void* buffer, DWORD count) throw (read_error) = 0;
+   OAC_DECL_ERROR(write_error, io_error);
 
    /**
     * Read count bytes from the stream, waiting for new data to arrive if
@@ -67,16 +67,19 @@ public:
     * byte is available. If the stream is closed before that, a eof_error
     * is thrown.
     *
+    * @tparam InputStream A type conforming InputStream concept
     * @param buffer the buffer where store the read elements. It must
     *               have at least count allocated bytes
     * @param count the count of bytes to read
     */
-   inline void read_all(void* buffer, DWORD count) throw (read_error)
+   template <typename InputStream>
+   inline static void read_all(InputStream& s, void* dest, std::size_t count)
+   throw (read_error)
    {
-      auto p = (std::uint8_t*) buffer;
+      auto p = (std::uint8_t*) dest;
       while (count)
       {
-         auto nread = read(p, count);
+         auto nread = s.read(p, count);
          if (nread == 0)
             BOOST_THROW_EXCEPTION(eof_error());
          p += nread;
@@ -84,77 +87,52 @@ public:
       }
    }
 
-   /**
-    * Read one element of type T from the stream and return it. If the
-    * stream is closed and there are no enough bytes left to read an element
-    * of type T, a eof_error is thrown.
-    */
-   template <typename T>
-   inline T read_as() throw (read_error)
+   template <typename T, typename InputStream>
+   inline static T read_as(InputStream& s)
+   throw (read_error)
    {
       T r;
-      read_all(&r, sizeof(T));
+      read_all(s, &r, sizeof(T));
       return r;
    }
 
-   inline std::string read_as_string(unsigned int len) throw (read_error)
+   template <typename InputStream>
+   inline static std::string read_as_string(InputStream& s, unsigned int len)
+   throw (read_error)
    {
       char* buff = new char[len];
-      read_all(buff, len);
+      read_all(s, buff, len);
       std::string r(buff, len);
       delete buff;
       return r;
    }
-};
 
-/**
- * Pure abstract class for a stream of data which may be written to.
- */
-class output_stream
-{
-public:
+   template <typename InputStream>
+   inline static std::string read_line(InputStream& s)
+   {
+      static const unsigned CHUNK_SIZE = 64;
+      CHAR buff[CHUNK_SIZE];
+      unsigned int i = 0;
 
-   OAC_DECL_ERROR(write_error, io_error);
+      for (i = 0; i < CHUNK_SIZE; i++)
+      {
+         if (!s.read(&(buff[i]), 1) || buff[i] == '\n')
+            return std::string(buff, i);
+      }
+      return std::string(buff, CHUNK_SIZE) + read_line(s);
+   }
 
-   virtual ~output_stream() {}
+   template <typename OutputStream>
+   inline static void write_as_string(
+         OutputStream& s, const std::string& str)
+   throw (write_error)
+   { s.write(str.c_str(), str.length()); }
 
-   /**
-    * Write count bytes obtained from given buffer into the stream. This
-    * call may be blocking depending on the concrete stream implementation.
-    *
-    * @param buffer the buffer which contains the elements to be written
-    * @param count the number of bytes from buffer to write
-    */
-   virtual void write(const void* buffer, DWORD count) throw (write_error) = 0;
+   template <typename T, typename OutputStream>
+   inline static void write_as(OutputStream& s, const T& t)
+   throw (write_error)
+   { s.write(&t, sizeof(T)); }
 
-   /**
-    * Flush the bytes pending to be sent.
-    */
-   virtual void flush() = 0;
-
-   template <typename T>
-   inline void write_as(const T& t) throw (write_error)
-   { write(&t, sizeof(T)); }
-
-   template <>
-   inline void write_as<std::string>(const std::string& str) throw (write_error)
-   { write_as_string(str); }
-
-   inline void write_as_string(const std::string& str) throw (write_error)
-   { write(str.c_str(), str.length()); }
-};
-
-class reader
-{
-public:
-
-   reader(const ptr<input_stream>& input);
-
-   std::string readLine();
-
-private:
-
-   ptr<input_stream> _input;
 };
 
 } // namespace oac
