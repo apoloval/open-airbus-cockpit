@@ -33,14 +33,17 @@ namespace oac {
  *
  * A class which provides a member to read bytes from with the signature:
  *
- * size_t InputStream::read(void* dest, size_t count);
+ * std::size_t InputStream::read(
+ *       void* dest, std::size_t count) throw (io_error);
  *
- * This operation is synchronous, so the caller may be blocked if no data
- * is available in the stream. It shall return 0 on any pending and subsequent
- * call if the stream is closed. It might occur that less bytes than requested
- * are read. In such a case, return value shall be less than count. For
- * blocking the caller until all bytes are available, use read_all() function
- * instead.
+ * The read() operation is synchronous, so the caller shall be blocked if
+ * there is no available data in the stream. When data is available, the bytes
+ * are copied into dest buffer. read() may not read all of the requested number
+ * of bytes if all them are not available yet. For that, use stream::read_all()
+ * function instead. When the stream is closed by the other end, a call to
+ * read() shall read the remaining bytes which were not consumed, if any.
+ * After that, any subsequent call to read() shall return 0.
+ *
  */
 
 /**
@@ -48,92 +51,233 @@ namespace oac {
  *
  * A class which provides a member to write bytes to, with the signature:
  *
- * void OutputStream::write(const void* src, size_t count);
+ * std::size_t OutputStream::write(
+ *       const void* src, std::size_t count) throw (io_error);
  *
- * void flush();
+ * void OutputStream::flush();
+ *
+ * The write() operation is synchronous, so the caller shall be blocked if
+ * it is not possible to write any byte yet. When data may be write, the bytes
+ * are copied from src buffer. write() may not write all of the requested
+ * number of bytes. For that, use stream::write_all() function instead. When
+ * the stream is closed by the other end, a call to write() shall return 0.
+ *
+ * The flush() operation forces the sending of any pending byte that was not
+ * sent to the device.
  */
 
-struct stream
+namespace stream {
+
+OAC_DECL_ERROR(eof_error, io_error);
+OAC_DECL_ERROR(read_error, io_error);
+OAC_DECL_ERROR(write_error, io_error);
+
+/**
+ * Read count bytes from the stream, waiting for new data to arrive if
+ * there are no enough bytes. While read() returns even when less bytes
+ * than requested have arrived, read_all() waits until every requested
+ * byte is available. If the stream is closed before that, a eof_error
+ * is thrown.
+ *
+ * @tparam InputStream A type conforming InputStream concept
+ * @param buffer the buffer where store the read elements. It must
+ *               have at least count allocated bytes
+ * @param count the count of bytes to read
+ */
+template <typename InputStream>
+inline void read_all(InputStream& s, void* dest, std::size_t count)
+throw (io_error)
 {
-   OAC_DECL_ERROR(read_error, io_error);
-   OAC_DECL_ERROR(eof_error, read_error);
-
-   OAC_DECL_ERROR(write_error, io_error);
-
-   /**
-    * Read count bytes from the stream, waiting for new data to arrive if
-    * there are no enough bytes. While read() returns even when less bytes
-    * than requested have arrived, read_all() waits until every requested
-    * byte is available. If the stream is closed before that, a eof_error
-    * is thrown.
-    *
-    * @tparam InputStream A type conforming InputStream concept
-    * @param buffer the buffer where store the read elements. It must
-    *               have at least count allocated bytes
-    * @param count the count of bytes to read
-    */
-   template <typename InputStream>
-   inline static void read_all(InputStream& s, void* dest, std::size_t count)
-   throw (read_error)
+   auto p = (std::uint8_t*) dest;
+   while (count)
    {
-      auto p = (std::uint8_t*) dest;
-      while (count)
+      auto nread = s.read(p, count);
+      if (nread == 0)
+         BOOST_THROW_EXCEPTION(eof_error());
+      p += nread;
+      count -= nread;
+   }
+}
+
+/**
+ * Read an object of type T from given InputStream object. The caller will
+ * block until at least sizeof(T) bytes are available in the stream. If the
+ * stream is closed before that, a eof_error is thrown.
+ */
+template <typename T, typename InputStream>
+inline T read_as(InputStream& s)
+throw (io_error)
+{
+   T r;
+   read_all(s, &r, sizeof(T));
+   return r;
+}
+
+/**
+ * Read a string of the given length from the InputStream. The caller will
+ * block until at requested bytes are available in the stream. If the
+ * stream is closed before that, a eof_error is thrown.
+ */
+template <typename InputStream>
+inline std::string read_as_string(InputStream& s, unsigned int len)
+throw (io_error)
+{
+   char* buff = new char[len];
+   read_all(s, buff, len);
+   std::string r(buff, len);
+   delete buff;
+   return r;
+}
+
+/**
+ * Read a line terminated with a '\n' symbol from the InputStream. If the
+ * stream is closed before line termination is found, the characters read to
+ * that point are returned.
+ */
+template <typename InputStream>
+inline std::string read_line(InputStream& s)
+{
+   static const unsigned CHUNK_SIZE = 64;
+   CHAR buff[CHUNK_SIZE];
+   unsigned int i = 0;
+
+   for (i = 0; i < CHUNK_SIZE; i++)
+   {
+      if (!s.read(&(buff[i]), 1) || buff[i] == '\n')
+         return std::string(buff, i);
+   }
+   return std::string(buff, CHUNK_SIZE) + read_line(s);
+}
+
+/**
+ * Write count bytes from src buffer into OutputStream object. This function
+ * will block until all the bytes are written. If the other end of the stream
+ * is closed before all bytes are written, an eof_error is thrown.
+ */
+template <typename OutputStream>
+inline void write_all(OutputStream& s, const void* src, std::size_t count)
+throw (io_error)
+{
+   auto p = (const std::uint8_t*) src;
+   while (count)
+   {
+      auto nwrite = s.write(p, count);
+      if (nwrite == 0)
+         BOOST_THROW_EXCEPTION(eof_error());
+      p += nwrite;
+      count -= nwrite;
+   }
+}
+
+/**
+ * Write given string into the OutputStream. This just writes the characters
+ * without any termination symbol. If the other end of the stream is closed
+ * before all bytes are written, an eof_error is thrown.
+ */
+template <typename OutputStream>
+inline void write_as_string(
+      OutputStream& s, const std::string& str)
+throw (io_error)
+{ write_all(s, str.c_str(), str.length()); }
+
+/**
+ * Write given object of type T into the OutputStream. If the other end of the
+ * stream is closed before all bytes are written, an eof_error is thrown.
+ */
+template <typename T, typename OutputStream>
+inline void write_as(OutputStream& s, const T& t)
+throw (io_error)
+{ write_all(s, &t, sizeof(T)); }
+
+} // namespace stream
+
+/**
+ * An input stream which adapts a Boost ASIO SyncReadStream object to
+ * conform InputStream concept.
+ */
+template <typename SyncReadStream>
+class sync_read_stream_adapter
+{
+public:
+
+   inline sync_read_stream_adapter(const ptr<SyncReadStream>& adapted)
+      : _adapted(adapted)
+   {}
+
+   inline size_t read(void* dest, size_t count)
+   {
+      try
+      { return _adapted->read_some(boost::asio::buffer(dest, count)); }
+      catch (boost::system::system_error& e)
       {
-         auto nread = s.read(p, count);
-         if (nread == 0)
-            BOOST_THROW_EXCEPTION(eof_error());
-         p += nread;
-         count -= nread;
+         if (e.code() == boost::asio::error::eof)
+            return 0;
+         else
+            BOOST_THROW_EXCEPTION(
+                     stream::read_error() << boost_system_error_info(e));
       }
    }
 
-   template <typename T, typename InputStream>
-   inline static T read_as(InputStream& s)
-   throw (read_error)
-   {
-      T r;
-      read_all(s, &r, sizeof(T));
-      return r;
-   }
+private:
 
-   template <typename InputStream>
-   inline static std::string read_as_string(InputStream& s, unsigned int len)
-   throw (read_error)
-   {
-      char* buff = new char[len];
-      read_all(s, buff, len);
-      std::string r(buff, len);
-      delete buff;
-      return r;
-   }
-
-   template <typename InputStream>
-   inline static std::string read_line(InputStream& s)
-   {
-      static const unsigned CHUNK_SIZE = 64;
-      CHAR buff[CHUNK_SIZE];
-      unsigned int i = 0;
-
-      for (i = 0; i < CHUNK_SIZE; i++)
-      {
-         if (!s.read(&(buff[i]), 1) || buff[i] == '\n')
-            return std::string(buff, i);
-      }
-      return std::string(buff, CHUNK_SIZE) + read_line(s);
-   }
-
-   template <typename OutputStream>
-   inline static void write_as_string(
-         OutputStream& s, const std::string& str)
-   throw (write_error)
-   { s.write(str.c_str(), str.length()); }
-
-   template <typename T, typename OutputStream>
-   inline static void write_as(OutputStream& s, const T& t)
-   throw (write_error)
-   { s.write(&t, sizeof(T)); }
-
+   ptr<SyncReadStream> _adapted;
 };
+
+/**
+ * An output stream which adapts a Boost ASIO SyncWriteStream object to
+ * conform OutputStream concept.
+ */
+template <typename SyncWriteStream>
+class sync_write_stream_adapter
+{
+public:
+
+   inline sync_write_stream_adapter(const ptr<SyncWriteStream>& adapted)
+      : _adapted(adapted)
+   {}
+
+   inline std::size_t write(const void* src, size_t count)
+   {
+      try { return _adapted->write_some(boost::asio::buffer(src, count)); }
+      catch (boost::system::system_error& e)
+      {
+         if (e.code() == boost::asio::error::eof)
+            return 0;
+         else
+            BOOST_THROW_EXCEPTION(
+                     stream::write_error() << boost_system_error_info(e));
+      }
+   }
+
+   inline void flush()
+   { /* Boost doesn't require flushing the bytes. */ }
+
+private:
+
+   ptr<SyncWriteStream> _adapted;
+};
+
+namespace stream {
+
+/**
+ * Create a pointer to a new adapter compliant with InputStream concept from a
+ * Boost SyncReadStream object.
+ */
+template <typename SyncReadStream>
+inline ptr<sync_read_stream_adapter<SyncReadStream>> make_input_adapter(
+      const ptr<SyncReadStream>& s)
+{ return new sync_read_stream_adapter<SyncReadStream>(s); }
+
+/**
+ * Create a pointer to a new adapter compliant with OutputStream concept from a
+ * Boost SyncWriteStream object.
+ */
+template <typename SyncWriteStream>
+inline ptr<sync_write_stream_adapter<SyncWriteStream>> make_output_adapter(
+  const ptr<SyncWriteStream>& s)
+{ return new sync_write_stream_adapter<SyncWriteStream>(s); }
+
+} // namespace stream
 
 } // namespace oac
 

@@ -420,14 +420,13 @@ public:
    inline buffer_output_stream(
          const ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
 
-   inline void write(const void* buffer, DWORD count)
-   throw (buffer::out_of_bounds_error)
+   inline std::size_t write(const void* buffer, std::size_t count)
    {
       auto remain = _buffer->capacity() - _index;
-      if (count > remain)
-         BOOST_THROW_EXCEPTION(buffer::out_of_bounds_error());
-      _buffer->write(buffer, _index, count);
-      _index += count;
+      auto nwrite = (count > remain) ? remain : count;
+      _buffer->write(buffer, _index, nwrite);
+      _index += nwrite;
+      return nwrite;
    }
 
    inline void flush()

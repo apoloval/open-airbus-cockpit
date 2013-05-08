@@ -25,6 +25,7 @@
 
 #include <boost/format.hpp>
 #include <boost/exception/all.hpp>
+#include <boost/system/system_error.hpp>
 
 #pragma warning( disable : 4290 )
 
@@ -79,6 +80,7 @@ OAC_DECL_LOGIC_ERROR(null_pointer_error);
 OAC_DECL_RUNTIME_ERROR(illegal_state_error);
 OAC_DECL_RUNTIME_ERROR(io_error);
 
+OAC_DECL_ERROR_INFO(boost_system_error_info, boost::system::system_error);
 OAC_DECL_ERROR_INFO(code_info, int);
 OAC_DECL_ERROR_INFO(file_name_info, std::wstring);
 OAC_DECL_ERROR_INFO(function_name_info, std::string);

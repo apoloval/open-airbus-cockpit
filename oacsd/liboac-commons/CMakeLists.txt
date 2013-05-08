@@ -12,8 +12,10 @@ set(liboac-commons_HEADERS
    include/liboac/fsuipc.h
    include/liboac/lang-utils.h
    include/liboac/logging.h
+   include/liboac/network.h
    include/liboac/simconn.h
    include/liboac/stream.h
+   include/liboac/worker.h
 )
 
 set(liboac-commons_SOURCES
@@ -44,6 +46,7 @@ test_link_libraries(
 add_unit_test(buffer-test)
 add_unit_test(filesystem-test)
 add_unit_test(lang-utils-test)
+add_unit_test(network-test)
 add_unit_test(stream-test)
 
 add_integration_test(simconn-itest)

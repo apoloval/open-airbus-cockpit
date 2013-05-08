@@ -19,11 +19,13 @@ set(Boost_USE_STATIC_LIBS ON)
 
 include(Testing)
 find_package(Boost COMPONENTS
-   system
-   unit_test_framework
-   filesystem
+   chrono
    date_time
+   filesystem
    regex
+   system
+   thread
+   unit_test_framework
 REQUIRED)
 find_package(SimConnect REQUIRED)
 find_package(FSUIPC_Internal REQUIRED)

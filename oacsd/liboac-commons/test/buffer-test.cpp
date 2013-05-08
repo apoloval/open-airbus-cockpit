@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteWhenNoEnoughCapacity)
 {
    auto s = buffer::make_output_stream(prepare_buffer(2));
    BOOST_CHECK_THROW(stream::write_as<DWORD>(*s, 100),
-                     buffer::out_of_bounds_error);
+                     stream::eof_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

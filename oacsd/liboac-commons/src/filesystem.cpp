@@ -77,10 +77,10 @@ file_output_stream::~file_output_stream()
    }
 }
 
-void
+std::size_t
 file_output_stream::write(const void* buffer, std::size_t count)
 throw (stream::write_error)
-{ fwrite(buffer, 1, count, _fd); }
+{ return fwrite(buffer, 1, count, _fd); }
 
 void
 file_output_stream::flush()

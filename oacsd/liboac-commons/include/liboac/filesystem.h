@@ -75,8 +75,9 @@ public:
 
    ~file_output_stream();
 
-   void write(const void* buffer,
-              std::size_t count) throw (stream::write_error);
+   std::size_t write(
+         const void* buffer,
+         std::size_t count) throw (stream::write_error);
 
    void flush();
 
