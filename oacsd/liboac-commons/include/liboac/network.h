@@ -68,7 +68,7 @@ private:
  * object.
  */
 template <typename Worker>
-class tcp_server : public std::enable_shared_from_this<tcp_server<Worker>>
+class tcp_server
 {
 public:
 
@@ -103,8 +103,7 @@ public:
     */
    inline void run_in_background()
    {
-      auto self = shared_from_this();
-      _bg_server = boost::thread([self]() { self->run(); });
+      _bg_server = boost::thread([this]() { run(); });
       {
          boost::mutex mutex;
          boost::unique_lock<boost::mutex> lock(mutex);
@@ -176,6 +175,10 @@ private:
 };
 
 namespace network {
+
+typedef std::function<void(const ptr<tcp_connection>&)> connection_handler;
+typedef thread_worker<network::connection_handler,
+                      ptr<tcp_connection>> dedicated_thread_connection_handler;
 
 /**
  * Create a new TCP server supported by a threaded worker.

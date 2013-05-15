@@ -23,9 +23,11 @@
 #include <string>
 
 #include <boost/variant.hpp>
-
+#include <liboac/endian.h>
 #include <liboac/exception.h>
 #include <liboac/stream.h>
+
+#include "api.h"
 
 namespace oac { namespace fv { namespace proto {
 
@@ -41,23 +43,79 @@ OAC_DECL_ERROR_INFO(actual_input_info, std::string);
 
 typedef std::uint16_t protocol_version;
 
-typedef std::string endpoint_name;
+typedef std::string peer_name;
 
 extern const protocol_version CURRENT_PROTOCOL_VERSION;
 
 /**
- * Begin session message. This message is sent by the client when initiates
- * the session and the server as response to that. It indicates the endpoint
- * name and the protocol version it implements.
+ * This message is sent by the client when initiates the session and the
+ * server as response to that. It indicates the endpoint name and the
+ * protocol version it implements.
  */
-struct begin_session_message {
-   endpoint_name ep_name;
+struct begin_session_message
+{
+   peer_name pname;
    protocol_version proto_ver;
 
    inline begin_session_message(
-         const endpoint_name& ep_name,
+         const peer_name& pname,
          protocol_version proto_ver = CURRENT_PROTOCOL_VERSION)
-      : ep_name(ep_name), proto_ver(proto_ver)
+      : pname(pname), proto_ver(proto_ver)
+   {}
+};
+
+/**
+ * This message is sent by either server or client when it wants to close
+ * the session. The cause field indicates the cause for the session to be ended.
+ */
+struct end_session_message {
+   std::string cause;
+
+   inline end_session_message(const std::string& cause) : cause(cause) {}
+};
+
+/**
+ * This message is sent by the client to request a new subscription for a
+ * variable. The server responds with a subscription reply message.
+ */
+struct subscription_request_message
+{
+   variable_group var_grp;
+   variable_name var_name;
+
+   inline subscription_request_message(
+         const variable_group& grp,
+         const variable_name& name)
+      : var_grp(grp), var_name(name)
+   {}
+};
+
+/**
+ * This message is sent by the server as response to a subscription request.
+ */
+struct subscription_reply_message
+{
+   enum status
+   {
+      /** The request was accepted and processed successfully */
+      STATUS_SUCCESS,
+      /** The requested variable is unknown to the server */
+      STATUS_NO_SUCH_VAR,
+      /** A server error ocurred which prevented the request to be success */
+      STATUS_SERVER_ERROR
+   };
+
+   status st;
+   variable_group var_grp;
+   variable_name var_name;
+   std::string cause;
+
+   inline subscription_reply_message(
+         status st,
+         const variable_group& grp,
+         const variable_name& name,
+         const std::string& cause)
+      : st(st), var_grp(grp), var_name(name), cause(cause)
    {}
 };
 
@@ -65,15 +123,112 @@ struct begin_session_message {
  * This union wraps all kinds of messages into a single one.
  */
 typedef boost::variant<
-      begin_session_message
+      begin_session_message,
+      end_session_message,
+      subscription_request_message,
+      subscription_reply_message
 > message;
 
 struct message_internals
 {
    enum message_type {
-      MSG_BEGIN_SESSION = 0x700
+      MSG_BEGIN_SESSION = 0x700,
+      MSG_END_SESSION = 0x701,
+      MSG_SUBSCRIPTION_REQ = 0x702,
+      MSG_SUBSCRIPTION_REP = 0x703
    };
 };
+
+/**
+ * Serialize a begin session message into given output stream.
+ */
+template <typename Serializer, typename OutputStream>
+inline void serialize_begin_session(
+      const begin_session_message& msg, OutputStream& output)
+throw (protocol_error, stream::write_error)
+{
+   try
+   {
+      Serializer::write_msg_begin(
+               output, message_internals::MSG_BEGIN_SESSION);
+      Serializer::write_string_value(output, msg.pname);
+      Serializer::write_uint16_value(output, msg.proto_ver);
+      Serializer::write_msg_end(output);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while writing begin session message"));
+   }
+}
+
+/**
+ * Serialize an end session message into given output stream.
+ */
+template <typename Serializer, typename OutputStream>
+inline void serialize_end_session(
+      const end_session_message& msg, OutputStream& output)
+throw (protocol_error, stream::write_error)
+{
+   try
+   {
+      Serializer::write_msg_begin(
+               output, message_internals::MSG_END_SESSION);
+      Serializer::write_string_value(output, msg.cause);
+      Serializer::write_msg_end(output);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while writing end session message"));
+   }
+}
+
+/**
+ * Serialize a subscription request message into given output stream.
+ */
+template <typename Serializer, typename OutputStream>
+inline void serialize_subscription_request(
+      const subscription_request_message& msg, OutputStream& output)
+{
+   try
+   {
+      Serializer::write_msg_begin(
+            output, message_internals::MSG_SUBSCRIPTION_REQ);
+      Serializer::write_string_value(output, msg.var_grp);
+      Serializer::write_string_value(output, msg.var_name);
+      Serializer::write_msg_end(output);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while writing subscription request message"));
+   }
+}
+
+/**
+ * Serialize a subscription reply message into given output stream.
+ */
+template <typename Serializer, typename OutputStream>
+inline void serialize_subscription_reply(
+      const subscription_reply_message& msg, OutputStream& output)
+{
+   try
+   {
+      Serializer::write_msg_begin(
+            output, message_internals::MSG_SUBSCRIPTION_REP);
+      Serializer::write_uint8_value(output, msg.st);
+      Serializer::write_string_value(output, msg.var_grp);
+      Serializer::write_string_value(output, msg.var_name);
+      Serializer::write_string_value(output, msg.cause);
+      Serializer::write_msg_end(output);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while writing subscription reply message"));
+   }
+}
 
 /**
  * Serialize given message into given output stream.
@@ -88,25 +243,99 @@ inline void serialize(const message& msg, OutputStream& output)
       inline visitor(OutputStream& os) : output(os) {}
 
       void operator()(const begin_session_message& msg) const
+      { return serialize_begin_session<Serializer, OutputStream>(msg, output); }
+
+      void operator()(const end_session_message& msg) const
+      { return serialize_end_session<Serializer, OutputStream>(msg, output); }
+
+      void operator()(const subscription_request_message& msg) const
       {
-         Serializer::write_msg_begin(
-                  output, message_internals::MSG_BEGIN_SESSION);
-         Serializer::write_string_value(output, msg.ep_name);
-         Serializer::write_uint16_value(output, msg.proto_ver);
-         Serializer::write_msg_end(output);
+         return serialize_subscription_request<Serializer, OutputStream>(
+               msg, output);
       }
+
+      void operator()(const subscription_reply_message& msg) const
+      {
+         return serialize_subscription_reply<Serializer, OutputStream>(
+               msg, output);
+      }
+
    } visit(output);
    boost::apply_visitor(visit, msg);
 }
 
 template <typename Deserializer, typename InputStream>
 begin_session_message
-deserialize_begin_session(InputStream& input)
-throw (protocol_error)
+deserialize_begin_session_contents(InputStream& input)
+throw (protocol_error, stream::read_error)
 {
-   auto ep_name = Deserializer::read_string_value(input);
-   auto proto_ver = Deserializer::read_uint16_value(input);
-   return begin_session_message(ep_name, proto_ver);
+   try
+   {
+      auto pname = Deserializer::read_string_value(input);
+      auto proto_ver = Deserializer::read_uint16_value(input);
+      return begin_session_message(pname, proto_ver);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while reading begin session message"));
+   }
+}
+
+template <typename Deserializer, typename InputStream>
+end_session_message
+deserialize_end_session_contents(InputStream& input)
+throw (protocol_error, stream::read_error)
+{
+   try
+   {
+      auto cause = Deserializer::read_string_value(input);
+      return end_session_message(cause);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while reading begin session message"));
+   }
+}
+
+template <typename Deserializer, typename InputStream>
+subscription_request_message
+deserialize_subscription_request_contents(InputStream& input)
+throw (protocol_error, stream::read_error)
+{
+   try
+   {
+      auto var_grp = Deserializer::read_string_value(input);
+      auto var_name = Deserializer::read_string_value(input);
+      return subscription_request_message(var_grp, var_name);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while reading subscription request message"));
+   }
+}
+
+template <typename Deserializer, typename InputStream>
+subscription_reply_message
+deserialize_subscription_reply_contents(InputStream& input)
+throw (protocol_error, stream::read_error)
+{
+   try
+   {
+      auto st = Deserializer::read_uint8_value(input);
+      auto grp = Deserializer::read_string_value(input);
+      auto name = Deserializer::read_string_value(input);
+      auto cause = Deserializer::read_string_value(input);
+      return subscription_reply_message(
+               subscription_reply_message::status(st), grp, name, cause);
+   } catch (stream::eof_error& e)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            nested_error_info(e) <<
+            message_info("eof while reading subscription reply message"));
+   }
 }
 
 template <typename Deserializer, typename InputStream>
@@ -114,16 +343,50 @@ message
 deserialize(InputStream& input)
 throw (protocol_error)
 {
-   auto msg_begin = Deserializer::read_msg_begin(input);
-   switch (msg_begin)
+   try
    {
-      case message_internals::MSG_BEGIN_SESSION:
-         return deserialize_begin_session<Deserializer>(input);
-      default:
-         BOOST_THROW_EXCEPTION(illegal_state_error() <<
-               message_info("received an unknown value for message type"));
+      auto msg_begin = Deserializer::read_msg_begin(input);
+      switch (msg_begin)
+      {
+         case message_internals::MSG_BEGIN_SESSION:
+         {
+            auto msg = deserialize_begin_session_contents<Deserializer>(input);
+            Deserializer::read_msg_end(input);
+            return msg;
+         }
+         case message_internals::MSG_END_SESSION:
+         {
+            auto msg = deserialize_end_session_contents<Deserializer>(input);
+            Deserializer::read_msg_end(input);
+            return msg;
+         }
+         case message_internals::MSG_SUBSCRIPTION_REQ:
+         {
+            auto msg = deserialize_subscription_request_contents<Deserializer>(
+                     input);
+            Deserializer::read_msg_end(input);
+            return msg;
+         }
+         case message_internals::MSG_SUBSCRIPTION_REP:
+         {
+            auto msg = deserialize_subscription_reply_contents<Deserializer>(
+                     input);
+            Deserializer::read_msg_end(input);
+            return msg;
+         }
+         default:
+            BOOST_THROW_EXCEPTION(protocol_error() <<
+                  message_info(str(
+                        boost::format("received an invalid value "
+                                      "0x%x for message type") %
+                        int(msg_begin))));
+      }
+   } catch (stream::eof_error)
+   {
+      BOOST_THROW_EXCEPTION(protocol_error() <<
+            expected_input_info("a message type token") <<
+            actual_input_info("end of file"));
    }
-   Deserializer::read_msg_end(input);
 }
 
 struct binary_message_serializer
@@ -149,6 +412,13 @@ struct binary_message_serializer
    {
       stream::write_as(output, native_to_big<std::uint16_t>(value.length()));
       stream::write_as_string(output, value);
+   }
+
+   template <typename OutputStream>
+   inline static void write_uint8_value(
+         OutputStream& output, std::uint8_t value)
+   {
+      stream::write_as(output, value);
    }
 
    template <typename OutputStream>
@@ -194,6 +464,13 @@ struct binary_message_deserializer
    throw (protocol_error)
    {
       return big_to_native(stream::read_as<std::uint16_t>(input));
+   }
+
+   template <typename InputStream>
+   inline static std::uint8_t read_uint8_value(InputStream& input)
+   throw (protocol_error)
+   {
+      return stream::read_as<std::uint8_t>(input);
    }
 };
 

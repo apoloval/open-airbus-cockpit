@@ -52,10 +52,12 @@ public:
     */
    OAC_DECL_ERROR(master_already_registered, invalid_input_error);
 
-   virtual void subscribe(
+   virtual subscription_id subscribe(
          const variable_group& grp,
          const variable_name& name,
-         const subscription& subs) throw (unknown_variable_error);
+         const var_update_handler& handler) throw (unknown_variable_error);
+
+   virtual void unsubscribe(const subscription_id& id);
 
    /**
     * Register a master for given variable group. If there is already a
@@ -69,8 +71,10 @@ public:
 private:
 
    typedef std::map<variable_group::tag, ptr<flight_vars>> group_master_dict;
+   typedef std::map<subscription_id, ptr<flight_vars>> subscription_master_dict;
 
    group_master_dict _group_masters;
+   subscription_master_dict _subscriptions;
 
    inline flight_vars_core() {}
 

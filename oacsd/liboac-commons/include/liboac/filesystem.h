@@ -19,6 +19,8 @@
 #ifndef OAC_FILESYSTEM_H
 #define OAC_FILESYSTEM_H
 
+#include <cstdio>
+
 #include <boost/filesystem.hpp>
 
 #include "stream.h"
@@ -37,7 +39,11 @@ public:
 
    static mode OPEN_READ;
 
+   static ptr<file_input_stream> STDIN;
+
    OAC_DECL_ERROR(open_error, io_error);
+
+   inline file_input_stream(FILE* fd) : _fd(fd) {}
 
    file_input_stream(const boost::filesystem::path& path, const mode& mode);
 
@@ -68,6 +74,10 @@ public:
    static mode OPEN_APPEND;
    static mode OPEN_WRITE;
 
+   static ptr<file_output_stream> STDOUT;
+   static ptr<file_output_stream> STDERR;
+
+   inline file_output_stream(FILE* fd) : _fd(fd) {}
 
    file_output_stream(const boost::filesystem::path& path, const mode& mode);
 

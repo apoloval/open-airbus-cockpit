@@ -16,13 +16,13 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <cstdio>
-
 #include "filesystem.h"
 
 namespace oac {
 
 file_input_stream::mode file_input_stream::OPEN_READ("r");
+
+ptr<file_input_stream> file_input_stream::STDIN(new file_input_stream(stdin));
 
 file_input_stream::file_input_stream(
       const boost::filesystem::path& path, const mode& mode)
@@ -53,6 +53,11 @@ throw (stream::read_error)
 
 file_output_stream::mode file_output_stream::OPEN_APPEND("a");
 file_output_stream::mode file_output_stream::OPEN_WRITE("w");
+
+ptr<file_output_stream> file_output_stream::STDOUT(
+      new file_output_stream(stdout));
+ptr<file_output_stream> file_output_stream::STDERR(
+      new file_output_stream(stderr));
 
 file_output_stream::file_output_stream(
       const boost::filesystem::path& path, const mode& mode)

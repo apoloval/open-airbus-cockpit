@@ -21,6 +21,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/uuid/uuid_io.hpp>
 #include <liboac/logging.h>
 
 #include "fsuipc.h"
@@ -63,19 +64,35 @@ fsuipc_flight_vars::fsuipc_flight_vars()
    log(INFO, "@FSUIPC; 6HZ event successfully registered!");
 }
 
-void
+flight_vars::subscription_id
 fsuipc_flight_vars::subscribe(
       const variable_group& grp,
       const variable_name& name,
-      const subscription& subs)
+      const var_update_handler& handler)
 throw (unknown_variable_error)
 {
    log(INFO, boost::format("@FSUIPC; Subscribing on %s -> %s...")
        % grp.get_tag() % name.get_tag());
    check_group(grp);
    offset offset(name);
-   subscribe(offset, subs);
-   log(INFO, "@FSUIPC; Subscribed successfully!");
+   auto id = subscribe(offset, handler);
+   log(INFO, boost::format("@FSUIPC; Subscribed successfully with ID %s!") %
+       boost::uuids::to_string(id));
+   return id;
+}
+
+void
+fsuipc_flight_vars::unsubscribe(const flight_vars::subscription_id& id)
+{
+   for (auto& entry : _subscribers)
+   {
+      auto s = entry.second.begin(), end = entry.second.end();
+      while (s != end)
+      {
+         if (s->id == id)
+            s = entry.second.erase(s);
+      }
+   }
 }
 
 void
@@ -87,18 +104,20 @@ throw (unknown_variable_group_error)
             variable_group_info(grp));
 }
 
-void
-fsuipc_flight_vars::subscribe(const offset& offset,
-                            const subscription& subs)
+flight_vars::subscription_id
+fsuipc_flight_vars::subscribe(
+      const offset& offset, const var_update_handler& handler)
 {
    // Insert a new subscription list, or take the existing one if any
    auto entry = _subscribers.find(offset);
    if (entry == _subscribers.end())
    {
-      _subscribers[offset] = subscriptionList();
+      _subscribers[offset] = subscription_list();
       entry = _subscribers.find(offset);
    }
+   subscription subs(handler);
    entry->second.push_back(subs);
+   return subs.id;
 }
 
 void
@@ -111,7 +130,7 @@ fsuipc_flight_vars::notify_changes()
       if (offset.is_updated(*_buffer))
          for (auto subs : entry.second)
          {
-            subs(VAR_GROUP, offset.var_name, offset.read(*_buffer));
+            subs.handler(VAR_GROUP, offset.var_name, offset.read(*_buffer));
          }
    }
    _buffer->swap();

@@ -19,11 +19,14 @@
 #ifndef OAC_FV_SERVER_H
 #define OAC_FV_SERVER_H
 
+#include <list>
 #include <memory>
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
-#include <liboac/lang-utils.h>
+#include <liboac/network.h>
+
+#include "protocol.h"
 
 namespace oac { namespace fv {
 
@@ -35,39 +38,44 @@ class flight_vars_server :
 public:
 
    static const int DEFAULT_PORT;
+   static const proto::peer_name PEER_NAME;
 
    flight_vars_server(const ptr<flight_vars>& delegate = nullptr,
                       int port = DEFAULT_PORT);
 
-   void run();
+   inline ~flight_vars_server()
+   { _tcp_server.stop(); }
+
+   inline void run()
+   { _tcp_server.run(); }
+
+   inline void run_in_background()
+   { _tcp_server.run_in_background(); }
 
 private:
 
-   class connection : public std::enable_shared_from_this<connection>
-   {
-   public:
+   typedef std::list<flight_vars::subscription_id> subscription_id_list;
 
-      connection(boost::asio::io_service& io_service,
-                 const ptr<flight_vars>& delegate);
+   void handle_connection(const ptr<tcp_connection>& conn);
 
-      inline boost::asio::ip::tcp::socket& get_socket()
-      { return _socket; }
+   void handle_handshake(const ptr<tcp_connection>& conn);
 
-      void start();
+   proto::subscription_reply_message handle_subscription_request(
+         const ptr<tcp_connection>& conn,
+         const proto::subscription_request_message& req,
+         subscription_id_list& subscriptions);
 
-   private:
+   void remove_subscriptions(subscription_id_list& subscriptions);
 
-      boost::asio::ip::tcp::socket _socket;
-      ptr<flight_vars> _delegate;
-   };
+   proto::message read_message(const ptr<tcp_connection>& conn);
+
+   void write_message(
+         const ptr<tcp_connection>& conn,
+         const proto::message& msg);
 
    ptr<flight_vars> _delegate;
-   boost::asio::io_service _io_service;
-   boost::asio::ip::tcp::acceptor _acceptor;
+   tcp_server<network::dedicated_thread_connection_handler> _tcp_server;
 
-   void accept_connection();
-
-   void on_connection_accepted(const ptr<connection>& conn);
 };
 
 }} // namespace oac::fv

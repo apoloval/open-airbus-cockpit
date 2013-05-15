@@ -97,6 +97,14 @@ namespace buffer
    {
       b.write(&t, offset, sizeof(T));
    }
+
+   template <typename Buffer>
+   inline static void fill(Buffer& b, std::uint8_t value)
+   throw (write_error)
+   {
+      for (std::uint32_t i = 0; i < b.capacity(); i++)
+         b.write(&value, i, 1);
+   }
 }
 
 /**

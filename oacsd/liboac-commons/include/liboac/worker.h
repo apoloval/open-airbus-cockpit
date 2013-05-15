@@ -43,7 +43,7 @@ private:
 
 namespace worker {
 
-template <typename Worker, typename WorkUnit>
+template <typename WorkUnit, typename Worker>
 thread_worker<Worker, WorkUnit> make_thread_worker(
       const Worker& worker)
 { return thread_worker<Worker, WorkUnit>(worker); }

@@ -24,6 +24,7 @@
 
 #include <Windows.h>
 
+#include <boost/uuid/uuid_generators.hpp>
 #include <liboac/fsuipc.h>
 #include <liboac/lang-utils.h>
 #include <liboac/simconn.h>
@@ -48,10 +49,12 @@ public:
 
    fsuipc_flight_vars();
 
-   virtual void subscribe(
+   virtual subscription_id subscribe(
          const variable_group& grp,
          const variable_name& name,
-         const subscription& subs) throw (unknown_variable_error);
+         const var_update_handler& handler) throw (unknown_variable_error);
+
+   virtual void unsubscribe(const subscription_id& id);
 
 private:
 
@@ -66,10 +69,25 @@ private:
       virtual variable_value read(double_buffer<>& buf);
    };
 
-   typedef std::list<subscription> subscriptionList;
-   typedef std::map<offset, subscriptionList> offsetsubscriptionsDict;
+   struct subscription
+   {
+      subscription_id id;
+      var_update_handler handler;
 
-   offsetsubscriptionsDict _subscribers;
+      inline subscription(
+            const subscription_id id, const var_update_handler& handler)
+         : id(id), handler(handler)
+      {}
+
+      inline subscription(const var_update_handler& handler)
+         : id(boost::uuids::random_generator()()), handler(handler)
+      {}
+   };
+
+   typedef std::list<subscription> subscription_list;
+   typedef std::map<offset, subscription_list> offset_subscriptions_dict;
+
+   offset_subscriptions_dict _subscribers;
    simconnect_client _sc;
    ptr<local_fsuipc> _fsuipc;
    ptr<double_buffer<>> _buffer;
@@ -78,12 +96,14 @@ private:
     * Check whether given var group corresponds to FSUIPC offset, and throw
     * a unknown_variable_group_error if not.
     */
-   void check_group(const variable_group& grp) throw (unknown_variable_group_error);
+   void check_group(
+         const variable_group& grp) throw (unknown_variable_group_error);
 
    /**
     * Create a new subscription for given offset
     */
-   void subscribe(const offset& offset, const subscription& subs);
+   subscription_id subscribe(
+         const offset& offset, const var_update_handler& handler);
 
    void notify_changes();
 

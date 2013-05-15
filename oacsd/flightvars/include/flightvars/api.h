@@ -23,6 +23,7 @@
 
 #include <Windows.h>
 
+#include <boost/uuid/uuid.hpp>
 #include <liboac/buffer.h>
 #include <liboac/exception.h>
 
@@ -154,26 +155,38 @@ public:
    OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
    OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
-   virtual ~flight_vars() {}
+   /**
+    * An opaque object which identifies a variable subscription
+    */
+   typedef boost::uuids::uuid subscription_id;
 
    /**
     * A callback representing a subscription to a variable.
     */
    typedef std::function<void(const variable_group& grp,
                               const variable_name& name,
-                              const variable_value& value)> subscription;
+                              const variable_value& value)> var_update_handler;
+
+   virtual ~flight_vars() {}
 
    /**
     * Subscribe to a variable.
     *
     * @param grp the variable group
     * @param name the variable name
-    * @param subs the subscription callback to be invoked when var changes.
+    * @param suhandlerbs the handler to be invoked when var changes.
+    * @return the subscription ID, which may be used for unsubscription
     */
-   virtual void subscribe(
+   virtual subscription_id subscribe(
          const variable_group& grp,
          const variable_name& name,
-         const subscription& subs) throw (unknown_variable_error) = 0;
+         const var_update_handler& handler) throw (unknown_variable_error) = 0;
+
+   /**
+    * Remove the subscription with the given ID. If the given ID is unknown,
+    * nothing is done.
+    */
+   virtual void unsubscribe(const subscription_id& id) = 0;
 };
 
 }} // namespace oac::fv
