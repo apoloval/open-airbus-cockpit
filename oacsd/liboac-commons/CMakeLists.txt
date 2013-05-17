@@ -6,6 +6,7 @@ set(liboac-commons_HEADERS
    include/liboac/buffer.h
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
+   include/liboac/concurrency.h
    include/liboac/endian.h
    include/liboac/exception.h
    include/liboac/filesystem.h
@@ -44,6 +45,7 @@ test_link_libraries(
 )
 
 add_unit_test(buffer-test)
+add_unit_test(concurrency-test)
 add_unit_test(filesystem-test)
 add_unit_test(lang-utils-test)
 add_unit_test(network-test)
