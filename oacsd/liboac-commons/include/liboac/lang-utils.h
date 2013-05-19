@@ -48,6 +48,38 @@ template <typename T>
 inline ptr<T> make_ptr(T* p)
 { return ptr<T>(p); }
 
+template <typename T>
+class shared_by_ptr
+{
+public:
+
+   typedef std::shared_ptr<T> ptr_type;
+
+   virtual ~shared_by_ptr() {}
+
+   static ptr_type create() { return new T(); }
+
+   template <typename T1>
+   static ptr_type create (T1& v1)
+   { return std::make_shared<T>(v1); }
+
+   template <typename T1, typename T2>
+   static ptr_type create (T1& v1, T2& v2)
+   { return std::make_shared<T>(v1, v2); }
+
+   template <typename T1, typename T2, typename T3>
+   static ptr_type create (T1& v1, T2& v2, T3& v3)
+   { return std::make_shared<T>(v1, v2, v3); }
+
+   template <typename T1, typename T2, typename T3, typename T4>
+   static ptr_type create (T1& v1, T2& v2, T3& v3, T4& v4)
+   { return std::make_shared<T>(v1, v2, v3, v4); }
+
+   template <typename T1, typename T2, typename T3, typename T4, typename T5>
+   static ptr_type create (T1& v1, T2& v2, T3& v3, T4& v4, T5& v5)
+   { return std::make_shared<T>(v1, v2, v3, v4, v5); }
+};
+
 /**
  * Maybe-monad template class. This template provides an object that wraps
  * a determined value that maybe or not. In other words, it extends the value
