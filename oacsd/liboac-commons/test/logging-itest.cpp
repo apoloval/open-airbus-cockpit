@@ -28,7 +28,7 @@ using namespace oac;
 
 std::pair<ptr<fixed_buffer>, ptr<abstract_logger>> init_logger()
 {
-   auto buff = make_ptr(new fixed_buffer(1024));
+   auto buff = std::make_shared<fixed_buffer>(1024);
    auto log = make_logger(
          log_level::INFO, buffer::make_output_stream(buff));
    return std::make_pair(buff, log);

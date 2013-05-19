@@ -25,6 +25,7 @@
 
 using namespace oac;
 
+/*
 BOOST_AUTO_TEST_SUITE(TcpServerTest)
 
 void test(const std::function<void(const ptr<tcp_connection>&)>& server_handler,
@@ -137,5 +138,128 @@ BOOST_AUTO_TEST_CASE(ClientShouldDetectIncompleteMessage)
    );
 }
 
+
+BOOST_AUTO_TEST_SUITE_END()
+*/
+
+
+BOOST_AUTO_TEST_SUITE(AsyncTcpServerTest)
+
+typedef std::function<
+      void(const async_tcp_connection::ptr_type&)> connection_handler;
+
+void test(
+      const connection_handler& conn_handler,
+      const std::function<void(tcp_connection&)>& client_handler,
+      std::uint32_t millis_before_stop)
+{
+   async_tcp_server<connection_handler> server(9000, conn_handler);
+   server.run_in_background();
+
+   {
+      tcp_client cli("localhost", 9000);
+      client_handler(cli.connection());
+   }
+
+   /* Must wait for the server to respond before stopping it. */
+   boost::this_thread::sleep_for(boost::chrono::milliseconds(millis_before_stop));
+   server.stop();
+}
+
+BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)
+{
+   test(
+         [](const async_tcp_connection::ptr_type& conn)
+         {
+            stream::write_as_string(*conn->output(), "Hello World!");
+         },
+         [](tcp_connection& conn){
+            BOOST_CHECK_EQUAL("Hello World!",
+                              stream::read_as_string(*conn.input(), 12));
+         },
+         0
+   );
+}
+
+BOOST_AUTO_TEST_CASE(ServerShouldConsumeMessage)
+{
+   bool consumed = false;
+   test(
+         [&consumed](const async_tcp_connection::ptr_type& conn){
+            conn->read([&consumed](
+                  buffer_input_stream<fixed_buffer>& input,
+                  std::size_t nbytes)
+            {
+               if (!nbytes)
+                  return 0; // Correct, eof
+               BOOST_CHECK_EQUAL(12, nbytes);
+               BOOST_CHECK_EQUAL("Hello World!",
+                                 stream::read_as_string(input, 12));
+               consumed = true;
+               return 12;
+            });
+         },
+         [](tcp_connection& conn){
+            stream::write_as_string(*conn.output(), "Hello World!");
+         },
+         200
+   );
+   BOOST_CHECK(consumed);
+}
+
+BOOST_AUTO_TEST_CASE(ServerShouldConsumePartedMessage)
+{
+   bool consumed = false;
+   test(
+         [&consumed](const async_tcp_connection::ptr_type& conn){
+            conn->read([&consumed](
+                  buffer_input_stream<fixed_buffer>& input,
+                  std::size_t nbytes) -> std::size_t
+            {
+               if (nbytes < 12)
+                  return 0;
+               BOOST_CHECK_EQUAL(12, nbytes);
+               BOOST_CHECK_EQUAL(
+                     "Hello World!", stream::read_as_string(input, 12));
+               consumed = true;
+               return 12;
+            });
+         },
+         [](tcp_connection& conn){
+            stream::write_as_string(*conn.output(), "Hello ");
+            boost::this_thread::sleep_for(boost::chrono::milliseconds(500));
+            stream::write_as_string(*conn.output(), "World!");
+         },
+         200
+   );
+   BOOST_CHECK(consumed);
+}
+
+BOOST_AUTO_TEST_CASE(ServerShouldConsumeBigMessage)
+{
+   bool consumed = false;
+   test(
+         [&consumed](const async_tcp_connection::ptr_type& conn){
+            conn->read([&consumed](
+                  buffer_input_stream<fixed_buffer>& input,
+                  std::size_t nbytes) -> std::size_t
+            {
+               auto to_read = 65536 * sizeof(std::uint32_t);
+               if (nbytes < to_read)
+                  return 0;
+               for (std::uint32_t i = 0; i < 65536; i++)
+                  BOOST_CHECK_EQUAL(i, stream::read_as<std::uint32_t>(input));
+               consumed = true;
+               return to_read;
+            });
+         },
+         [](tcp_connection& conn){
+            for (std::uint32_t i = 0; i < 65536; i++)
+               stream::write_as(*conn.output(), i);
+         },
+         200
+   );
+   BOOST_CHECK(consumed);
+}
 
 BOOST_AUTO_TEST_SUITE_END()

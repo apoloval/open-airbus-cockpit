@@ -85,7 +85,8 @@ private:
  */
 template <typename OutputStream>
 ptr<logger<OutputStream>> make_logger(
-      const log_level& level, const ptr<OutputStream>& output)
+      const log_level& level,
+      const std::shared_ptr<OutputStream>& output)
 { return new logger<OutputStream>(level, output); }
 
 /**

@@ -178,6 +178,16 @@ public:
       src.read(&(_data[dst_offset]), src_offset, length);
    }
 
+   /**
+    * Obtain a pointer to the raw data for this buffer.
+    */
+   const void* data() const { return _data; }
+
+   /**
+    * Obtain a pointer to the raw data for this buffer.
+    */
+   void* data() { return _data; }
+
 private:
 
    BYTE* _data;
@@ -397,11 +407,15 @@ private:
 };
 
 template <typename Buffer>
-class buffer_input_stream {
+class buffer_input_stream :
+      public shared_by_ptr<buffer_input_stream<Buffer>> {
 public:
 
    inline buffer_input_stream(
-         const ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+         const ptr<Buffer>& buffer,
+         std::uint32_t from_offset = 0)
+      : _buffer(buffer), _index(from_offset)
+   {}
 
    inline std::size_t read(void* buffer, std::size_t count)
    {
@@ -422,11 +436,15 @@ private:
 };
 
 template <typename Buffer>
-class buffer_output_stream {
+class buffer_output_stream :
+      public shared_by_ptr<buffer_output_stream<Buffer>> {
 public:
 
    inline buffer_output_stream(
-         const ptr<Buffer>& buffer) : _buffer(buffer), _index(0) {}
+         const ptr<Buffer>& buffer,
+         std::uint32_t from_offset = 0)
+      : _buffer(buffer), _index(from_offset)
+   {}
 
    inline std::size_t write(const void* buffer, std::size_t count)
    {
@@ -478,14 +496,16 @@ namespace buffer {
    }
 
    template <typename Buffer>
-   inline ptr<buffer_input_stream<Buffer>> make_input_stream(
-         const ptr<Buffer>& b)
-   { return new buffer_input_stream<Buffer>(b); }
+   inline typename buffer_input_stream<Buffer>::ptr_type make_input_stream(
+         const std::shared_ptr<Buffer>& b,
+         std::uint32_t from_offset = 0)
+   { return std::make_shared<buffer_input_stream<Buffer>>(b, from_offset); }
 
    template <typename Buffer>
-   inline ptr<buffer_output_stream<Buffer>> make_output_stream(
-         const ptr<Buffer>& b)
-   { return new buffer_output_stream<Buffer>(b); }
+   inline typename buffer_output_stream<Buffer>::ptr_type make_output_stream(
+         const std::shared_ptr<Buffer>& b,
+         std::uint32_t from_offset = 0)
+   { return std::make_shared<buffer_output_stream<Buffer>>(b, from_offset); }
 }
 
 } // namespace oac

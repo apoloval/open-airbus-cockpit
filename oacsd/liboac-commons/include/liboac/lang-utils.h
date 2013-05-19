@@ -48,12 +48,12 @@ template <typename T>
 inline ptr<T> make_ptr(T* p)
 { return ptr<T>(p); }
 
-template <typename T>
+template <typename T, typename Pointer = std::shared_ptr<T>>
 class shared_by_ptr
 {
 public:
 
-   typedef std::shared_ptr<T> ptr_type;
+   typedef Pointer ptr_type;
 
    virtual ~shared_by_ptr() {}
 

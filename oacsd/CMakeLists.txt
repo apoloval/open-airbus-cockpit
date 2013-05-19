@@ -39,7 +39,10 @@ include_directories(
 	${CMAKE_SOURCE_DIR}/liboac-commons/include
 )
 
-add_definitions(-DUNICODE -D_SCL_SECURE_NO_WARNINGS)
+add_definitions(
+   -DUNICODE
+   -D_SCL_SECURE_NO_WARNINGS
+   -D_VARIADIC_MAX=6)
 
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "OACSD")
