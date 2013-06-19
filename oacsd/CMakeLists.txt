@@ -42,7 +42,9 @@ include_directories(
 add_definitions(
    -DUNICODE
    -D_SCL_SECURE_NO_WARNINGS
-   -D_VARIADIC_MAX=6)
+   -D_VARIADIC_MAX=6
+   -DNOMINMAX # Required to avoid clashing with std::min and std::max
+)
 
 set(CPACK_GENERATOR "NSIS")
 set(CPACK_PACKAGE_INSTALL_DIRECTORY "OACSD")

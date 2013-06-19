@@ -21,9 +21,12 @@
 
 #pragma warning( disable : 4290 )
 
+#include <list>
+
 #include <Windows.h>
 
-#include <Boost/format.hpp>
+#include <boost/asio/buffer.hpp>
+#include <boost/format.hpp>
 
 #include "exception.h"
 #include "lang-utils.h"
@@ -35,7 +38,8 @@ namespace oac {
  * @concept Buffer
  *
  * A class that may be used as data storage, allowing reading from and
- * writing to bytes. It should provide the following members.
+ * writing to bytes. Buffer concept extends the InputStream and OutputStream
+ * concepts, so it implements their members plus:
  *
  * typedef BufferFactory factory_type;
  *
@@ -66,12 +70,42 @@ namespace oac {
 /**
  * @concept BufferFactory
  *
- * A class that may be used to create buffer objects. It provides the
- * following members, where T is the type of buffer objects it creates.
+ * A class that may be used to create buffer objects under a common interface.
+ * It provides the following members, where T is the type of buffer objects
+ * it creates.
  *
  * typedef T value_type;
  *
  * T* create_buffer();
+ *
+ */
+
+/**
+ * @concept StreamBuffer
+ *
+ * A class able to store data as Buffer but allows stream-like read and write
+ * operations. It conforms the Buffer and Stream concepts, with the following
+ * additional operations.
+ *
+ * std::size_t available_for_read() const;
+ *
+ * std::size_t available_for_write() const;
+ *
+ * boost::optional<std::uint32_t> mark() const;
+ *
+ * void set_mark();
+ *
+ * void unset_mark();
+ *
+ * void reset();
+ *
+ * template <typename AsyncReadStream,
+ *           typename ReadHandler>
+ * void async_write_some_from(AsyncReadStream& stream, ReadHandler handler);
+ *
+ * template <typename AsyncWriteStream,
+ *           typename WriteHandler>
+ * void async_read_some_to(AsyncWriteStream& stream, WriteHandler handler);
  *
  */
 
@@ -83,35 +117,192 @@ namespace buffer
    OAC_DECL_ERROR(write_error, io_error);
 
    template <typename T, typename Buffer>
-   inline static T read_as(Buffer& b, std::uint32_t offset)
-   throw (out_of_bounds_error, read_error)
-   {
-      T result;
-      b.read(&result, offset, sizeof(T));
-      return result;
-   }
+   T read_as(
+         Buffer& b, std::uint32_t offset)
+         throw (out_of_bounds_error, read_error);
 
    template <typename T, typename Buffer>
-   inline static void write_as(Buffer& b, std::uint32_t offset, const T& t)
-   throw (out_of_bounds_error, write_error)
-   {
-      b.write(&t, offset, sizeof(T));
-   }
+   void write_as(
+         Buffer& b, std::uint32_t offset, const T& t)
+         throw (out_of_bounds_error, write_error);
 
    template <typename Buffer>
-   inline static void fill(Buffer& b, std::uint8_t value)
-   throw (write_error)
-   {
-      for (std::uint32_t i = 0; i < b.capacity(); i++)
-         b.write(&value, i, 1);
-   }
+   void fill(Buffer& b, std::uint8_t value) throw (write_error);
+
+   template <typename AsyncReadStream,
+             typename StreamBuffer,
+             typename ReadHandler>
+   void async_read_some(
+         AsyncReadStream& stream,
+         StreamBuffer& buffer,
+         ReadHandler handler);
+
+   template <typename AsyncWriteStream,
+             typename StreamBuffer,
+             typename WriteHandler>
+   void async_write_some(
+         AsyncWriteStream& stream,
+         StreamBuffer& buffer,
+         WriteHandler handler);
 }
+
+template <typename Buffer>
+class linear_stream_buffer_base
+{
+public:
+
+   std::size_t read(void* dest, std::size_t count);
+
+   std::size_t write(const void* src, std::size_t count);
+
+   void flush();
+
+   std::size_t available_for_read() const;
+
+   std::size_t available_for_write() const;
+
+   boost::optional<std::uint32_t> mark() const;
+
+   void set_mark();
+
+   void unset_mark();
+
+   void reset();
+
+   template <typename AsyncReadStream,
+             typename ReadHandler>
+   void async_write_some_from(AsyncReadStream& stream, ReadHandler handler);
+
+   template <typename AsyncWriteStream,
+             typename WriteHandler>
+   void async_read_some_to(AsyncWriteStream& stream, WriteHandler handler);
+
+protected:
+
+   linear_stream_buffer_base(Buffer* self);
+
+   linear_stream_buffer_base(
+         const linear_stream_buffer_base& base, Buffer* self);
+
+   linear_stream_buffer_base(
+         linear_stream_buffer_base&& base, Buffer* self);
+
+   std::list<boost::asio::mutable_buffer> asio_mutable_buffers();
+
+   std::list<boost::asio::mutable_buffer> asio_mutable_buffers(
+         std::size_t nbytes);
+
+   std::list<boost::asio::const_buffer> asio_const_buffers();
+
+   std::list<boost::asio::const_buffer> asio_const_buffers(
+         std::size_t nbytes);
+
+   template <typename ReadHandler>
+   void on_async_read(
+         ReadHandler handler,
+         const boost::system::error_code& ec,
+         std::size_t nbytes);
+
+   template <typename WriteHandler>
+   void on_async_write(
+         WriteHandler handler,
+         const boost::system::error_code& ec,
+         std::size_t nbytes);
+
+private:
+
+   Buffer* _self;
+   std::uint32_t _read_index;
+   std::uint32_t _write_index;
+   boost::optional<std::uint32_t> _mark;
+};
+
+template <typename Buffer>
+class ring_stream_buffer_base
+{
+public:
+
+   std::size_t read(void* dest, std::size_t count);
+
+   std::size_t write(const void* src, std::size_t count);
+
+   void flush();
+
+   std::size_t available_for_read() const;
+
+   std::size_t available_for_write() const;
+
+   boost::optional<std::uint32_t> mark() const;
+
+   void set_mark();
+
+   void unset_mark();
+
+   void reset();
+
+   template <typename AsyncReadStream,
+             typename ReadHandler>
+   void async_write_some_from(
+         AsyncReadStream& stream,
+         ReadHandler handler);
+
+   template <typename AsyncWriteStream,
+             typename WriteHandler>
+   void async_read_some_to(
+         AsyncWriteStream& stream,
+         WriteHandler handler);
+
+protected:
+
+   ring_stream_buffer_base(Buffer* self);
+
+private:
+
+   typedef std::function<void(
+         const boost::system::error_code&,
+         std::size_t)> async_io_handler;
+
+   bool is_broken() const;
+
+   void inc_dist_from_mark(std::size_t amount);
+
+   std::list<boost::asio::mutable_buffer> asio_mutable_buffers();
+
+   std::list<boost::asio::mutable_buffer> asio_mutable_buffers(
+         std::size_t nbytes);
+
+   std::list<boost::asio::const_buffer> asio_const_buffers();
+
+   std::list<boost::asio::const_buffer> asio_const_buffers(
+         std::size_t nbytes);
+
+   template <typename ReadHandler>
+   void on_async_read(
+         ReadHandler handler,
+         const boost::system::error_code& ec,
+         std::size_t nbytes);
+
+   template <typename WriteHandler>
+   void on_async_write(
+         WriteHandler handler,
+         const boost::system::error_code& ec,
+         std::size_t nbytes);
+
+   Buffer* _self;
+   std::uint32_t _read_index;
+   std::uint32_t _write_index;
+   std::size_t _bytes_written;
+   boost::optional<std::uint32_t> _mark;
+   std::size_t _dist_from_mark;
+};
 
 /**
  * Buffer of fixed capacity. This is buffer implementation of
- * fixed capacity set at object construction. It conforms Buffer concept.
+ * fixed capacity set at object construction. It conforms Buffer concept but
+ * not Stream. For streamed buffer please check linear_buffer or ring_buffer
+ * classes.
  */
-class fixed_buffer
+class fixed_buffer : public shared_by_ptr<fixed_buffer>
 {
 public:
 
@@ -124,11 +315,12 @@ public:
 
       typedef fixed_buffer value_type;
 
-      inline factory(size_t capacity) : _capacity(capacity) {}
-      inline virtual fixed_buffer* create_buffer() const
-      { return new fixed_buffer(_capacity); }
+      factory(size_t capacity);
+
+      virtual fixed_buffer* create_buffer() const;
 
    private:
+
       size_t _capacity;
    };
 
@@ -136,65 +328,188 @@ public:
 
    fixed_buffer(size_t capacity);
 
+   fixed_buffer(const fixed_buffer& buff);
+
+   fixed_buffer(fixed_buffer&& buff);
+
    ~fixed_buffer();
 
-   inline std::size_t capacity() const
-   { return _capacity; }
+   std::size_t capacity() const;
 
    void read(void* dst, std::uint32_t offset, std::uint32_t length) const
          throw (buffer::out_of_bounds_error);
 
    template <typename OutputStream>
-   inline void read_to(
+   void read_to(
          OutputStream& dst,
          std::uint32_t offset,
          std::uint32_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
-   {
-      check_bounds(offset, length);
-      dst.write(&(_data[offset]), length);
-   }
+   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error);
 
    void write(const void* src, std::uint32_t offset, std::uint32_t length)
          throw (buffer::out_of_bounds_error, buffer::write_error);
 
    template <typename InputStream>
-   inline std::size_t write_from(
+   std::size_t write_from(
          InputStream& src,
          std::uint32_t offset,
          std::uint32_t length)
-   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error)
-   {
-      check_bounds(offset, length);
-      return src.read(&(_data[offset]), length);
-   }
+   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error);
 
    template <typename Buffer>
-   inline void copy(const Buffer& src, std::uint32_t src_offset,
-                    std::uint32_t dst_offset, std::size_t length)
-   throw (buffer::out_of_bounds_error)
-   {
-      this->check_bounds(dst_offset, length);
-      src.read(&(_data[dst_offset]), src_offset, length);
-   }
+   void copy(
+         const Buffer& src, std::uint32_t src_offset,
+         std::uint32_t dst_offset, std::size_t length)
+   throw (buffer::out_of_bounds_error);
 
    /**
     * Obtain a pointer to the raw data for this buffer.
     */
-   const void* data() const { return _data; }
+   const void* data() const;
 
    /**
     * Obtain a pointer to the raw data for this buffer.
     */
-   void* data() { return _data; }
+   void* data();
 
 private:
 
-   BYTE* _data;
+   std::uint8_t* _data;
    size_t _capacity;
+   std::uint32_t _read_index;
+   std::uint32_t _write_index;
 
    void check_bounds(std::uint32_t offset, std::size_t length) const
          throw (buffer::out_of_bounds_error);
+};
+
+class linear_buffer :
+      public shared_by_ptr<linear_buffer>,
+      public linear_stream_buffer_base<fixed_buffer>
+{
+public:
+
+   using linear_stream_buffer_base<fixed_buffer>::read;
+   using linear_stream_buffer_base<fixed_buffer>::write;
+
+   class factory
+   {
+   public:
+
+      typedef linear_buffer value_type;
+
+      factory(size_t capacity);
+
+      virtual value_type* create_buffer() const;
+
+   private:
+
+      std::size_t _capacity;
+   };
+
+   typedef factory factory_type;
+
+   /**
+    * Create a new linear buffer with given capacity.
+    */
+   linear_buffer(std::size_t capacity);
+
+   linear_buffer(const linear_buffer& buff);
+
+   linear_buffer(linear_buffer&& buff);
+
+   std::size_t capacity() const;
+
+   void read(void* dst, std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error);
+
+   template <typename OutputStream>
+   void read_to(
+         OutputStream& dst, std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error, stream::write_error);
+
+   void write(
+         const void* src, std::uint32_t offset, std::size_t length)
+         throw (buffer::out_of_bounds_error);
+
+   template <typename InputStream>
+   std::size_t write_from(
+         InputStream& src, std::uint32_t offset, std::size_t length)
+         throw (buffer::out_of_bounds_error, stream::read_error);
+
+   template <typename Buffer>
+   void copy(
+         const Buffer& src, std::uint32_t src_offset,
+         std::uint32_t dst_offset, std::size_t length)
+         throw (buffer::out_of_bounds_error);
+
+private:
+
+   fixed_buffer _fixed_buffer;
+};
+
+class ring_buffer :
+      public shared_by_ptr<ring_buffer>,
+      public ring_stream_buffer_base<fixed_buffer>
+{
+public:
+
+   using ring_stream_buffer_base::read;
+   using ring_stream_buffer_base::write;
+
+   class factory
+   {
+   public:
+
+      typedef ring_buffer value_type;
+
+      factory(std::size_t capacity);
+
+      virtual value_type* create_buffer() const;
+
+   private:
+
+      std::size_t _capacity;
+   };
+
+   typedef factory factory_type;
+
+   ring_buffer(std::size_t capacity);
+
+   ring_buffer(const ring_buffer& buff);
+
+   ring_buffer(ring_buffer&& buff);
+
+   std::size_t capacity() const;
+
+   void read(void* dst, std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error);
+
+   template <typename OutputStream>
+   void read_to(
+         OutputStream& dst, std::uint32_t offset, std::size_t length) const
+         throw (buffer::out_of_bounds_error, stream::write_error);
+
+   void write(
+         const void* src, std::uint32_t offset, std::size_t length)
+         throw (buffer::out_of_bounds_error);
+
+   template <typename InputStream>
+   std::size_t write_from(
+         InputStream& src, std::uint32_t offset, std::size_t length)
+         throw (buffer::out_of_bounds_error, stream::read_error);
+
+   template <typename Buffer>
+   void copy(
+         const Buffer& src,
+         std::uint32_t src_offset,
+         std::uint32_t dst_offset,
+         std::size_t length)
+   throw (buffer::out_of_bounds_error);
+
+private:
+
+   fixed_buffer _fixed_buffer;
 };
 
 /**
@@ -205,7 +520,9 @@ private:
  * 0x5678 would be made on decorated buffer on 0x0078. 
  */
 template <typename Buffer>
-class shifted_buffer
+class shifted_buffer :
+      public shared_by_ptr<shifted_buffer<Buffer>>,
+      public linear_stream_buffer_base<shifted_buffer<Buffer>>
 {
 public:
 
@@ -235,10 +552,20 @@ public:
 
    inline shifted_buffer(const ptr<Buffer>& backed_buffer,
                          std::uint32_t offset_shift)
-      : _backed_buffer(backed_buffer),
+      : linear_stream_buffer_base<shifted_buffer<Buffer>>(this),
+        _backed_buffer(backed_buffer),
         _backed_capacity(backed_buffer->capacity()),
         _offset_shift(offset_shift)
    {}
+
+   std::size_t read(void* dest, std::size_t count)
+   { return _backed_buffer->read(dest, count); }
+
+   std::size_t write(const void* src, std::size_t count)
+   { return _backed_buffer->write(src, count); }
+
+   void flush()
+   { _backed_buffer->flush(); }
 
    inline std::size_t capacity() const
    { return _backed_buffer->capacity(); }
@@ -308,8 +635,10 @@ private:
  * Double buffer class. This class decorates a couple of buffers, 
  * making it possible to detect modifications among them. 
  */
-template <typename Buffer = fixed_buffer>
-class double_buffer
+template <typename Buffer = linear_buffer>
+class double_buffer :
+      public shared_by_ptr<double_buffer<Buffer>>,
+      public linear_stream_buffer_base<double_buffer<Buffer>>
 {
 public:
 
@@ -341,6 +670,7 @@ public:
    inline double_buffer(
          const ptr<Buffer>& backed_buffer_0,
          const ptr<Buffer>& backed_buffer_1) :
+      linear_stream_buffer_base<double_buffer<Buffer>>(this),
       _current_buffer(0)
    {
       _backed_buffer[0] = ptr<Buffer>(backed_buffer_0);
@@ -403,68 +733,7 @@ public:
 private:
 
    ptr<Buffer> _backed_buffer[2];
-   BYTE _current_buffer;
-};
-
-template <typename Buffer>
-class buffer_input_stream :
-      public shared_by_ptr<buffer_input_stream<Buffer>> {
-public:
-
-   inline buffer_input_stream(
-         const ptr<Buffer>& buffer,
-         std::uint32_t from_offset = 0)
-      : _buffer(buffer), _index(from_offset)
-   {}
-
-   inline std::size_t read(void* buffer, std::size_t count)
-   {
-      auto remain = _buffer->capacity() - _index;
-      if (count > remain)
-         count = remain;
-      _buffer->read(buffer, _index, count);
-      _index += count;
-      return count;
-   }
-
-   inline ptr<Buffer> get_buffer() const { return _buffer; }
-
-private:
-
-   ptr<Buffer> _buffer;
-   DWORD _index;
-};
-
-template <typename Buffer>
-class buffer_output_stream :
-      public shared_by_ptr<buffer_output_stream<Buffer>> {
-public:
-
-   inline buffer_output_stream(
-         const ptr<Buffer>& buffer,
-         std::uint32_t from_offset = 0)
-      : _buffer(buffer), _index(from_offset)
-   {}
-
-   inline std::size_t write(const void* buffer, std::size_t count)
-   {
-      auto remain = _buffer->capacity() - _index;
-      auto nwrite = (count > remain) ? remain : count;
-      _buffer->write(buffer, _index, nwrite);
-      _index += nwrite;
-      return nwrite;
-   }
-
-   inline void flush()
-   { /* Well, it's a buffer. Nothing to be done here */ }
-
-   inline ptr<Buffer> get_buffer() const { return _buffer; }
-
-private:
-
-   ptr<Buffer> _buffer;
-   DWORD _index;
-
+   std::uint8_t _current_buffer;
 };
 
 namespace buffer {
@@ -493,21 +762,11 @@ namespace buffer {
          const ptr<BufferFactory>& fact)
    {
       return new double_buffer<typename BufferFactory::value_type>::factory(fact);
-   }
-
-   template <typename Buffer>
-   inline typename buffer_input_stream<Buffer>::ptr_type make_input_stream(
-         const std::shared_ptr<Buffer>& b,
-         std::uint32_t from_offset = 0)
-   { return std::make_shared<buffer_input_stream<Buffer>>(b, from_offset); }
-
-   template <typename Buffer>
-   inline typename buffer_output_stream<Buffer>::ptr_type make_output_stream(
-         const std::shared_ptr<Buffer>& b,
-         std::uint32_t from_offset = 0)
-   { return std::make_shared<buffer_output_stream<Buffer>>(b, from_offset); }
+   }   
 }
 
 } // namespace oac
+
+#include "buffer.inl"
 
 #endif

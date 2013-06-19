@@ -107,6 +107,7 @@ ptr<local_fsuipc_handler> local_fsuipc_handler::_singleton;
 } // anonymous namespace
 
 local_fsuipc::local_fsuipc()
+   : linear_stream_buffer_base<local_fsuipc>(this)
 {
    local_fsuipc_handler::init();
 }

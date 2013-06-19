@@ -25,16 +25,6 @@
 
 using namespace oac;
 
-maybe<float> f1(int i)
-{
-   return (i <= 10 && i >= 0) ? 3.1416f : maybe<float>::NOTHING;
-}
-
-maybe<std::string> f2(float f)
-{
-   return std::string("Works!");
-}
-
 BOOST_AUTO_TEST_CASE(PointerShouldConstructAsNull)
 {
    ptr<int> p;
@@ -62,48 +52,4 @@ BOOST_AUTO_TEST_CASE(PointerShouldConstructByCopyFromStlType)
    ptr<int> p2(p1);
    BOOST_CHECK(p2);
    BOOST_CHECK_EQUAL(12, *p2);
-}
-
-BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToNothing)
-{
-   maybe<int> m;
-   BOOST_CHECK(m.is_nothing());
-   BOOST_CHECK(!m.is_just());
-   BOOST_CHECK_THROW(m.get(), illegal_state_error);
-   BOOST_CHECK_THROW(*m, illegal_state_error);
-}
-
-BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToJustValue)
-{
-   maybe<int> m(12);
-   BOOST_CHECK(!m.is_nothing());
-   BOOST_CHECK(m.is_just());
-   BOOST_CHECK_EQUAL(12, m.get());
-   BOOST_CHECK_EQUAL(12, *m);
-}
-
-BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToJustValueAfterSet)
-{
-   maybe<int> m;
-   m.set(12);
-   BOOST_CHECK(!m.is_nothing());
-   BOOST_CHECK(m.is_just());
-   BOOST_CHECK_EQUAL(12, *m);
-}
-
-BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToJustInSuccessFunctionChain)
-{
-   maybe<int> m(7);
-   std::string result;
-
-   BOOST_CHECK(m >> f1 >> f2 >> result);
-   BOOST_CHECK_EQUAL("Works!", result);
-}
-
-BOOST_AUTO_TEST_CASE(MaybeShouldEvaluateToNothingInBrokenFunctionChain)
-{
-   maybe<int> m(15);
-   std::string result;
-
-   BOOST_CHECK(!(m >> f1 >> f2 >> result));
 }

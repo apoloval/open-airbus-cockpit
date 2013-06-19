@@ -32,31 +32,29 @@ namespace network {
 
 OAC_DECL_ERROR(connection_closed_error, illegal_state_error);
 
+typedef std::function<void(const io_error&)> error_handler;
+
 } // namespace network
 
 class tcp_connection
 {
 public:
 
-   typedef sync_read_stream_adapter<boost::asio::ip::tcp::socket> input_stream;
+   typedef sync_read_stream_adapter<
+         boost::asio::ip::tcp::socket> input_stream;
 
-   typedef sync_write_stream_adapter<boost::asio::ip::tcp::socket> output_stream;
+   typedef sync_write_stream_adapter<
+         boost::asio::ip::tcp::socket> output_stream;
 
-   inline tcp_connection()
-      : _socket(new boost::asio::ip::tcp::socket(_io_service))
-   {}
+   tcp_connection();
 
-   inline boost::asio::io_service& io_service()
-   { return _io_service; }
+   boost::asio::io_service& io_service();
 
-   inline boost::asio::ip::tcp::socket& socket()
-   { return *_socket; }
+   boost::asio::ip::tcp::socket& socket();
 
-   inline ptr<input_stream> input()
-   { return new input_stream(_socket); }
+   ptr<input_stream> input();
 
-   inline ptr<output_stream> output()
-   { return new output_stream(_socket); }
+   ptr<output_stream> output();
 
 private:
 
@@ -77,24 +75,13 @@ public:
     * Creates a new TCP server on the given port, using the given worker
     * to submit the incoming connections.
     */
-   inline tcp_server(std::uint16_t port, const Worker& worker)
-      : _worker(worker),
-        _acceptor(_io_service,
-                  boost::asio::ip::tcp::endpoint(
-                     boost::asio::ip::tcp::v4(), port))
-   {}
+   tcp_server(std::uint16_t port, const Worker& worker);
 
    /**
     * Run the server. It uses the current thread to execute the accept loop.
     * It stops running after a call to stop().
     */
-   inline void run()
-   {
-      _io_service.reset();
-      start_accept();
-      _is_started.notify_all();
-      _io_service.run();
-   }
+   void run();
 
    /**
     * Run the server in background. It creates a background thread which
@@ -102,25 +89,13 @@ public:
     * sucessfuly created and accept loop is started. Any immediate subsequent
     * call to stop shall work.
     */
-   inline void run_in_background()
-   {
-      _bg_server = boost::thread([this]() { run(); });
-      {
-         boost::mutex mutex;
-         boost::unique_lock<boost::mutex> lock(mutex);
-         _is_started.wait(lock);
-      }
-   }
+   void run_in_background();
 
    /**
     * Stop the server. If running in background, it waits for the background
     * thread to finish before returning.
     */
-   inline void stop()
-   {
-      _io_service.stop();
-      _bg_server.join(); // if not in background, returns immediately
-   }
+   void stop();
 
 private:
 
@@ -130,224 +105,92 @@ private:
    boost::thread _bg_server;
    boost::condition_variable _is_started;
 
-   void start_accept()
-   {
-      if (_io_service.stopped())
-         return;
-      auto conn = make_ptr(new tcp_connection());
-      _acceptor.async_accept(
-               conn->socket(), std::bind(&tcp_server::on_accept, this, conn));
-   }
+   void start_accept();
 
-   void on_accept(const ptr<tcp_connection>& conn)
-   {
-      _worker(conn);
-      start_accept();
-   }
+   void on_accept(const ptr<tcp_connection>& conn);
 };
 
 class tcp_client
 {
 public:
 
-   inline tcp_client(const std::string& hostname, std::uint16_t port)
-   {
-      using namespace boost::asio;
+   tcp_client(const std::string& hostname, std::uint16_t port);
 
-      _connection = new tcp_connection();
-      ip::tcp::resolver resolver(_connection->io_service());
-      ip::tcp::resolver::query query(
-            hostname, boost::lexical_cast<std::string>(port));
-      connect(_connection->socket(), resolver.resolve(query));
-   }
+   tcp_connection& connection() throw (network::connection_closed_error);
 
-   inline tcp_connection& connection() throw (network::connection_closed_error)
-   { return *_connection; }
+   ptr<tcp_connection::input_stream> input();
 
-   inline ptr<tcp_connection::input_stream> input()
-   { return _connection->input(); }
-
-   inline ptr<tcp_connection::output_stream> output()
-   { return _connection->output(); }
+   ptr<tcp_connection::output_stream> output();
 
 private:
 
    ptr<tcp_connection> _connection;
 };
 
+/**
+ * An asynchronous TCP connection, which uses handlers to perform read and
+ * write operations. The connection object wraps two streams, input_stream
+ * and output_stream that behave according to InputStream and OutputStream
+ * concepts, respectively. They maintaining an internal buffer to store the
+ * data pending to receive/send. In case of input_stream, the programmer
+ * have not to worry on buffering the input data until a new message is
+ * received, since input_stream does that for him.
+ */
 class async_tcp_connection :
       public shared_by_ptr<async_tcp_connection>,
       public std::enable_shared_from_this<async_tcp_connection> {
-public:
+public:  
 
    typedef boost::asio::ip::tcp::socket socket_type;
-   typedef std::shared_ptr<socket_type> socket_ptr;
+   typedef std::shared_ptr<socket_type> socket_ptr;   
 
-   class output_stream :
-         public shared_by_ptr<output_stream>,
-         public std::enable_shared_from_this<output_stream>
-   {
-   public:
+   async_tcp_connection(
+         boost::asio::io_service& io_service,
+         const network::error_handler& ehandler);
 
-      template <typename ErrorHandler>
-      output_stream(
-            const socket_ptr& socket,
-            const ErrorHandler& ehandler)
-         : _socket(socket), _ehandler(ehandler)
-      {}
+   async_tcp_connection(boost::asio::io_service& io_service);
 
-      output_stream(const socket_ptr& socket)
-         : _socket(socket),
-           _ehandler(
-              std::bind(
-                 &output_stream::ignore_error, this, std::placeholders::_1))
-      {}
+   boost::asio::ip::tcp::socket& socket();
 
-      std::size_t write(const void* src, std::size_t count) throw (io_error)
-      {
-         auto buff = std::make_shared<fixed_buffer>(count);
-         buff->write(src, 0, count);
-         boost::asio::async_write(
-               *_socket,
-               boost::asio::buffer(buff->data(), count),
-               std::bind(
-                     &output_stream::on_write,
-                     shared_from_this(),
-                     buff,
-                     std::placeholders::_1,
-                     std::placeholders::_2));
-         return count;
-      }
+   template <typename StreamBuffer, typename ReadHandler>
+   void read(StreamBuffer& buff, ReadHandler handler);
 
-      void flush() {}
-
-   private:
-
-      socket_ptr _socket;
-      std::function<void(const io_error& error)>_ehandler;
-
-      void on_write(
-            const std::shared_ptr<fixed_buffer>& buff,
-            const boost::system::error_code& ec,
-            std::size_t bytes_written)
-      {
-
-      }
-
-      void ignore_error(const io_error&) {}
-   };
-
-   async_tcp_connection(boost::asio::io_service& io_service)
-      : _socket(new socket_type(io_service))
-   {}
-
-   boost::asio::ip::tcp::socket& socket()
-   { return *_socket; }
-
-   template <typename ReadHandler>
-   void read(const ReadHandler& handler, std::size_t buffer_size = 4096)
-   {
-      auto buff = std::make_shared<fixed_buffer>(buffer_size);
-      read(buff, 0, handler);
-   }
-
-   template <typename ErrorHandler>
-   output_stream::ptr_type output(const ErrorHandler& ehandler)
-   { return output_stream::create(_socket, ehandler); }
-
-   output_stream::ptr_type output()
-   { return output_stream::create(_socket); }
+   template <typename StreamBuffer, typename WriteHandler>
+   void write(StreamBuffer& buff, WriteHandler handler);
 
 private:
 
-   typedef std::function<
-         std::size_t(
-               buffer_input_stream<fixed_buffer>& input,
-               std::size_t nbytes)> read_handler;
-
    socket_ptr _socket;
-
-   void read(
-         const std::shared_ptr<fixed_buffer>& buffer,
-         std::uint32_t index,
-         const read_handler& handler)
-   {
-      auto buff_cap = buffer->capacity();
-      auto data = ((std::uint8_t*) buffer->data()) + index;
-      auto remaining = buff_cap - index;
-
-      if (remaining)
-      {
-         _socket->async_read_some(
-               boost::asio::buffer(data, remaining),
-               std::bind(
-                     &async_tcp_connection::on_read,
-                     shared_from_this(),
-                     buffer,
-                     index,
-                     handler,
-                     std::placeholders::_1,
-                     std::placeholders::_2));
-      }
-      else
-      {
-         /* Buffer exhausted. Allocate a new one and continue reading. */
-         auto new_buff = std::make_shared<fixed_buffer>(buff_cap * 4);
-         new_buff->copy(*buffer, 0, 0, buff_cap);
-         read(new_buff, index, handler);
-      }
-   }
-
-   void on_read(
-         const std::shared_ptr<fixed_buffer>& buffer,
-         std::uint32_t index,
-         const read_handler& handler,
-         const boost::system::error_code& ec,
-         std::size_t nbytes)
-   {
-      auto new_index = index + nbytes;
-      auto nconsumed = handler(
-            *buffer::make_input_stream(buffer),
-            new_index);
-      std::shared_ptr<fixed_buffer> new_buff = buffer;
-      if (nconsumed)
-      {
-         new_buff = std::make_shared<fixed_buffer>(buffer->capacity());
-         new_buff->copy(*buffer, nconsumed, 0, new_index - nconsumed);
-         new_index = 0;
-      }
-      // TODO: check error code
-      if (!ec)
-         read(new_buff, new_index, handler);
-   }
 };
 
-template <typename ConnectionHandler>
 class async_tcp_server
 {
 public:
 
    /**
-    * Creates a new asynchronous TCP server on the given port.
+    * Creates a new asynchronous TCP server on the given port with given
+    * connection handler and error handler.
     */
-   async_tcp_server(std::uint16_t port, const ConnectionHandler& handler)
-      : _acceptor(_io_service,
-                  boost::asio::ip::tcp::endpoint(
-                     boost::asio::ip::tcp::v4(), port)),
-        _handler(handler)
-   {}
+   template <typename ConnectionHandler, typename ErrorHandler>
+   async_tcp_server(
+         std::uint16_t port,
+         const ConnectionHandler& handler,
+         const ErrorHandler& ehandler);
+
+   /**
+    * Creates a new asynchronous TCP server on the given port with given
+    * connection handler.
+    */
+   template <typename ConnectionHandler>
+   async_tcp_server(std::uint16_t port, const ConnectionHandler& handler);
+
+   ~async_tcp_server();
 
    /**
     * Run the server. It uses the current thread to execute the accept loop.
     * It stops running after a call to stop().
     */
-   inline void run()
-   {
-      _io_service.reset();
-      start_accept();
-      _is_started.notify_all();
-      _io_service.run();
-   }
+   void run();
 
    /**
     * Run the server in background. It creates a background thread which
@@ -355,57 +198,29 @@ public:
     * sucessfuly created and accept loop is started. Any immediate subsequent
     * call to stop shall work.
     */
-   inline void run_in_background()
-   {
-      _bg_server = boost::thread([this]() { run(); });
-      {
-         boost::mutex mutex;
-         boost::unique_lock<boost::mutex> lock(mutex);
-         _is_started.wait(lock);
-      }
-   }
+   void run_in_background();
 
    /**
     * Stop the server. If running in background, it waits for the background
     * thread to finish before returning.
     */
-   inline void stop()
-   {
-      _io_service.stop();
-      _bg_server.join(); // if not in background, returns immediately
-   }
+   void stop();
 
 private:
+
+   typedef std::function<
+         void(const async_tcp_connection::ptr_type&)> connection_handler;
 
    boost::asio::io_service _io_service;
    boost::asio::ip::tcp::acceptor _acceptor;
    boost::thread _bg_server;
    boost::condition_variable _is_started;
-   ConnectionHandler _handler;
+   connection_handler _handler;
+   network::error_handler _ehandler;
 
-   struct buffers
-   {
-      fixed_buffer input_buffer;
-      fixed_buffer output_buffer;
+   void start_accept();
 
-      inline buffers() : input_buffer(4096), output_buffer(4096) {}
-   };
-
-   std::map<async_tcp_connection, buffers> _buffers;
-
-   void start_accept()
-   {
-      auto conn = async_tcp_connection::create(_io_service);
-      _acceptor.async_accept(
-               conn->socket(),
-               std::bind(&async_tcp_server::on_accept, this, conn));
-   }
-
-   void on_accept(const async_tcp_connection::ptr_type& conn)
-   {
-      _handler(conn);
-      start_accept();
-   }
+   void on_accept(const async_tcp_connection::ptr_type& conn);
 };
 
 namespace network {
@@ -419,14 +234,12 @@ typedef thread_worker<network::connection_handler,
  */
 template <typename Worker>
 ptr<tcp_server<thread_worker<Worker, ptr<tcp_connection>>>> make_tcp_server(
-      std::uint16_t port, const Worker& worker)
-{
-   return new tcp_server<thread_worker<Worker, ptr<tcp_connection>>>(
-         port, worker);
-}
+      std::uint16_t port, const Worker& worker);
 
 } // namespace network
 
 } // namespace oac
+
+#include "network.inl"
 
 #endif // OAC_NETWORK_H

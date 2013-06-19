@@ -42,7 +42,7 @@ public:
 
 private:
 
-   ptr<double_buffer<shifted_buffer<fixed_buffer>>> _buffer;
+   ptr<double_buffer<shifted_buffer<linear_buffer>>> _buffer;
    ptr<local_fsuipc::factory> _fsuipc_fact;
    ptr<local_fsuipc> _fsuipc;
    ptr<flight_control_unit> _fcu;

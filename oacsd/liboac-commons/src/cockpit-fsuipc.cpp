@@ -29,7 +29,7 @@ namespace oac {
 
 namespace {
 
-typedef double_buffer<shifted_buffer<fixed_buffer>> buffer_type;
+typedef double_buffer<shifted_buffer<linear_buffer>> buffer_type;
 
 template <DWORD offset, typename Data, typename event_type>
 inline void import_nullary_event(
@@ -330,11 +330,11 @@ throw (sync_error)
 void
 fsuipc_cockpit_back::init_buffer()
 {
-   auto fb_fact = new fixed_buffer::factory(512);
-   auto sh_fact = new shifted_buffer<fixed_buffer>::factory(
+   auto fb_fact = new linear_buffer::factory(512);
+   auto sh_fact = new shifted_buffer<linear_buffer>::factory(
             fb_fact, 0x5600);
    auto do_fact =
-         std::make_shared<double_buffer<shifted_buffer<fixed_buffer>>::factory>(
+         std::make_shared<double_buffer<shifted_buffer<linear_buffer>>::factory>(
                sh_fact);
    _buffer = do_fact->create_buffer();
 }

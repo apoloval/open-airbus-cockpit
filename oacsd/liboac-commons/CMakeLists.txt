@@ -4,6 +4,7 @@ project(liboac-commons)
 
 set(liboac-commons_HEADERS
    include/liboac/buffer.h
+   include/liboac/buffer.inl
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
    include/liboac/concurrency.h
@@ -14,13 +15,13 @@ set(liboac-commons_HEADERS
    include/liboac/lang-utils.h
    include/liboac/logging.h
    include/liboac/network.h
+   include/liboac/network.inl
    include/liboac/simconn.h
    include/liboac/stream.h
    include/liboac/worker.h
 )
 
 set(liboac-commons_SOURCES
-   src/buffer.cpp
    src/cockpit.cpp
    src/cockpit-fsuipc.cpp
    src/filesystem.cpp

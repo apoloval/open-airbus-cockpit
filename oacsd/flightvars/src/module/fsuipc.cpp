@@ -47,7 +47,7 @@ fsuipc_flight_vars::fsuipc_flight_vars()
    : _sc("flight_vars - FSUIPC"),
      _fsuipc(new local_fsuipc()),
      _buffer(double_buffer<>::factory(
-                new fixed_buffer::factory(0xffff)).create_buffer())
+                new linear_buffer::factory(0xffff)).create_buffer())
 {
    /**
     * Register a timed callback on SimConnect to check var changes

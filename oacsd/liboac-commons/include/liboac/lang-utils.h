@@ -60,134 +60,43 @@ public:
    static ptr_type create() { return new T(); }
 
    template <typename T1>
-   static ptr_type create (T1& v1)
-   { return std::make_shared<T>(v1); }
+   static ptr_type create(T1&& v1)
+   { return ptr_type(new T(std::forward<T1>(v1))); }
 
    template <typename T1, typename T2>
-   static ptr_type create (T1& v1, T2& v2)
-   { return std::make_shared<T>(v1, v2); }
+   static ptr_type create(T1&& v1, T2&& v2)
+   { return ptr_type(new T(std::forward<T1>(v1), std::forward<T2>(v2))); }
 
    template <typename T1, typename T2, typename T3>
-   static ptr_type create (T1& v1, T2& v2, T3& v3)
-   { return std::make_shared<T>(v1, v2, v3); }
+   static ptr_type create(T1&& v1, T2&& v2, T3&& v3)
+   {
+      return ptr_type(new T(
+            std::forward<T1>(v1),
+            std::forward<T2>(v2),
+            std::forward<T3>(v3)));
+   }
 
    template <typename T1, typename T2, typename T3, typename T4>
-   static ptr_type create (T1& v1, T2& v2, T3& v3, T4& v4)
-   { return std::make_shared<T>(v1, v2, v3, v4); }
+   static ptr_type create(T1&& v1, T2&& v2, T3&& v3, T4&& v4)
+   {
+      return ptr_type(new T(
+            std::forward<T1>(v1),
+            std::forward<T2>(v2),
+            std::forward<T3>(v3),
+            std::forward<T4>(v4)));
+   }
 
    template <typename T1, typename T2, typename T3, typename T4, typename T5>
-   static ptr_type create (T1& v1, T2& v2, T3& v3, T4& v4, T5& v5)
-   { return std::make_shared<T>(v1, v2, v3, v4, v5); }
-};
-
-/**
- * Maybe-monad template class. This template provides an object that wraps
- * a determined value that maybe or not. In other words, it extends the value
- * space of the type passed as argument with 'nothing'.
- */
-template <typename T>
-class maybe
-{
-public:
-
-   static const maybe NOTHING;
-
-   OAC_DECL_ERROR(NothingError, illegal_state_error);
-
-   /**
-    * Create a new maybe object set to 'nothing'.
-    */
-   inline maybe() : _nothing(true) {}
-
-   /**
-    * Create a new maybe object set to 'just value'
-    */
-   inline maybe(const T& value) : _value(value), _nothing(false) {}
-
-   /**
-    * Return true if this maybe evaluates to 'nothing'.
-    */
-   inline bool is_nothing() const
-   { return _nothing; }
-
-   /**
-    * Return true if this maybe evaluates to 'just value'.
-    */
-   inline bool is_just() const
-   { return !_nothing; }
-
-   /**
-    * Obtain the value of this maybe object. If it evaluates to 'nothing',
-    * a IllegalStateException is thrown.
-    */
-   inline const T& get() const throw (NothingError)
-   { 
-      if (this->is_nothing())
-         BOOST_THROW_EXCEPTION(NothingError());
-      return _value;
+   static ptr_type create(T1&& v1, T2&& v2, T3&& v3, T4&& v4, T5&& v5)
+   {
+      return ptr_type(new T(
+            std::forward<T1>(v1),
+            std::forward<T2>(v2),
+            std::forward<T3>(v3),
+            std::forward<T4>(v4),
+            std::forward<T5>(v5)));
    }
-
-   /**
-    * Obtain the value of this maybe object. If it evaluates to 'nothing',
-    * a IllegalStateException is thrown.
-    */
-   inline T& get() throw (NothingError)
-   { 
-      if (this->is_nothing())
-         BOOST_THROW_EXCEPTION(NothingError());
-      return _value;
-   }
-
-   /**
-    * Set the value of this maybe to 'just value'.
-    */
-   inline void set(const T& value)
-   { _value = value; _nothing = false; }
-
-   /**
-    * Return the value of the maybe, or throw IllegalStateException if 'nothing'
-    */
-   inline const T& operator * () const throw (NothingError)
-   { return this->get(); }
-
-   /**
-    * Return the value of the maybe, or throw IllegalStateException if 'nothing'
-    */
-   inline T& operator * () throw (NothingError)
-   { return this->get(); }
-
-private:
-
-   T _value;
-   bool _nothing;
 };
-
-template <typename T>
-const maybe<T> maybe<T>::NOTHING;
-
-/**
- * Bind operator for maybe. This operator works as bind operation of monadic
- * maybe type. It produces Maybe<T2> from Maybe<T1 >> function<Maybe<T2>(T1)>.
- */
-template <typename T, typename F>
-auto operator >> (const maybe<T>& m, const F& f) -> decltype(f(m.get()))
-{
-   typedef decltype(f(m.get())) R;
-   return m.is_just() ? R(f(m.get())) : R();
-}
-
-/**
- * Convenient operator for binding the maybe value to a variable. It returns
- * true if maybe is just T, or false if maybe is nothing.
- */
-template <typename T>
-bool operator >> (const maybe<T>&m, T& t)
-{
-   auto proceed = m.is_just();
-   if (proceed)
-      t = m.get();
-   return proceed;
-}
 
 } // namespace oac
 

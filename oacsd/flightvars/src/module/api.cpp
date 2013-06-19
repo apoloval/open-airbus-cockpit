@@ -25,9 +25,9 @@ namespace oac { namespace fv {
 namespace {
 
 template <typename T>
-ptr<fixed_buffer> make_buffer_of(const T& value)
+ptr<linear_buffer> make_buffer_of(const T& value)
 {
-   auto buff = new fixed_buffer(sizeof(T));
+   auto buff = new linear_buffer(sizeof(T));
    buffer::write_as(*buff, 0, value);
    return buff;
 }

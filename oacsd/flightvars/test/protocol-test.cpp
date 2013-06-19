@@ -31,27 +31,21 @@ using namespace oac::fv::proto;
 template <typename Serializer, typename Deserializer>
 struct protocol_test
 {
-   ptr<buffer_input_stream<fixed_buffer>> input;
-   ptr<buffer_output_stream<fixed_buffer>> output;
+   linear_buffer buffer;
 
-   inline protocol_test()
+   inline protocol_test() : buffer(1024)
    {
-      auto buff = make_ptr(new fixed_buffer(1024));
-      buffer::fill(*buff, 0xE1);
-      input = buffer::make_input_stream(buff);
-      output = buffer::make_output_stream(buff);
+      buffer::fill(buffer, 0xE1);
    }
 
    void serialize(const message& msg)
-   { proto::serialize<Serializer>(msg, *output); }
+   { proto::serialize<Serializer>(msg, buffer); }
 
    message deserialize()
-   { return proto::deserialize<Deserializer>(*input); }   
+   { return proto::deserialize<Deserializer>(buffer); }
 
    bool input_eof()
-   {
-      return 0xE1 == stream::read_as<std::uint8_t>(*input);
-   }
+   { return !buffer.available_for_read(); }
 };
 
 
@@ -65,15 +59,15 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSessionBegin)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x700, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x700, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            15, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            15, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "FlightVars Test", stream::read_as_string(*test.input, 15));
+            "FlightVars Test", stream::read_as_string(test.buffer, 15));
    BOOST_CHECK_EQUAL(
-            0x0100, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x0100, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK(test.input_eof());
 }
 
@@ -81,11 +75,11 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSessionBegin)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x700));
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(15));
-   stream::write_as_string(*test.output, "FlightVars Test");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0115));
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0d0a));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x700));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(15));
+   stream::write_as_string(test.buffer, "FlightVars Test");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0115));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
    message msg = test.deserialize();
    begin_session_message& bs_msg = boost::get<begin_session_message>(msg);
 
@@ -101,13 +95,13 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSessionEnd)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x701, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x701, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            23, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            23, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "Server is closing, bye!", stream::read_as_string(*test.input, 23));
+            "Server is closing, bye!", stream::read_as_string(test.buffer, 23));
    BOOST_CHECK_EQUAL(
-            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK(test.input_eof());
 }
 
@@ -115,10 +109,10 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSessionEnd)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x701));
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(23));
-   stream::write_as_string(*test.output, "Client is closing, bye!");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0d0a));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x701));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(23));
+   stream::write_as_string(test.buffer, "Client is closing, bye!");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
    message msg = test.deserialize();
    end_session_message& es_msg = boost::get<end_session_message>(msg);
 
@@ -134,17 +128,17 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSubscriptionRequest)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x702, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x702, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            13, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            13, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "fsuipc/offset", stream::read_as_string(*test.input, 13));
+            "fsuipc/offset", stream::read_as_string(test.buffer, 13));
    BOOST_CHECK_EQUAL(
-            6, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            6, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "0x4ca1", stream::read_as_string(*test.input, 6));
+            "0x4ca1", stream::read_as_string(test.buffer, 6));
    BOOST_CHECK_EQUAL(
-            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK(test.input_eof());
 }
 
@@ -152,12 +146,12 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionRequest)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x702));
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(13));
-   stream::write_as_string(*test.output,"fsuipc/offset");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(6));
-   stream::write_as_string(*test.output,"0x4ca1");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0d0a));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x702));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(13));
+   stream::write_as_string(test.buffer,"fsuipc/offset");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(6));
+   stream::write_as_string(test.buffer,"0x4ca1");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
    message msg = test.deserialize();
    subscription_request_message& sr_msg =
          boost::get<subscription_request_message>(msg);
@@ -178,23 +172,23 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSubscriptionReply)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x703, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x703, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            0, stream::read_as<std::uint8_t>(*test.input));
+            0, stream::read_as<std::uint8_t>(test.buffer));
    BOOST_CHECK_EQUAL(
-            13, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            13, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "fsuipc/offset", stream::read_as_string(*test.input, 13));
+            "fsuipc/offset", stream::read_as_string(test.buffer, 13));
    BOOST_CHECK_EQUAL(
-            6, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            6, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "0x4ca1", stream::read_as_string(*test.input, 6));
+            "0x4ca1", stream::read_as_string(test.buffer, 6));
    BOOST_CHECK_EQUAL(
-            24, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            24, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
-            "Successfully subscribed!", stream::read_as_string(*test.input, 24));
+            "Successfully subscribed!", stream::read_as_string(test.buffer, 24));
    BOOST_CHECK_EQUAL(
-            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(*test.input)));
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK(test.input_eof());
 }
 
@@ -202,15 +196,15 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionReply)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x703));
-   stream::write_as(*test.output, std::uint8_t(1));
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(13));
-   stream::write_as_string(*test.output,"fsuipc/offset");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(6));
-   stream::write_as_string(*test.output,"0x4ca1");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(17));
-   stream::write_as_string(*test.output,"No such variable!");
-   stream::write_as(*test.output, native_to_big<std::uint16_t>(0x0d0a));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x703));
+   stream::write_as(test.buffer, std::uint8_t(1));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(13));
+   stream::write_as_string(test.buffer,"fsuipc/offset");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(6));
+   stream::write_as_string(test.buffer,"0x4ca1");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(17));
+   stream::write_as_string(test.buffer,"No such variable!");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
    message msg = test.deserialize();
    subscription_reply_message& rep_msg =
          boost::get<subscription_reply_message>(msg);

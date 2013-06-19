@@ -30,56 +30,49 @@ BOOST_AUTO_TEST_SUITE(readerTest)
 
 BOOST_AUTO_TEST_CASE(ShouldReadLine)
 {
-   auto buff = make_ptr(new fixed_buffer(512));
-   auto os = buffer::make_output_stream(buff);
-   auto is = buffer::make_input_stream(buff);
+   linear_buffer buff(512);
    stream::write_as_string(
-            *os, "The quick brown fox jumps over the lazy dog\n");
+            buff, "The quick brown fox jumps over the lazy dog\n");
    BOOST_CHECK_EQUAL(
             "The quick brown fox jumps over the lazy dog",
-            stream::read_line(*is));
+            stream::read_line(buff));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadSeveralLines)
 {
-   auto buff = make_ptr(new fixed_buffer(512));
-   auto os = buffer::make_output_stream(buff);
-   auto is = buffer::make_input_stream(buff);
-   stream::write_as_string(*os, "The quick brown\n");
-   stream::write_as_string(*os, "fox jumps over\n");
-   stream::write_as_string(*os, "the lazy dog\n");
-   BOOST_CHECK_EQUAL("The quick brown", stream::read_line(*is));
-   BOOST_CHECK_EQUAL("fox jumps over", stream::read_line(*is));
-   BOOST_CHECK_EQUAL("the lazy dog", stream::read_line(*is));
+   linear_buffer buff(512);
+   stream::write_as_string(buff, "The quick brown\n");
+   stream::write_as_string(buff, "fox jumps over\n");
+   stream::write_as_string(buff, "the lazy dog\n");
+   BOOST_CHECK_EQUAL("The quick brown", stream::read_line(buff));
+   BOOST_CHECK_EQUAL("fox jumps over", stream::read_line(buff));
+   BOOST_CHECK_EQUAL("the lazy dog", stream::read_line(buff));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadEmptyLineOnEmptyBuffer)
 {
-   auto buff = make_ptr(new fixed_buffer(0));
-   auto is = buffer::make_input_stream(buff);
-   BOOST_CHECK_EQUAL("", stream::read_line(*is));
+   linear_buffer buff(0);
+   BOOST_CHECK_EQUAL("", stream::read_line(buff));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadPendingLineUntilEndOfFile)
 {
-   auto buff = make_ptr(new fixed_buffer(15));
-   auto os = buffer::make_output_stream(buff);
-   auto is = buffer::make_input_stream(buff);
-   stream::write_as_string(*os, "The quick brown");
-   BOOST_CHECK_EQUAL("The quick brown", stream::read_line(*is));
+   linear_buffer buff(15);
+   stream::write_as_string(buff, "The quick brown");
+   BOOST_CHECK_EQUAL("The quick brown", stream::read_line(buff));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldReadLineWithMultipleChunks)
 {
-   auto buff = make_ptr(new fixed_buffer(256));
-   auto os = buffer::make_output_stream(buff);
-   auto is = buffer::make_input_stream(buff);
-   stream::write_as_string(*os, "The quick brown fox jumps over the lazy dog, ");
-   stream::write_as_string(*os, "The quick brown fox jumps over the lazy dog\n");
+   linear_buffer buff(256);
+   stream::write_as_string(
+            buff, "The quick brown fox jumps over the lazy dog, ");
+   stream::write_as_string(
+            buff, "The quick brown fox jumps over the lazy dog\n");
    BOOST_CHECK_EQUAL(
             "The quick brown fox jumps over the lazy dog, "
             "The quick brown fox jumps over the lazy dog",
-            stream::read_line(*is));
+            stream::read_line(buff));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -37,7 +37,9 @@ namespace oac {
  * FSUIPC class. This class encapsulates the access to FSUIPC module. It 
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
-class local_fsuipc
+class local_fsuipc :
+      public shared_by_ptr<local_fsuipc>,
+      public linear_stream_buffer_base<local_fsuipc>
 {
 public:
 
@@ -74,7 +76,7 @@ public:
                 std::size_t length) const
    throw (buffer::out_of_bounds_error, buffer::read_error)
    {
-      fixed_buffer tmp(length);
+      linear_buffer tmp(length);
       tmp.copy(*this, offset, 0, length);
       tmp.read(dst, 0, length);
    }
@@ -85,7 +87,7 @@ public:
                           std::size_t length)
    throw (buffer::out_of_bounds_error, buffer::write_error)
    {
-      fixed_buffer tmp(length);
+      linear_buffer tmp(length);
       auto nbytes = tmp.write(src, 0, length);
       this->copy(tmp, 0, offset, length);
       return nbytes;

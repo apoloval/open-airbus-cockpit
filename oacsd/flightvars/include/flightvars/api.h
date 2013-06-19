@@ -117,11 +117,11 @@ public:
 private:
 
    variable_type _type;
-   ptr<fixed_buffer> _buffer;
+   ptr<linear_buffer> _buffer;
 
    inline variable_value(
          const variable_type& type,
-         const ptr<fixed_buffer>& buffer)
+         const ptr<linear_buffer>& buffer)
       : _type(type), _buffer(buffer) {}
 
    void checkType(

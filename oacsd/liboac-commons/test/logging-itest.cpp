@@ -26,11 +26,10 @@
 
 using namespace oac;
 
-std::pair<ptr<fixed_buffer>, ptr<abstract_logger>> init_logger()
+std::pair<ptr<linear_buffer>, ptr<abstract_logger>> init_logger()
 {
-   auto buff = std::make_shared<fixed_buffer>(1024);
-   auto log = make_logger(
-         log_level::INFO, buffer::make_output_stream(buff));
+   auto buff = linear_buffer::create(1024);
+   auto log = make_logger(log_level::INFO, buff);
    return std::make_pair(buff, log);
 }
 
@@ -45,7 +44,7 @@ BOOST_AUTO_TEST_CASE(ShouldWriteInlogger)
 {
    auto log = init_logger();
    log.second->log(log_level::INFO, "ABCD");
-   auto input = buffer::make_input_stream(log.first);
+   auto input = log.first;
    auto line = stream::read_line(*input);
    BOOST_CHECK(line.find("[INFO]") != std::string::npos);
    BOOST_CHECK(line.find("ABCD") != std::string::npos);
