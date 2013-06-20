@@ -232,7 +232,8 @@ inline void
 async_tcp_server::stop()
 {
    _io_service.stop();
-   if (_bg_server.joinable())
+   if (boost::this_thread::get_id() != _bg_server.get_id() &&
+       _bg_server.joinable())
       _bg_server.join();
 }
 

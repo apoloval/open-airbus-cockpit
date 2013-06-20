@@ -145,21 +145,13 @@ struct message_internals
 template <typename Serializer, typename OutputStream>
 inline void serialize_begin_session(
       const begin_session_message& msg, OutputStream& output)
-throw (protocol_error, stream::write_error)
+throw (stream::write_error, stream::eof_error)
 {
-   try
-   {
-      Serializer::write_msg_begin(
-               output, message_internals::MSG_BEGIN_SESSION);
-      Serializer::write_string_value(output, msg.pname);
-      Serializer::write_uint16_value(output, msg.proto_ver);
-      Serializer::write_msg_end(output);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while writing begin session message"));
-   }
+   Serializer::write_msg_begin(
+            output, message_internals::MSG_BEGIN_SESSION);
+   Serializer::write_string_value(output, msg.pname);
+   Serializer::write_uint16_value(output, msg.proto_ver);
+   Serializer::write_msg_end(output);
 }
 
 /**
@@ -168,20 +160,12 @@ throw (protocol_error, stream::write_error)
 template <typename Serializer, typename OutputStream>
 inline void serialize_end_session(
       const end_session_message& msg, OutputStream& output)
-throw (protocol_error, stream::write_error)
+throw (stream::write_error, stream::eof_error)
 {
-   try
-   {
-      Serializer::write_msg_begin(
-               output, message_internals::MSG_END_SESSION);
-      Serializer::write_string_value(output, msg.cause);
-      Serializer::write_msg_end(output);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while writing end session message"));
-   }
+   Serializer::write_msg_begin(
+            output, message_internals::MSG_END_SESSION);
+   Serializer::write_string_value(output, msg.cause);
+   Serializer::write_msg_end(output);
 }
 
 /**
@@ -189,21 +173,15 @@ throw (protocol_error, stream::write_error)
  */
 template <typename Serializer, typename OutputStream>
 inline void serialize_subscription_request(
-      const subscription_request_message& msg, OutputStream& output)
+      const subscription_request_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
 {
-   try
-   {
-      Serializer::write_msg_begin(
-            output, message_internals::MSG_SUBSCRIPTION_REQ);
-      Serializer::write_string_value(output, msg.var_grp);
-      Serializer::write_string_value(output, msg.var_name);
-      Serializer::write_msg_end(output);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while writing subscription request message"));
-   }
+   Serializer::write_msg_begin(
+         output, message_internals::MSG_SUBSCRIPTION_REQ);
+   Serializer::write_string_value(output, msg.var_grp);
+   Serializer::write_string_value(output, msg.var_name);
+   Serializer::write_msg_end(output);
 }
 
 /**
@@ -211,23 +189,17 @@ inline void serialize_subscription_request(
  */
 template <typename Serializer, typename OutputStream>
 inline void serialize_subscription_reply(
-      const subscription_reply_message& msg, OutputStream& output)
+      const subscription_reply_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
 {
-   try
-   {
-      Serializer::write_msg_begin(
-            output, message_internals::MSG_SUBSCRIPTION_REP);
-      Serializer::write_uint8_value(output, msg.st);
-      Serializer::write_string_value(output, msg.var_grp);
-      Serializer::write_string_value(output, msg.var_name);
-      Serializer::write_string_value(output, msg.cause);
-      Serializer::write_msg_end(output);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while writing subscription reply message"));
-   }
+   Serializer::write_msg_begin(
+         output, message_internals::MSG_SUBSCRIPTION_REP);
+   Serializer::write_uint8_value(output, msg.st);
+   Serializer::write_string_value(output, msg.var_grp);
+   Serializer::write_string_value(output, msg.var_name);
+   Serializer::write_string_value(output, msg.cause);
+   Serializer::write_msg_end(output);
 }
 
 /**
@@ -267,125 +239,85 @@ inline void serialize(const message& msg, OutputStream& output)
 template <typename Deserializer, typename InputStream>
 begin_session_message
 deserialize_begin_session_contents(InputStream& input)
-throw (protocol_error, stream::read_error)
+throw (stream::read_error, stream::eof_error)
 {
-   try
-   {
-      auto pname = Deserializer::read_string_value(input);
-      auto proto_ver = Deserializer::read_uint16_value(input);
-      return begin_session_message(pname, proto_ver);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while reading begin session message"));
-   }
+   auto pname = Deserializer::read_string_value(input);
+   auto proto_ver = Deserializer::read_uint16_value(input);
+   return begin_session_message(pname, proto_ver);
 }
 
 template <typename Deserializer, typename InputStream>
 end_session_message
 deserialize_end_session_contents(InputStream& input)
-throw (protocol_error, stream::read_error)
+throw (stream::read_error, stream::eof_error)
 {
-   try
-   {
-      auto cause = Deserializer::read_string_value(input);
-      return end_session_message(cause);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while reading begin session message"));
-   }
+   auto cause = Deserializer::read_string_value(input);
+   return end_session_message(cause);
 }
 
 template <typename Deserializer, typename InputStream>
 subscription_request_message
 deserialize_subscription_request_contents(InputStream& input)
-throw (protocol_error, stream::read_error)
+throw (stream::read_error, stream::eof_error)
 {
-   try
-   {
-      auto var_grp = Deserializer::read_string_value(input);
-      auto var_name = Deserializer::read_string_value(input);
-      return subscription_request_message(var_grp, var_name);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while reading subscription request message"));
-   }
+   auto var_grp = Deserializer::read_string_value(input);
+   auto var_name = Deserializer::read_string_value(input);
+   return subscription_request_message(var_grp, var_name);
 }
 
 template <typename Deserializer, typename InputStream>
 subscription_reply_message
 deserialize_subscription_reply_contents(InputStream& input)
-throw (protocol_error, stream::read_error)
+throw (stream::read_error, stream::eof_error)
 {
-   try
-   {
-      auto st = Deserializer::read_uint8_value(input);
-      auto grp = Deserializer::read_string_value(input);
-      auto name = Deserializer::read_string_value(input);
-      auto cause = Deserializer::read_string_value(input);
-      return subscription_reply_message(
-               subscription_reply_message::status(st), grp, name, cause);
-   } catch (stream::eof_error& e)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            nested_error_info(e) <<
-            message_info("eof while reading subscription reply message"));
-   }
+   auto st = Deserializer::read_uint8_value(input);
+   auto grp = Deserializer::read_string_value(input);
+   auto name = Deserializer::read_string_value(input);
+   auto cause = Deserializer::read_string_value(input);
+   return subscription_reply_message(
+            subscription_reply_message::status(st), grp, name, cause);
 }
 
 template <typename Deserializer, typename InputStream>
 message
 deserialize(InputStream& input)
-throw (protocol_error)
+throw (protocol_error, stream::eof_error)
 {
-   try
+   auto msg_begin = Deserializer::read_msg_begin(input);
+   switch (msg_begin)
    {
-      auto msg_begin = Deserializer::read_msg_begin(input);
-      switch (msg_begin)
+      case message_internals::MSG_BEGIN_SESSION:
       {
-         case message_internals::MSG_BEGIN_SESSION:
-         {
-            auto msg = deserialize_begin_session_contents<Deserializer>(input);
-            Deserializer::read_msg_end(input);
-            return msg;
-         }
-         case message_internals::MSG_END_SESSION:
-         {
-            auto msg = deserialize_end_session_contents<Deserializer>(input);
-            Deserializer::read_msg_end(input);
-            return msg;
-         }
-         case message_internals::MSG_SUBSCRIPTION_REQ:
-         {
-            auto msg = deserialize_subscription_request_contents<Deserializer>(
-                     input);
-            Deserializer::read_msg_end(input);
-            return msg;
-         }
-         case message_internals::MSG_SUBSCRIPTION_REP:
-         {
-            auto msg = deserialize_subscription_reply_contents<Deserializer>(
-                     input);
-            Deserializer::read_msg_end(input);
-            return msg;
-         }
-         default:
-            BOOST_THROW_EXCEPTION(protocol_error() <<
-                  message_info(str(
-                        boost::format("received an invalid value "
-                                      "0x%x for message type") %
-                        int(msg_begin))));
+         auto msg = deserialize_begin_session_contents<Deserializer>(input);
+         Deserializer::read_msg_end(input);
+         return msg;
       }
-   } catch (stream::eof_error)
-   {
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-            expected_input_info("a message type token") <<
-            actual_input_info("end of file"));
+      case message_internals::MSG_END_SESSION:
+      {
+         auto msg = deserialize_end_session_contents<Deserializer>(input);
+         Deserializer::read_msg_end(input);
+         return msg;
+      }
+      case message_internals::MSG_SUBSCRIPTION_REQ:
+      {
+         auto msg = deserialize_subscription_request_contents<Deserializer>(
+                  input);
+         Deserializer::read_msg_end(input);
+         return msg;
+      }
+      case message_internals::MSG_SUBSCRIPTION_REP:
+      {
+         auto msg = deserialize_subscription_reply_contents<Deserializer>(
+                  input);
+         Deserializer::read_msg_end(input);
+         return msg;
+      }
+      default:
+         BOOST_THROW_EXCEPTION(protocol_error() <<
+               message_info(str(
+                     boost::format("received an invalid value "
+                                   "0x%x for message type") %
+                     int(msg_begin))));
    }
 }
 

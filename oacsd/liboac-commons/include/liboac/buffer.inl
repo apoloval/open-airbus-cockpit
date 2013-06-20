@@ -252,10 +252,9 @@ linear_stream_buffer_base<Buffer>::asio_const_buffers(std::size_t nbytes)
 }
 
 template <typename Buffer>
-template <typename ReadHandler>
 void
 linear_stream_buffer_base<Buffer>::on_async_read(
-      ReadHandler handler,
+      buffer::async_io_handler handler,
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {
@@ -264,10 +263,9 @@ linear_stream_buffer_base<Buffer>::on_async_read(
 }
 
 template <typename Buffer>
-template <typename WriteHandler>
 void
 linear_stream_buffer_base<Buffer>::on_async_write(
-      WriteHandler handler,
+      buffer::async_io_handler handler,
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {
@@ -406,11 +404,11 @@ ring_stream_buffer_base<Buffer>::async_write_some_from(
       AsyncReadStream& stream,
       ReadHandler handler)
 {
-   async_io_handler on_read(
+   buffer::async_io_handler on_read(
          std::bind(
-               &ring_stream_buffer_base<Buffer>::on_async_read<ReadHandler>,
+               &ring_stream_buffer_base<Buffer>::on_async_read,
                this,
-               handler,
+               buffer::async_io_handler(handler),
                std::placeholders::_1,
                std::placeholders::_2));
    stream.async_read_some(
@@ -426,11 +424,11 @@ ring_stream_buffer_base<Buffer>::async_read_some_to(
       AsyncWriteStream& stream,
       WriteHandler handler)
 {
-   async_io_handler on_write(
+   buffer::async_io_handler on_write(
          std::bind(
-            &ring_stream_buffer_base<Buffer>::on_async_write<WriteHandler>,
+            &ring_stream_buffer_base<Buffer>::on_async_write,
             this,
-            handler,
+            buffer::async_io_handler(handler),
             std::placeholders::_1,
             std::placeholders::_2));
    stream.async_write_some(
@@ -532,10 +530,9 @@ ring_stream_buffer_base<Buffer>::asio_const_buffers(std::size_t nbytes)
 }
 
 template <typename Buffer>
-template <typename ReadHandler>
 void
 ring_stream_buffer_base<Buffer>::on_async_read(
-      ReadHandler handler,
+      buffer::async_io_handler handler,
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {
@@ -545,10 +542,9 @@ ring_stream_buffer_base<Buffer>::on_async_read(
 }
 
 template <typename Buffer>
-template <typename WriteHandler>
 void
 ring_stream_buffer_base<Buffer>::on_async_write(
-      WriteHandler handler,
+      buffer::async_io_handler handler,
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {

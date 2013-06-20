@@ -112,6 +112,10 @@ namespace oac {
 namespace buffer
 {
 
+   typedef std::function<void(
+         const boost::system::error_code&,
+         std::size_t)> async_io_handler;
+
    OAC_DECL_ERROR(out_of_bounds_error, invalid_input_error);
    OAC_DECL_ERROR(read_error, io_error);
    OAC_DECL_ERROR(write_error, io_error);
@@ -197,15 +201,13 @@ protected:
    std::list<boost::asio::const_buffer> asio_const_buffers(
          std::size_t nbytes);
 
-   template <typename ReadHandler>
    void on_async_read(
-         ReadHandler handler,
+         buffer::async_io_handler handler,
          const boost::system::error_code& ec,
          std::size_t nbytes);
 
-   template <typename WriteHandler>
    void on_async_write(
-         WriteHandler handler,
+         buffer::async_io_handler handler,
          const boost::system::error_code& ec,
          std::size_t nbytes);
 
@@ -258,10 +260,6 @@ protected:
 
 private:
 
-   typedef std::function<void(
-         const boost::system::error_code&,
-         std::size_t)> async_io_handler;
-
    bool is_broken() const;
 
    void inc_dist_from_mark(std::size_t amount);
@@ -276,15 +274,13 @@ private:
    std::list<boost::asio::const_buffer> asio_const_buffers(
          std::size_t nbytes);
 
-   template <typename ReadHandler>
    void on_async_read(
-         ReadHandler handler,
+         buffer::async_io_handler handler,
          const boost::system::error_code& ec,
          std::size_t nbytes);
 
-   template <typename WriteHandler>
    void on_async_write(
-         WriteHandler handler,
+         buffer::async_io_handler handler,
          const boost::system::error_code& ec,
          std::size_t nbytes);
 
