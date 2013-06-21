@@ -76,8 +76,8 @@ throw (unknown_variable_error)
    check_group(grp);
    offset offset(name);
    auto id = subscribe(offset, handler);
-   log(INFO, boost::format("@FSUIPC; Subscribed successfully with ID %s!") %
-       boost::uuids::to_string(id));
+   log(INFO,
+       boost::format("@FSUIPC; Subscribed successfully with ID %d!") % id);
    return id;
 }
 

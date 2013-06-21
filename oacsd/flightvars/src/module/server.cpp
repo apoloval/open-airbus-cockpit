@@ -206,19 +206,21 @@ flight_vars_server::handle_subscription_request(
                // TODO: write var update message to the client
             });
       session->subscriptions.push_back(subs_id);
+      return proto::subscription_reply_message(
+            proto::subscription_reply_message::STATUS_SUCCESS,
+            req.var_grp,
+            req.var_name,
+            subs_id,
+            "");
    } catch (flight_vars::unknown_variable_error&)
    {
       return proto::subscription_reply_message(
             proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
             req.var_grp,
             req.var_name,
+            0,
             "No such variable defined in FlightVars module; missing plugin?");
    }
-   return proto::subscription_reply_message(
-         proto::subscription_reply_message::STATUS_SUCCESS,
-         req.var_grp,
-         req.var_name,
-         "");
 }
 
 void

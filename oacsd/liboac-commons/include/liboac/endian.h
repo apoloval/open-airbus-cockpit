@@ -40,7 +40,7 @@ inline std::uint32_t endian_swap<std::uint32_t>(std::uint32_t v)
    return (v >> 24) |
           ((v << 8) & 0x00ff0000) |
           ((v >> 8) & 0x0000ff00) |
-          (v << 8);
+          (v << 24);
 }
 
 template <>
@@ -55,7 +55,7 @@ inline std::int32_t endian_swap<std::int32_t>(std::int32_t v)
    return (v >> 24) |
           ((v << 8) & 0x00ff0000) |
           ((v >> 8) & 0x0000ff00) |
-          (v << 8);
+          (v << 24);
 }
 
 template <typename T>

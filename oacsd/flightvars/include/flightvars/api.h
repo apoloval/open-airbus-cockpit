@@ -158,7 +158,7 @@ public:
    /**
     * An opaque object which identifies a variable subscription
     */
-   typedef boost::uuids::uuid subscription_id;
+   typedef std::uint32_t subscription_id;
 
    /**
     * A callback representing a subscription to a variable.

@@ -27,13 +27,14 @@
 
 #include "server.h"
 #include "core.h"
+#include "subscription.h"
 
 using namespace oac;
 using namespace oac::fv;
 
-struct SetUpLog
+struct setup_log
 {
-   inline SetUpLog()
+   inline setup_log()
    {
       set_main_logger(make_logger(log_level::INFO, file_output_stream::STDERR));
    }
@@ -50,7 +51,7 @@ struct fake_flight_vars : public flight_vars
    {
       if (grp != VAR_GROUP)
          BOOST_THROW_EXCEPTION(unknown_variable_group_error());
-      return boost::uuids::random_generator()();
+      return make_subscription_id();
    }
 
    virtual void unsubscribe(const subscription_id& id)
@@ -89,7 +90,7 @@ proto::subscription_reply_message request_subscription(
    return boost::get<proto::subscription_reply_message>(rep);
 }
 
-BOOST_FIXTURE_TEST_SUITE(FlightVarsServerTest, SetUpLog);
+BOOST_FIXTURE_TEST_SUITE(FlightVarsServerTest, setup_log);
 
 BOOST_AUTO_TEST_CASE(ServerShouldHandshake)
 {   
@@ -148,5 +149,33 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
       terminate(cli);
    }
 }
+
+BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
+{
+   ptr<flight_vars_server> server = new flight_vars_server(
+            new fake_flight_vars());
+   server->run_in_background();
+
+   {
+      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
+      auto bs_msg = handshake(cli);
+      for (int i = 0; i < 8192; i++)
+      {
+         auto var_name = str(boost::format("foobar-%d") % i);
+         auto rep = request_subscription(
+                  cli,
+                  variable_group("testing"),
+                  variable_name(var_name));
+         BOOST_CHECK_EQUAL(
+                  proto::subscription_reply_message::STATUS_SUCCESS,
+                  rep.st);
+         BOOST_CHECK_EQUAL("testing", rep.var_grp.get_tag());
+         BOOST_CHECK_EQUAL(var_name, rep.var_name.get_tag());
+      }
+      terminate(cli);
+   }
+}
+
+
 
 BOOST_AUTO_TEST_SUITE_END()

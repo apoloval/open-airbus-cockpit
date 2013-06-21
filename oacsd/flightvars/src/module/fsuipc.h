@@ -30,6 +30,7 @@
 #include <liboac/simconn.h>
 
 #include "api.h"
+#include "subscription.h"
 
 namespace oac { namespace fv {
 
@@ -80,7 +81,7 @@ private:
       {}
 
       inline subscription(const var_update_handler& handler)
-         : id(boost::uuids::random_generator()()), handler(handler)
+         : id(make_subscription_id()), handler(handler)
       {}
    };
 

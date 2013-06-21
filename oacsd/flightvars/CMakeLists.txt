@@ -5,6 +5,7 @@ project(FlightVars)
 set(libflightvars_HEADERS
    include/flightvars/api.h
    include/flightvars/protocol.h
+   include/flightvars/protocol.inl
 )
 
 set(libflightvars_SOURCES
@@ -23,6 +24,7 @@ set(flightvars_SOURCES
    src/module/main.cpp
    src/module/protocol.cpp
    src/module/server.cpp
+   src/module/subscription.cpp
 )
 
 include_directories(

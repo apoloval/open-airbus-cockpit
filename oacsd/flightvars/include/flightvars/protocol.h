@@ -57,11 +57,9 @@ struct begin_session_message
    peer_name pname;
    protocol_version proto_ver;
 
-   inline begin_session_message(
+   begin_session_message(
          const peer_name& pname,
-         protocol_version proto_ver = CURRENT_PROTOCOL_VERSION)
-      : pname(pname), proto_ver(proto_ver)
-   {}
+         protocol_version proto_ver = CURRENT_PROTOCOL_VERSION);
 };
 
 /**
@@ -71,7 +69,7 @@ struct begin_session_message
 struct end_session_message {
    std::string cause;
 
-   inline end_session_message(const std::string& cause) : cause(cause) {}
+   end_session_message(const std::string& cause);
 };
 
 /**
@@ -83,11 +81,9 @@ struct subscription_request_message
    variable_group var_grp;
    variable_name var_name;
 
-   inline subscription_request_message(
+   subscription_request_message(
          const variable_group& grp,
-         const variable_name& name)
-      : var_grp(grp), var_name(name)
-   {}
+         const variable_name& name);
 };
 
 /**
@@ -99,8 +95,10 @@ struct subscription_reply_message
    {
       /** The request was accepted and processed successfully */
       STATUS_SUCCESS,
+
       /** The requested variable is unknown to the server */
       STATUS_NO_SUCH_VAR,
+
       /** A server error ocurred which prevented the request to be success */
       STATUS_SERVER_ERROR
    };
@@ -108,15 +106,34 @@ struct subscription_reply_message
    status st;
    variable_group var_grp;
    variable_name var_name;
+   flight_vars::subscription_id subscription_id;
    std::string cause;
 
-   inline subscription_reply_message(
+   subscription_reply_message(
          status st,
          const variable_group& grp,
          const variable_name& name,
-         const std::string& cause)
-      : st(st), var_grp(grp), var_name(name), cause(cause)
-   {}
+         const flight_vars::subscription_id& subs_id,
+         const std::string& cause);
+};
+
+/**
+ * This message is sent by either server or client to report a variable update.
+ * The server sends this message when the the client had subscribed to that
+ * variable before and the value of that variable has been changed. The client
+ * sends this message to the server when it wants the variable to be updated.
+ * There is no response to this message to keep a good performance and reduce
+ * the peer complexity. In case of client sending a var update message for an
+ * unexisting variable, the server will simply ignore it.
+ */
+struct var_update_message
+{
+   flight_vars::subscription_id subscription_id;
+   variable_value var_value;
+
+   var_update_message(
+         const flight_vars::subscription_id& subs_id,
+         const variable_value& value);
 };
 
 /**
@@ -126,16 +143,28 @@ typedef boost::variant<
       begin_session_message,
       end_session_message,
       subscription_request_message,
-      subscription_reply_message
+      subscription_reply_message,
+      var_update_message
 > message;
 
 struct message_internals
 {
-   enum message_type {
+   enum var_type
+   {
+      VAR_TYPE_BOOLEAN = 0x00,
+      VAR_TYPE_BYTE = 0x01,
+      VAR_TYPE_WORD = 0x02,
+      VAR_TYPE_DWORD = 0x03,
+      VAR_TYPE_FLOAT = 0x04,
+   };
+
+   enum message_type
+   {
       MSG_BEGIN_SESSION = 0x700,
       MSG_END_SESSION = 0x701,
       MSG_SUBSCRIPTION_REQ = 0x702,
-      MSG_SUBSCRIPTION_REP = 0x703
+      MSG_SUBSCRIPTION_REP = 0x703,
+      MSG_VAR_UPDATE = 0x704,
    };
 };
 
@@ -143,269 +172,125 @@ struct message_internals
  * Serialize a begin session message into given output stream.
  */
 template <typename Serializer, typename OutputStream>
-inline void serialize_begin_session(
-      const begin_session_message& msg, OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-            output, message_internals::MSG_BEGIN_SESSION);
-   Serializer::write_string_value(output, msg.pname);
-   Serializer::write_uint16_value(output, msg.proto_ver);
-   Serializer::write_msg_end(output);
-}
+void serialize_begin_session(
+      const begin_session_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error);
 
 /**
  * Serialize an end session message into given output stream.
  */
 template <typename Serializer, typename OutputStream>
-inline void serialize_end_session(
-      const end_session_message& msg, OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-            output, message_internals::MSG_END_SESSION);
-   Serializer::write_string_value(output, msg.cause);
-   Serializer::write_msg_end(output);
-}
+void
+serialize_end_session(
+      const end_session_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error);
 
 /**
  * Serialize a subscription request message into given output stream.
  */
 template <typename Serializer, typename OutputStream>
-inline void serialize_subscription_request(
+void serialize_subscription_request(
       const subscription_request_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-         output, message_internals::MSG_SUBSCRIPTION_REQ);
-   Serializer::write_string_value(output, msg.var_grp);
-   Serializer::write_string_value(output, msg.var_name);
-   Serializer::write_msg_end(output);
-}
+throw (stream::write_error, stream::eof_error);
 
 /**
  * Serialize a subscription reply message into given output stream.
  */
 template <typename Serializer, typename OutputStream>
-inline void serialize_subscription_reply(
+void serialize_subscription_reply(
       const subscription_reply_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-         output, message_internals::MSG_SUBSCRIPTION_REP);
-   Serializer::write_uint8_value(output, msg.st);
-   Serializer::write_string_value(output, msg.var_grp);
-   Serializer::write_string_value(output, msg.var_name);
-   Serializer::write_string_value(output, msg.cause);
-   Serializer::write_msg_end(output);
-}
+throw (stream::write_error, stream::eof_error);
+
+/**
+ * Serialize a var update message into given output stream.
+ */
+template <typename Serializer, typename OutputStream>
+void serialize_var_update(
+      const var_update_message& msg,
+      OutputStream& output);
 
 /**
  * Serialize given message into given output stream.
  */
 template <typename Serializer, typename OutputStream>
-inline void serialize(const message& msg, OutputStream& output)
-{
-   struct visitor : public boost::static_visitor<void>
-   {
-      OutputStream& output;
-
-      inline visitor(OutputStream& os) : output(os) {}
-
-      void operator()(const begin_session_message& msg) const
-      { return serialize_begin_session<Serializer, OutputStream>(msg, output); }
-
-      void operator()(const end_session_message& msg) const
-      { return serialize_end_session<Serializer, OutputStream>(msg, output); }
-
-      void operator()(const subscription_request_message& msg) const
-      {
-         return serialize_subscription_request<Serializer, OutputStream>(
-               msg, output);
-      }
-
-      void operator()(const subscription_reply_message& msg) const
-      {
-         return serialize_subscription_reply<Serializer, OutputStream>(
-               msg, output);
-      }
-
-   } visit(output);
-   boost::apply_visitor(visit, msg);
-}
+void serialize(
+      const message& msg,
+      OutputStream& output);
 
 template <typename Deserializer, typename InputStream>
-begin_session_message
-deserialize_begin_session_contents(InputStream& input)
-throw (stream::read_error, stream::eof_error)
-{
-   auto pname = Deserializer::read_string_value(input);
-   auto proto_ver = Deserializer::read_uint16_value(input);
-   return begin_session_message(pname, proto_ver);
-}
-
-template <typename Deserializer, typename InputStream>
-end_session_message
-deserialize_end_session_contents(InputStream& input)
-throw (stream::read_error, stream::eof_error)
-{
-   auto cause = Deserializer::read_string_value(input);
-   return end_session_message(cause);
-}
-
-template <typename Deserializer, typename InputStream>
-subscription_request_message
-deserialize_subscription_request_contents(InputStream& input)
-throw (stream::read_error, stream::eof_error)
-{
-   auto var_grp = Deserializer::read_string_value(input);
-   auto var_name = Deserializer::read_string_value(input);
-   return subscription_request_message(var_grp, var_name);
-}
-
-template <typename Deserializer, typename InputStream>
-subscription_reply_message
-deserialize_subscription_reply_contents(InputStream& input)
-throw (stream::read_error, stream::eof_error)
-{
-   auto st = Deserializer::read_uint8_value(input);
-   auto grp = Deserializer::read_string_value(input);
-   auto name = Deserializer::read_string_value(input);
-   auto cause = Deserializer::read_string_value(input);
-   return subscription_reply_message(
-            subscription_reply_message::status(st), grp, name, cause);
-}
-
-template <typename Deserializer, typename InputStream>
-message
-deserialize(InputStream& input)
-throw (protocol_error, stream::eof_error)
-{
-   auto msg_begin = Deserializer::read_msg_begin(input);
-   switch (msg_begin)
-   {
-      case message_internals::MSG_BEGIN_SESSION:
-      {
-         auto msg = deserialize_begin_session_contents<Deserializer>(input);
-         Deserializer::read_msg_end(input);
-         return msg;
-      }
-      case message_internals::MSG_END_SESSION:
-      {
-         auto msg = deserialize_end_session_contents<Deserializer>(input);
-         Deserializer::read_msg_end(input);
-         return msg;
-      }
-      case message_internals::MSG_SUBSCRIPTION_REQ:
-      {
-         auto msg = deserialize_subscription_request_contents<Deserializer>(
-                  input);
-         Deserializer::read_msg_end(input);
-         return msg;
-      }
-      case message_internals::MSG_SUBSCRIPTION_REP:
-      {
-         auto msg = deserialize_subscription_reply_contents<Deserializer>(
-                  input);
-         Deserializer::read_msg_end(input);
-         return msg;
-      }
-      default:
-         BOOST_THROW_EXCEPTION(protocol_error() <<
-               message_info(str(
-                     boost::format("received an invalid value "
-                                   "0x%x for message type") %
-                     int(msg_begin))));
-   }
-}
+message deserialize(
+      InputStream& input)
+throw (protocol_error, stream::eof_error);
 
 struct binary_message_serializer
 {
 
    template <typename OutputStream>
-   inline static void write_msg_begin(
+   static void write_msg_begin(
          OutputStream& output,
-         message_internals::message_type msg_type)
-   {
-      stream::write_as(output, native_to_big<std::uint16_t>(msg_type));
-   }
+         message_internals::message_type msg_type);
 
    template <typename OutputStream>
-   inline static void write_msg_end(OutputStream& output)
-   {
-      stream::write_as(output, native_to_big<std::uint16_t>(0x0d0a));
-   }
+   static void write_msg_end(OutputStream& output);
 
    template <typename OutputStream>
-   inline static void write_string_value(
-         OutputStream& output, const std::string& value)
-   {
-      stream::write_as(output, native_to_big<std::uint16_t>(value.length()));
-      stream::write_as_string(output, value);
-   }
+   static void write_string_value(
+         OutputStream& output, const std::string& value);
 
    template <typename OutputStream>
-   inline static void write_uint8_value(
-         OutputStream& output, std::uint8_t value)
-   {
-      stream::write_as(output, value);
-   }
+   static void write_uint8_value(
+         OutputStream& output, std::uint8_t value);
 
    template <typename OutputStream>
-   inline static void write_uint16_value(
-         OutputStream& output, std::uint16_t value)
-   {
-      stream::write_as(output, native_to_big<std::uint16_t>(value));
-   }
+   static void write_uint16_value(
+         OutputStream& output, std::uint16_t value);
+
+   template <typename OutputStream>
+   static void write_uint32_value(
+         OutputStream& output, std::uint32_t value);
+
+   template <typename OutputStream>
+   static void write_float_value(
+         OutputStream& output, float value);
 };
 
 struct binary_message_deserializer
 {
    template <typename InputStream>
-   inline static message_internals::message_type read_msg_begin(
-         InputStream& input)
-   throw (protocol_error)
-   {
-      return message_internals::message_type(
-               big_to_native(stream::read_as<std::uint16_t>(input)));
-   }
+   static message_internals::message_type read_msg_begin(
+         InputStream& input) throw (protocol_error);
 
    template <typename InputStream>
-   inline static void read_msg_end(InputStream& input)
-   throw (protocol_error)
-   {
-      auto eol = native_to_big(stream::read_as<uint16_t>(input));
-      if (eol != 0x0d0a)
-         BOOST_THROW_EXCEPTION(protocol_error() <<
-            expected_input_info("a message termination mark 0x0D0A") <<
-            actual_input_info(str(boost::format("bytes 0x%x") % eol)));
-   }
+   static void read_msg_end(
+         InputStream& input) throw (protocol_error);
 
    template <typename InputStream>
-   inline static std::string read_string_value(InputStream& input)
-   throw (protocol_error)
-   {
-      auto str_len = big_to_native(stream::read_as<std::uint16_t>(input));
-      return stream::read_as_string(input, str_len);
-   }
+   static std::string read_string_value(
+         InputStream& input) throw (protocol_error);
 
    template <typename InputStream>
-   inline static std::uint16_t read_uint16_value(InputStream& input)
-   throw (protocol_error)
-   {
-      return big_to_native(stream::read_as<std::uint16_t>(input));
-   }
+   static std::uint8_t read_uint8_value(
+         InputStream& input) throw (protocol_error);
 
    template <typename InputStream>
-   inline static std::uint8_t read_uint8_value(InputStream& input)
-   throw (protocol_error)
-   {
-      return stream::read_as<std::uint8_t>(input);
-   }
+   static std::uint16_t read_uint16_value(
+         InputStream& input) throw (protocol_error);
+
+   template <typename InputStream>
+   static std::uint32_t read_uint32_value(
+         InputStream& input) throw (protocol_error);
+
+   template <typename InputStream>
+   static float read_float_value(
+         InputStream& input) throw (protocol_error);
 };
 
 }}} // namespace oac::fv::proto
+
+#include "protocol.inl"
 
 #endif
