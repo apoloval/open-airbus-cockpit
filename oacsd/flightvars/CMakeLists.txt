@@ -59,6 +59,7 @@ test_link_libraries(
 
 add_unit_test(api-test)
 add_unit_test(protocol-test)
+add_unit_test(subscription-test)
 
 add_integration_test(fsuipc-itest)
 add_integration_test(server-itest)
