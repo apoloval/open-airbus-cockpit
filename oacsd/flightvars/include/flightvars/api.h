@@ -23,7 +23,7 @@
 
 #include <Windows.h>
 
-#include <boost/uuid/uuid.hpp>
+#include <boost/algorithm/string.hpp>
 #include <liboac/buffer.h>
 #include <liboac/exception.h>
 
@@ -34,48 +34,86 @@ namespace oac { namespace fv {
  * tags are case insensitive. The tag passed as argument to the constructor
  * is transformed into lower case.
  */
+template <typename TaggedElement>
 class tagged_element
 {
 public:
 
-   typedef std::string tag;
+   typedef std::string tag_type;
 
-   tagged_element(const tag& tag);
+   tagged_element(const tag_type& tag)
+      : _tag(tag)
+   {
+      boost::algorithm::to_lower(_tag);
+   }
 
-   inline operator const tag& () const { return get_tag(); }
+   operator const tag_type& () const { return get_tag(); }
 
-   inline bool operator == (const tagged_element& elem) const
+   bool operator == (const TaggedElement& elem) const
    { return _tag == elem._tag; }
 
-   inline bool operator != (const tagged_element& elem) const
+   bool operator != (const TaggedElement& elem) const
    { return _tag != elem._tag; }
 
-   inline bool operator < (const tagged_element& elem) const
+   bool operator < (const TaggedElement& elem) const
    { return _tag < elem._tag; }
 
-   inline bool operator > (const tagged_element& elem) const
+   bool operator > (const TaggedElement& elem) const
    { return _tag > elem._tag; }
 
-   inline const tag& get_tag() const { return _tag; }
+   const tag_type& get_tag() const { return _tag; }
 
 private:
 
-   tag _tag;
+   tag_type _tag;
 };
 
-class variable_group : public tagged_element
+class variable_group : public tagged_element<variable_group>
 {
 public:
 
-   inline variable_group(const tag& tag) : tagged_element(tag) {}
+   variable_group(const tag_type& tag) : tagged_element(tag) {}
 };
 
-class variable_name : public tagged_element
+class variable_name : public tagged_element<variable_name>
 {
 public:
 
-   inline variable_name(const tag& tag) : tagged_element(tag) {}
+   variable_name(const tag_type& tag) : tagged_element(tag) {}
 };
+
+/**
+ * The variable ID, which comprises the var group and the var name.
+ */
+typedef std::pair<variable_group, variable_name> variable_id;
+
+/**
+ * Make a variable ID from its group and name.
+ */
+inline variable_id make_var_id(
+      const variable_group& grp,
+      const variable_name& name)
+{ return std::make_pair(grp, name); }
+
+/**
+ * Make a variable ID from its group and name.
+ */
+inline variable_id make_var_id(
+      const std::string& grp,
+      const std::string& name)
+{ return std::make_pair(variable_group(grp), variable_name(name)); }
+
+/**
+ * Obtain the variable group from the variable ID.
+ */
+inline variable_group get_var_group(const variable_id& id)
+{ return id.first; }
+
+/**
+ * Obtain the variable name from the variable ID.
+ */
+inline variable_name get_var_name(const variable_id& id)
+{ return id.second; }
 
 enum variable_type
 {

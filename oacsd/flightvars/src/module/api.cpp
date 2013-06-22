@@ -16,8 +16,6 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/algorithm/string.hpp>
-
 #include "api.h"
 
 namespace oac { namespace fv {
@@ -33,11 +31,6 @@ ptr<linear_buffer> make_buffer_of(const T& value)
 }
 
 } // anonymous namespace
-
-tagged_element::tagged_element(const tag& tag) : _tag(tag)
-{
-   boost::algorithm::to_lower(_tag);
-}
 
 variable_value
 variable_value::from_bool(bool value)

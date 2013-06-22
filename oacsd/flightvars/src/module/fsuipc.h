@@ -59,7 +59,7 @@ public:
 
 private:
 
-   struct offset : tagged_element
+   struct offset : tagged_element<offset>
    {
       variable_name var_name;
       std::uint16_t address;

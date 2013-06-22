@@ -24,7 +24,7 @@
 using namespace oac;
 using namespace oac::fv;
 
-BOOST_AUTO_TEST_SUITE(variable_groupTest)
+BOOST_AUTO_TEST_SUITE(VariableGroupTest)
 
 BOOST_AUTO_TEST_CASE(ShouldCreateGroupAsLowerCase)
 {
@@ -32,11 +32,18 @@ BOOST_AUTO_TEST_CASE(ShouldCreateGroupAsLowerCase)
    BOOST_CHECK_EQUAL("my_group/foobar", grp.get_tag());
 }
 
+BOOST_AUTO_TEST_CASE(ShouldCopyGroup)
+{
+   variable_group grp("my_group/foobar");
+   auto grp_copy = grp;
+   BOOST_CHECK_EQUAL("my_group/foobar", grp_copy.get_tag());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_AUTO_TEST_SUITE(variable_nameTest)
+BOOST_AUTO_TEST_SUITE(VariableNameTest)
 
 BOOST_AUTO_TEST_CASE(ShouldCreateNameAsLowerCase)
 {
@@ -44,11 +51,48 @@ BOOST_AUTO_TEST_CASE(ShouldCreateNameAsLowerCase)
    BOOST_CHECK_EQUAL("my_var/millibars", name.get_tag());
 }
 
+BOOST_AUTO_TEST_CASE(ShouldCopyName)
+{
+   variable_name name("my_var/millibars");
+   auto name_copy = name;
+   BOOST_CHECK_EQUAL("my_var/millibars", name_copy.get_tag());
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_AUTO_TEST_SUITE(variable_valueTest)
+BOOST_AUTO_TEST_SUITE(VariableIdTest)
+
+BOOST_AUTO_TEST_CASE(ShouldMakeVarIdFromObjects)
+{
+   variable_group grp("my_group/foobar");
+   variable_name name("my_var/millibars");
+   auto id = make_var_id(grp, name);
+   BOOST_CHECK_EQUAL(
+            "my_group/foobar",
+            get_var_group(id).get_tag());
+   BOOST_CHECK_EQUAL(
+            "my_var/millibars",
+            get_var_name(id).get_tag());
+}
+
+BOOST_AUTO_TEST_CASE(ShouldMakeVarIdFromStrings)
+{
+   auto id = make_var_id("my_group/foobar", "my_var/millibars");
+   BOOST_CHECK_EQUAL(
+            "my_group/foobar",
+            get_var_group(id).get_tag());
+   BOOST_CHECK_EQUAL(
+            "my_var/millibars",
+            get_var_name(id).get_tag());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(VariableValueTest)
 
 BOOST_AUTO_TEST_CASE(ShouldMatchCreationAndExtractionType)
 {

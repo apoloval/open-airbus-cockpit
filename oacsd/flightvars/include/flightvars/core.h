@@ -70,7 +70,7 @@ public:
 
 private:
 
-   typedef std::map<variable_group::tag, ptr<flight_vars>> group_master_dict;
+   typedef std::map<variable_group::tag_type, ptr<flight_vars>> group_master_dict;
    typedef std::map<subscription_id, ptr<flight_vars>> subscription_master_dict;
 
    group_master_dict _group_masters;
