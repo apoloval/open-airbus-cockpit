@@ -53,8 +53,7 @@ public:
    OAC_DECL_ERROR(master_already_registered, invalid_input_error);
 
    virtual subscription_id subscribe(
-         const variable_group& grp,
-         const variable_name& name,
+         const variable_id& var,
          const var_update_handler& handler) throw (unknown_variable_error);
 
    virtual void unsubscribe(const subscription_id& id);

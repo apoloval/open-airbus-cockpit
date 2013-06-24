@@ -30,7 +30,6 @@ BOOST_AUTO_TEST_CASE(ShouldRegister)
 {
    ptr<flight_vars> fsuipc = new fsuipc_flight_vars();
    fsuipc->subscribe(
-            variable_group("fsuipc/offset"),
-            variable_name("0x200:2"),
-            [](const variable_group&, const variable_name&, const variable_value&) {});
+            make_var_id("fsuipc/offset", "0x200:2"),
+            [](const variable_id&, const variable_value&) {});
 }

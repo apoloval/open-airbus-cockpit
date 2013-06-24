@@ -196,11 +196,9 @@ flight_vars_server::handle_subscription_request(
    try
    {
       auto subs_id = _delegate->subscribe(
-            req.var_grp,
-            req.var_name,
+            make_var_id(req.var_grp, req.var_name),
             [this, session](
-               const variable_group& grp,
-               const variable_name& name,
+               const variable_id& var,
                const variable_value& value)
             {
                // TODO: write var update message to the client

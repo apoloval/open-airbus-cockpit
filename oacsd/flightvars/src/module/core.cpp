@@ -31,16 +31,16 @@ flight_vars_core::instance()
 
 flight_vars::subscription_id
 flight_vars_core::subscribe(
-      const variable_group& grp,
-      const variable_name& name,
+      const variable_id& var,
       const var_update_handler& handler)
 throw (unknown_variable_error)
 {
+   auto grp = get_var_group(var);
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
       BOOST_THROW_EXCEPTION(unknown_variable_group_error() <<
             variable_group_info(grp));
-   auto id = entry->second->subscribe(grp, name, handler);
+   auto id = entry->second->subscribe(var, handler);
    _subscriptions[id] = entry->second;
    return id;
 }

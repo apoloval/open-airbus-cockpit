@@ -115,6 +115,17 @@ inline variable_group get_var_group(const variable_id& id)
 inline variable_name get_var_name(const variable_id& id)
 { return id.second; }
 
+/**
+ * Convert variable ID into string.
+ */
+inline std::string var_to_string(const variable_id& id)
+{
+   return str(
+            boost::format("%s->%s") %
+            get_var_group(id).get_tag() %
+            get_var_name(id).get_tag());
+}
+
 enum variable_type
 {
    VAR_BOOLEAN,
@@ -201,8 +212,7 @@ public:
    /**
     * A callback representing a subscription to a variable.
     */
-   typedef std::function<void(const variable_group& grp,
-                              const variable_name& name,
+   typedef std::function<void(const variable_id& id,
                               const variable_value& value)> var_update_handler;
 
    virtual ~flight_vars() {}
@@ -216,8 +226,7 @@ public:
     * @return the subscription ID, which may be used for unsubscription
     */
    virtual subscription_id subscribe(
-         const variable_group& grp,
-         const variable_name& name,
+         const variable_id& var,
          const var_update_handler& handler) throw (unknown_variable_error) = 0;
 
    /**

@@ -51,8 +51,7 @@ public:
    fsuipc_flight_vars();
 
    virtual subscription_id subscribe(
-         const variable_group& grp,
-         const variable_name& name,
+         const variable_id& var,
          const var_update_handler& handler) throw (unknown_variable_error);
 
    virtual void unsubscribe(const subscription_id& id);
@@ -61,11 +60,11 @@ private:
 
    struct offset : tagged_element<offset>
    {
-      variable_name var_name;
+      variable_id var;
       std::uint16_t address;
       std::size_t length;
 
-      offset(const variable_name& var_name) throw (unknown_variable_name_error);
+      offset(const variable_id& v) throw (unknown_variable_name_error);
       virtual bool is_updated(double_buffer<>& buf);
       virtual variable_value read(double_buffer<>& buf);
    };

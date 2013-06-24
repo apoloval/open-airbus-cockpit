@@ -45,11 +45,10 @@ struct fake_flight_vars : public flight_vars
    static variable_group VAR_GROUP;
 
    virtual subscription_id subscribe(
-         const variable_group& grp,
-         const variable_name& name,
+         const variable_id& var,
          const var_update_handler& handler) throw (unknown_variable_error)
    {
-      if (grp != VAR_GROUP)
+      if (get_var_group(var) != VAR_GROUP)
          BOOST_THROW_EXCEPTION(unknown_variable_group_error());
       return make_subscription_id();
    }

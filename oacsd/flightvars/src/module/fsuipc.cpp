@@ -66,15 +66,17 @@ fsuipc_flight_vars::fsuipc_flight_vars()
 
 flight_vars::subscription_id
 fsuipc_flight_vars::subscribe(
-      const variable_group& grp,
-      const variable_name& name,
+      const variable_id& var,
       const var_update_handler& handler)
 throw (unknown_variable_error)
 {
+   auto grp = get_var_group(var);
+   auto name = get_var_name(var);
+
    log(INFO, boost::format("@FSUIPC; Subscribing on %s -> %s...")
        % grp.get_tag() % name.get_tag());
    check_group(grp);
-   offset offset(name);
+   offset offset(var);
    auto id = subscribe(offset, handler);
    log(INFO,
        boost::format("@FSUIPC; Subscribed successfully with ID %d!") % id);
@@ -130,7 +132,7 @@ fsuipc_flight_vars::notify_changes()
       if (offset.is_updated(*_buffer))
          for (auto subs : entry.second)
          {
-            subs.handler(VAR_GROUP, offset.var_name, offset.read(*_buffer));
+            subs.handler(offset.var, offset.read(*_buffer));
          }
    }
    _buffer->swap();
@@ -142,11 +144,12 @@ fsuipc_flight_vars::sync_offset(const offset& offset)
    _buffer->copy(*_fsuipc, offset.address, offset.address, offset.length);
 }
 
-fsuipc_flight_vars::offset::offset(const variable_name& var_name)
+fsuipc_flight_vars::offset::offset(const variable_id& v)
 throw (unknown_variable_name_error)
-   : tagged_element(var_name),
-     var_name(var_name)
+   : tagged_element(var_to_string(v)),
+     var(v)
 {
+   auto var_name = get_var_name(var);
    try
    {
       std::vector<std::string> parts;
