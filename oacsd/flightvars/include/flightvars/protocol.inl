@@ -28,6 +28,125 @@ namespace oac { namespace fv { namespace proto {
 
 namespace {
 
+std::uint16_t msg_type_to_code(message_type msg_type)
+{
+   return std::uint16_t(msg_type) + 0x700;
+};
+
+message_type code_to_msg_type(std::uint16_t code)
+{
+   return message_type(code - 0x700);
+}
+
+std::uint8_t var_type_to_code(variable_type var_type)
+{
+   return std::uint8_t(var_type);
+}
+
+variable_type code_to_var_type(std::uint8_t code)
+{
+   return variable_type(code);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_begin_session(
+      const begin_session_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
+{
+   Serializer::write_msg_begin(output, MSG_BEGIN_SESSION);
+   Serializer::write_string_value(output, msg.pname);
+   Serializer::write_uint16_value(output, msg.proto_ver);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_end_session(
+      const end_session_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
+{
+   Serializer::write_msg_begin(output, MSG_END_SESSION);
+   Serializer::write_string_value(output, msg.cause);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_subscription_request(
+      const subscription_request_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
+{
+   Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REQ);
+   Serializer::write_string_value(output, msg.var_grp);
+   Serializer::write_string_value(output, msg.var_name);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_subscription_reply(
+      const subscription_reply_message& msg,
+      OutputStream& output)
+throw (stream::write_error, stream::eof_error)
+{
+   Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REP);
+   Serializer::write_uint8_value(output, msg.st);
+   Serializer::write_string_value(output, msg.var_grp);
+   Serializer::write_string_value(output, msg.var_name);
+   Serializer::write_uint32_value(output, msg.subs_id);
+   Serializer::write_string_value(output, msg.cause);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_var_update(
+      const var_update_message& msg,
+      OutputStream& output)
+{
+   auto var_type = msg.var_value.get_type();
+   Serializer::write_msg_begin(output, MSG_VAR_UPDATE);
+   Serializer::write_uint32_value(output, msg.subs_id);
+   switch (var_type)
+   {
+      case VAR_BOOLEAN:
+         Serializer::write_uint8_value(
+                  output, var_type_to_code(VAR_BOOLEAN));
+         Serializer::write_uint8_value(
+                  output, msg.var_value.as_bool() ? 1 : 0);
+         break;
+      case VAR_BYTE:
+         Serializer::write_uint8_value(
+                  output, var_type_to_code(VAR_BYTE));
+         Serializer::write_uint8_value(
+                  output, msg.var_value.as_byte());
+         break;
+      case VAR_WORD:
+         Serializer::write_uint8_value(
+                  output, var_type_to_code(VAR_WORD));
+         Serializer::write_uint16_value(
+                  output, msg.var_value.as_word());
+         break;
+      case VAR_DWORD:
+         Serializer::write_uint8_value(
+                  output, var_type_to_code(VAR_DWORD));
+         Serializer::write_uint32_value(
+                  output, msg.var_value.as_dword());
+         break;
+      case VAR_FLOAT:
+         Serializer::write_uint8_value(
+                  output, var_type_to_code(VAR_FLOAT));
+         Serializer::write_float_value(
+                  output, msg.var_value.as_float());
+         break;
+   }
+   Serializer::write_msg_end(output);
+}
+
 template <typename Deserializer, typename InputStream>
 begin_session_message
 deserialize_begin_session_contents(
@@ -168,111 +287,6 @@ var_update_message::var_update_message(
 
 template <typename Serializer, typename OutputStream>
 void
-serialize_begin_session(
-      const begin_session_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-            output, message_internals::MSG_BEGIN_SESSION);
-   Serializer::write_string_value(output, msg.pname);
-   Serializer::write_uint16_value(output, msg.proto_ver);
-   Serializer::write_msg_end(output);
-}
-
-template <typename Serializer, typename OutputStream>
-void
-serialize_end_session(
-      const end_session_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-            output, message_internals::MSG_END_SESSION);
-   Serializer::write_string_value(output, msg.cause);
-   Serializer::write_msg_end(output);
-}
-
-template <typename Serializer, typename OutputStream>
-void
-serialize_subscription_request(
-      const subscription_request_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-         output, message_internals::MSG_SUBSCRIPTION_REQ);
-   Serializer::write_string_value(output, msg.var_grp);
-   Serializer::write_string_value(output, msg.var_name);
-   Serializer::write_msg_end(output);
-}
-
-template <typename Serializer, typename OutputStream>
-void
-serialize_subscription_reply(
-      const subscription_reply_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error)
-{
-   Serializer::write_msg_begin(
-         output, message_internals::MSG_SUBSCRIPTION_REP);
-   Serializer::write_uint8_value(output, msg.st);
-   Serializer::write_string_value(output, msg.var_grp);
-   Serializer::write_string_value(output, msg.var_name);
-   Serializer::write_uint32_value(output, msg.subs_id);
-   Serializer::write_string_value(output, msg.cause);
-   Serializer::write_msg_end(output);
-}
-
-template <typename Serializer, typename OutputStream>
-void
-serialize_var_update(
-      const var_update_message& msg,
-      OutputStream& output)
-{
-   auto var_type = msg.var_value.get_type();
-   Serializer::write_msg_begin(
-            output, message_internals::MSG_VAR_UPDATE);
-   Serializer::write_uint32_value(output, msg.subs_id);
-   switch (var_type)
-   {
-      case VAR_BOOLEAN:
-         Serializer::write_uint8_value(
-                  output, message_internals::VAR_TYPE_BOOLEAN);
-         Serializer::write_uint8_value(
-                  output, msg.var_value.as_bool() ? 1 : 0);
-         break;
-      case VAR_BYTE:
-         Serializer::write_uint8_value(
-                  output, message_internals::VAR_TYPE_BYTE);
-         Serializer::write_uint8_value(
-                  output, msg.var_value.as_byte());
-         break;
-      case VAR_WORD:
-         Serializer::write_uint8_value(
-                  output, message_internals::VAR_TYPE_WORD);
-         Serializer::write_uint16_value(
-                  output, msg.var_value.as_word());
-         break;
-      case VAR_DWORD:
-         Serializer::write_uint8_value(
-                  output, message_internals::VAR_TYPE_DWORD);
-         Serializer::write_uint32_value(
-                  output, msg.var_value.as_dword());
-         break;
-      case VAR_FLOAT:
-         Serializer::write_uint8_value(
-                  output, message_internals::VAR_TYPE_FLOAT);
-         Serializer::write_float_value(
-                  output, msg.var_value.as_float());
-         break;
-   }
-   Serializer::write_msg_end(output);
-}
-
-
-template <typename Serializer, typename OutputStream>
-void
 serialize(
       const message& msg,
       OutputStream& output)
@@ -323,33 +337,33 @@ throw (protocol_error, stream::eof_error)
    auto msg_begin = Deserializer::read_msg_begin(input);
    switch (msg_begin)
    {
-      case message_internals::MSG_BEGIN_SESSION:
+      case MSG_BEGIN_SESSION:
       {
          auto msg = deserialize_begin_session_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case message_internals::MSG_END_SESSION:
+      case MSG_END_SESSION:
       {
          auto msg = deserialize_end_session_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case message_internals::MSG_SUBSCRIPTION_REQ:
+      case MSG_SUBSCRIPTION_REQ:
       {
          auto msg = deserialize_subscription_request_contents<Deserializer>(
                   input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case message_internals::MSG_SUBSCRIPTION_REP:
+      case MSG_SUBSCRIPTION_REP:
       {
          auto msg = deserialize_subscription_reply_contents<Deserializer>(
                   input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case message_internals::MSG_VAR_UPDATE:
+      case MSG_VAR_UPDATE:
       {
          auto msg = deserialize_var_update_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);
@@ -368,9 +382,11 @@ template <typename OutputStream>
 void
 binary_message_serializer::write_msg_begin(
       OutputStream& output,
-      message_internals::message_type msg_type)
+      message_type msg_type)
 {
-   stream::write_as(output, native_to_big<std::uint16_t>(msg_type));
+   stream::write_as(
+            output,
+            native_to_big<std::uint16_t>(msg_type_to_code(msg_type)));
 }
 
 template <typename OutputStream>
@@ -437,12 +453,12 @@ binary_message_serializer::write_float_value(
 
 
 template <typename InputStream>
-message_internals::message_type
+message_type
 binary_message_deserializer::read_msg_begin(
       InputStream& input)
 throw (protocol_error)
 {
-   return message_internals::message_type(
+   return code_to_msg_type(
             big_to_native(stream::read_as<std::uint16_t>(input)));
 }
 

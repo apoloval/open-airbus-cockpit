@@ -41,11 +41,33 @@ OAC_DECL_ERROR(protocol_error, invalid_input_error);
 OAC_DECL_ERROR_INFO(expected_input_info, std::string);
 OAC_DECL_ERROR_INFO(actual_input_info, std::string);
 
+/**
+ * A 16-bits number indicating the version of the protocol.
+ */
 typedef std::uint16_t protocol_version;
 
+/**
+ * The name of a peer that communicates using the protocol.
+ */
 typedef std::string peer_name;
 
+/**
+ * The current protocol version implemented by this codebase.
+ */
 extern const protocol_version CURRENT_PROTOCOL_VERSION;
+
+/**
+ * An enumeration for the different types or messages that comprise the
+ * protocol.
+ */
+enum message_type
+{
+   MSG_BEGIN_SESSION,
+   MSG_END_SESSION,
+   MSG_SUBSCRIPTION_REQ,
+   MSG_SUBSCRIPTION_REP,
+   MSG_VAR_UPDATE,
+};
 
 /**
  * This message is sent by the client when initiates the session and the
@@ -147,72 +169,6 @@ typedef boost::variant<
       var_update_message
 > message;
 
-struct message_internals
-{
-   enum var_type
-   {
-      VAR_TYPE_BOOLEAN = 0x00,
-      VAR_TYPE_BYTE = 0x01,
-      VAR_TYPE_WORD = 0x02,
-      VAR_TYPE_DWORD = 0x03,
-      VAR_TYPE_FLOAT = 0x04,
-   };
-
-   enum message_type
-   {
-      MSG_BEGIN_SESSION = 0x700,
-      MSG_END_SESSION = 0x701,
-      MSG_SUBSCRIPTION_REQ = 0x702,
-      MSG_SUBSCRIPTION_REP = 0x703,
-      MSG_VAR_UPDATE = 0x704,
-   };
-};
-
-/**
- * Serialize a begin session message into given output stream.
- */
-template <typename Serializer, typename OutputStream>
-void serialize_begin_session(
-      const begin_session_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error);
-
-/**
- * Serialize an end session message into given output stream.
- */
-template <typename Serializer, typename OutputStream>
-void
-serialize_end_session(
-      const end_session_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error);
-
-/**
- * Serialize a subscription request message into given output stream.
- */
-template <typename Serializer, typename OutputStream>
-void serialize_subscription_request(
-      const subscription_request_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error);
-
-/**
- * Serialize a subscription reply message into given output stream.
- */
-template <typename Serializer, typename OutputStream>
-void serialize_subscription_reply(
-      const subscription_reply_message& msg,
-      OutputStream& output)
-throw (stream::write_error, stream::eof_error);
-
-/**
- * Serialize a var update message into given output stream.
- */
-template <typename Serializer, typename OutputStream>
-void serialize_var_update(
-      const var_update_message& msg,
-      OutputStream& output);
-
 /**
  * Serialize given message into given output stream.
  */
@@ -232,7 +188,7 @@ struct binary_message_serializer
    template <typename OutputStream>
    static void write_msg_begin(
          OutputStream& output,
-         message_internals::message_type msg_type);
+         message_type msg_type);
 
    template <typename OutputStream>
    static void write_msg_end(OutputStream& output);
@@ -261,7 +217,7 @@ struct binary_message_serializer
 struct binary_message_deserializer
 {
    template <typename InputStream>
-   static message_internals::message_type read_msg_begin(
+   static message_type read_msg_begin(
          InputStream& input) throw (protocol_error);
 
    template <typename InputStream>
