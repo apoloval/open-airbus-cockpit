@@ -149,20 +149,20 @@ subscription_reply_message::subscription_reply_message(
       status st,
       const variable_group& grp,
       const variable_name& name,
-      const flight_vars::subscription_id& subs_id,
+      const subscription_id& subs,
       const std::string& cause)
    : st(st),
      var_grp(grp),
      var_name(name),
-     subscription_id(subs_id),
+     subs_id(subs),
      cause(cause)
 {}
 
 inline
 var_update_message::var_update_message(
-      const flight_vars::subscription_id& subs_id,
+      const subscription_id& subs,
       const variable_value& value)
-   : subscription_id(subs_id),
+   : subs_id(subs),
      var_value(value)
 {}
 
@@ -219,7 +219,7 @@ throw (stream::write_error, stream::eof_error)
    Serializer::write_uint8_value(output, msg.st);
    Serializer::write_string_value(output, msg.var_grp);
    Serializer::write_string_value(output, msg.var_name);
-   Serializer::write_uint32_value(output, msg.subscription_id);
+   Serializer::write_uint32_value(output, msg.subs_id);
    Serializer::write_string_value(output, msg.cause);
    Serializer::write_msg_end(output);
 }
@@ -233,7 +233,7 @@ serialize_var_update(
    auto var_type = msg.var_value.get_type();
    Serializer::write_msg_begin(
             output, message_internals::MSG_VAR_UPDATE);
-   Serializer::write_uint32_value(output, msg.subscription_id);
+   Serializer::write_uint32_value(output, msg.subs_id);
    switch (var_type)
    {
       case VAR_BOOLEAN:

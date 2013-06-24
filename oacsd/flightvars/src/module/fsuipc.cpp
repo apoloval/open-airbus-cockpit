@@ -64,7 +64,7 @@ fsuipc_flight_vars::fsuipc_flight_vars()
    log(INFO, "@FSUIPC; 6HZ event successfully registered!");
 }
 
-flight_vars::subscription_id
+subscription_id
 fsuipc_flight_vars::subscribe(
       const variable_id& var,
       const var_update_handler& handler)
@@ -84,7 +84,7 @@ throw (unknown_variable_error)
 }
 
 void
-fsuipc_flight_vars::unsubscribe(const flight_vars::subscription_id& id)
+fsuipc_flight_vars::unsubscribe(const subscription_id& id)
 {
    for (auto& entry : _subscribers)
    {
@@ -106,7 +106,7 @@ throw (unknown_variable_group_error)
             variable_group_info(grp));
 }
 
-flight_vars::subscription_id
+subscription_id
 fsuipc_flight_vars::subscribe(
       const offset& offset, const var_update_handler& handler)
 {

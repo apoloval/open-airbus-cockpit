@@ -29,7 +29,7 @@ flight_vars_core::instance()
    return core;
 }
 
-flight_vars::subscription_id
+subscription_id
 flight_vars_core::subscribe(
       const variable_id& var,
       const var_update_handler& handler)
@@ -46,7 +46,7 @@ throw (unknown_variable_error)
 }
 
 void
-flight_vars_core::unsubscribe(const flight_vars::subscription_id& id)
+flight_vars_core::unsubscribe(const subscription_id& id)
 {
    auto entry = _subscriptions.find(id);
    if (entry != _subscriptions.end())

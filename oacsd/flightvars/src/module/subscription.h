@@ -25,7 +25,7 @@
 
 namespace oac { namespace fv {
 
-flight_vars::subscription_id make_subscription_id();
+subscription_id make_subscription_id();
 
 class subscription_mapper
 {
@@ -53,7 +53,7 @@ public:
 
    void register_subscription(
          const variable_id& var_id,
-         const flight_vars::subscription_id& subs_id)
+         const subscription_id& subs_id)
    throw (duplicated_variable_error, duplicated_subscription_error);
 
    /**
@@ -61,14 +61,14 @@ public:
     * @throw unknown_subscription_error when given subscription ID is unknown
     */
    variable_id get_var_id(
-         const flight_vars::subscription_id& subs_id)
+         const subscription_id& subs_id)
    throw (unknown_subscription_error);
 
    /**
     * Obtain the subscription ID for given variable ID.
     * @throw unknown_variable_error when given variable ID is unknown
     */
-   flight_vars::subscription_id get_subscription_id(
+   subscription_id get_subscription_id(
          const variable_id& var_id)
    throw (unknown_variable_error);
 
@@ -85,12 +85,12 @@ public:
     * @throw unknown_subscription_error when given subscription ID is unknown
     */
    void unregister(
-         const flight_vars::subscription_id& subs_id)
+         const subscription_id& subs_id)
    throw (unknown_subscription_error);
 
 private:
 
-   typedef boost::bimap<variable_id, flight_vars::subscription_id> map_type;
+   typedef boost::bimap<variable_id, subscription_id> map_type;
 
    map_type _map;
 };

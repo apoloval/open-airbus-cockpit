@@ -106,14 +106,14 @@ struct subscription_reply_message
    status st;
    variable_group var_grp;
    variable_name var_name;
-   flight_vars::subscription_id subscription_id;
+   subscription_id subs_id;
    std::string cause;
 
    subscription_reply_message(
          status st,
          const variable_group& grp,
          const variable_name& name,
-         const flight_vars::subscription_id& subs_id,
+         const subscription_id& subs,
          const std::string& cause);
 };
 
@@ -128,11 +128,11 @@ struct subscription_reply_message
  */
 struct var_update_message
 {
-   flight_vars::subscription_id subscription_id;
+   subscription_id subs_id;
    variable_value var_value;
 
    var_update_message(
-         const flight_vars::subscription_id& subs_id,
+         const subscription_id& subs,
          const variable_value& value);
 };
 

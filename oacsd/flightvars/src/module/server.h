@@ -58,7 +58,7 @@ private:
    struct session : shared_by_ptr<session>
    {
       std::shared_ptr<flight_vars_server> server;
-      std::list<flight_vars::subscription_id> subscriptions;
+      std::list<subscription_id> subscriptions;
       ring_buffer::ptr_type input_buffer;
       ring_buffer::ptr_type output_buffer;
       async_tcp_connection::ptr_type conn;

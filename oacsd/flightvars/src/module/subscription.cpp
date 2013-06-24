@@ -24,11 +24,11 @@ namespace oac { namespace fv {
 
 namespace {
 
-flight_vars::subscription_id next_id = 1;
+subscription_id next_id = 1;
 
 } // anonymous namespace
 
-flight_vars::subscription_id
+subscription_id
 make_subscription_id()
 {
    return next_id++;
@@ -37,7 +37,7 @@ make_subscription_id()
 void
 subscription_mapper::register_subscription(
       const variable_id& var_id,
-      const flight_vars::subscription_id& subs_id)
+      const subscription_id& subs_id)
 throw (duplicated_variable_error, duplicated_subscription_error)
 {
    if (_map.left.find(var_id) != _map.left.end())
@@ -49,7 +49,7 @@ throw (duplicated_variable_error, duplicated_subscription_error)
 
 variable_id
 subscription_mapper::get_var_id(
-      const flight_vars::subscription_id& subs_id)
+      const subscription_id& subs_id)
 throw (unknown_subscription_error)
 {
    auto entry = _map.right.find(subs_id);
@@ -58,7 +58,7 @@ throw (unknown_subscription_error)
    return entry->second;
 }
 
-flight_vars::subscription_id
+subscription_id
 subscription_mapper::get_subscription_id(
       const variable_id& var_id)
 throw (unknown_variable_error)
@@ -80,7 +80,7 @@ throw (unknown_variable_error)
 
 void
 subscription_mapper::unregister(
-      const flight_vars::subscription_id& subs_id)
+      const subscription_id& subs_id)
 throw (unknown_subscription_error)
 {
    if (_map.right.erase(subs_id) == 0)

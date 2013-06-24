@@ -178,6 +178,12 @@ private:
 };
 
 /**
+ * An opaque object which identifies a variable subscription. The internal
+ * representation of this type is intended to be opaque to the API consumer.
+ */
+typedef std::uint32_t subscription_id;
+
+/**
  * Flight vars API interface.
  */
 class flight_vars
@@ -204,10 +210,6 @@ public:
    OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
    OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
-   /**
-    * An opaque object which identifies a variable subscription
-    */
-   typedef std::uint32_t subscription_id;
 
    /**
     * A callback representing a subscription to a variable.
