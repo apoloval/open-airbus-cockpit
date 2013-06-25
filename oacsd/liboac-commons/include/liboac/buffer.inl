@@ -158,14 +158,13 @@ linear_stream_buffer_base<Buffer>::async_write_some_from(
       AsyncReadStream& stream,
       ReadHandler handler)
 {
-   std::function<void(
-            const boost::system::error_code&,
-            std::size_t)> on_read(std::bind(
-                  &linear_stream_buffer::on_async_read<ReadHandler>,
-                  this,
-                  handler,
-                  std::placeholders::_1,
-                  std::placeholders::_2));
+   buffer::async_io_handler on_read(
+            std::bind(
+               &linear_stream_buffer_base<Buffer>::on_async_read,
+               this,
+               buffer::async_io_handler(handler),
+               std::placeholders::_1,
+               std::placeholders::_2));
    stream.async_read_some(asio_mutable_buffers(), on_read);
 }
 
@@ -177,15 +176,14 @@ linear_stream_buffer_base<Buffer>::async_read_some_to(
       AsyncWriteStream& stream,
       WriteHandler handler)
 {
-   std::function<void(
-            const boost::system::error_code&,
-            std::size_t)> on_write(std::bind(
-                  &linear_stream_buffer::on_async_write<WriteHandler>,
-                  this,
-                  handler,
-                  std::placeholders::_1,
-                  std::placeholders::_2));
-   stream.async_write_some(asio_mutable_buffers(), on_read);
+   buffer::async_io_handler on_write(
+            std::bind(
+               &linear_stream_buffer_base<Buffer>::on_async_write,
+               this,
+               buffer::async_io_handler(handler),
+               std::placeholders::_1,
+               std::placeholders::_2));
+   stream.async_write_some(asio_const_buffers(), on_write);
 }
 
 template <typename Buffer>
