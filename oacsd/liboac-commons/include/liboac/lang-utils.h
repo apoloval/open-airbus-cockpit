@@ -57,7 +57,7 @@ public:
 
    virtual ~shared_by_ptr() {}
 
-   static ptr_type create() { return new T(); }
+   static ptr_type create() { return ptr_type(new T()); }
 
    template <typename T1>
    static ptr_type create(T1&& v1)
