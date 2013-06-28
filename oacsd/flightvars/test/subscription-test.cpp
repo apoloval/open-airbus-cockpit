@@ -16,6 +16,8 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <set>
+
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
@@ -95,6 +97,36 @@ BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionBySubscriptionId)
    BOOST_CHECK_THROW(
             mapper.get_subscription_id(var_id),
             subscription_mapper::unknown_variable_error);
+}
+
+BOOST_AUTO_TEST_CASE(ShouldExecuteActionForEachSubscription)
+{
+   subscription_mapper mapper;
+   variable_id var_id[3] =
+   {
+      make_var_id("fsuipc/offset", "0x4ca1"),
+      make_var_id("fsuipc/offset", "0x4ca2"),
+      make_var_id("fsuipc/offset", "0x4ca3"),
+   };
+   subscription_id subs_id[3] =
+   {
+      make_subscription_id(),
+      make_subscription_id(),
+      make_subscription_id(),
+   };
+   std::set<subscription_id> subs_traversed;
+
+   mapper.register_subscription(var_id[0], subs_id[0]);
+   mapper.register_subscription(var_id[1], subs_id[1]);
+   mapper.register_subscription(var_id[2], subs_id[2]);
+
+   mapper.for_each_subscription([&subs_traversed](const subscription_id& subs)
+   {
+      subs_traversed.insert(subs);
+   });
+   BOOST_CHECK(subs_traversed.find(subs_id[0]) != subs_traversed.end());
+   BOOST_CHECK(subs_traversed.find(subs_id[1]) != subs_traversed.end());
+   BOOST_CHECK(subs_traversed.find(subs_id[2]) != subs_traversed.end());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

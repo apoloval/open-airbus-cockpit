@@ -35,6 +35,12 @@ make_subscription_id()
 }
 
 void
+subscription_mapper::clear()
+{
+   _map.clear();
+}
+
+void
 subscription_mapper::register_subscription(
       const variable_id& var_id,
       const subscription_id& subs_id)
@@ -45,6 +51,16 @@ throw (duplicated_variable_error, duplicated_subscription_error)
    if (_map.right.find(subs_id) != _map.right.end())
       boost::throw_exception(duplicated_subscription_error());
    _map.insert(map_type::value_type(var_id, subs_id));
+}
+
+void
+subscription_mapper::for_each_subscription(
+      const std::function<void(const subscription_id&)>& action)
+{
+   for (auto& entry : _map.right)
+   {
+      action(entry.first);
+   }
 }
 
 variable_id

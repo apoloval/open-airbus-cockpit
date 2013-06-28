@@ -36,13 +36,13 @@ unmarshall(StreamBuffer& buff)
    return result;
 }
 
-}
+} // anonymous namespace
 
 const int flight_vars_server::DEFAULT_PORT(8642);
 const proto::peer_name flight_vars_server::PEER_NAME("FlightVars Server");
 
 flight_vars_server::flight_vars_server(
-      const ptr<flight_vars>& delegate, int port)
+      const std::shared_ptr<flight_vars>& delegate, int port)
    : _delegate(delegate),
      _tcp_server(
         port,
@@ -57,10 +57,34 @@ flight_vars_server::flight_vars_server(
       _delegate = flight_vars_core::instance();
 }
 
+flight_vars_server::~flight_vars_server()
+{
+   log(log_level::INFO, "@server; stopping service");
+   _tcp_server.stop();
+
+   /*
+    * This invocation to reset() is pretty important. For any reason I cannot
+    * understand, the destructor of _delegate member is not invoked in MSVC11,
+    * preventing the delegate object to be destroyed. I tried almost anything
+    * to find out the cause of this unexpected behavior without success. The
+    * most effective workaround I've found is to reset the shared pointer
+    * explicitely.
+    */
+   _delegate.reset();
+}
+
 flight_vars_server::session::~session()
 {
-   for (auto& subs : subscriptions)
-      this->server->_delegate->unsubscribe(subs);
+   unsubscribe_all();
+}
+
+void
+flight_vars_server::session::unsubscribe_all()
+{
+   subscriptions.for_each_subscription([this](const subscription_id& subs)
+   {
+      server->_delegate->unsubscribe(subs);
+   });
    subscriptions.clear();
 }
 
@@ -112,7 +136,7 @@ flight_vars_server::on_read_begin_session(
                   (bs_msg->proto_ver & 0x00ff));
          auto rep = begin_session_message(PEER_NAME);
          write_message(
-                  session,
+                  session->conn,
                   rep,
                   std::bind(
                      &flight_vars_server::read_request,
@@ -137,14 +161,24 @@ void
 flight_vars_server::read_request(
       const session::ptr_type& session)
 {
-   session->conn->read(
-            *session->input_buffer,
-            std::bind(
-               &flight_vars_server::on_read_request,
-               shared_from_this(),
-               session,
-               std::placeholders::_1,
-               std::placeholders::_2));
+   try
+   {
+      session->conn->read(
+               *session->input_buffer,
+               std::bind(
+                  &flight_vars_server::on_read_request,
+                  shared_from_this(),
+                  session,
+                  std::placeholders::_1,
+                  std::placeholders::_2));
+   }
+   catch (...)
+   {
+      log(log_level::FAIL,
+          boost::format(
+             "@server; unexpected exception thrown while "
+             "waiting for a request"));
+   }
 }
 
 void
@@ -160,15 +194,20 @@ flight_vars_server::on_read_request(
       auto msg = unmarshall(*session->input_buffer);
       if (auto es_msg = boost::get<proto::end_session_message>(&msg))
       {
+         session->unsubscribe_all();
          log(log_level::INFO,
              boost::format("@server; Session closed by peer (%s)") %
              es_msg->cause);
          return;
       } else if (auto s_req = boost::get<subscription_request_message>(&msg))
       {
+         log(log_level::INFO,
+             boost::format("@server; processing subscription request "
+                           "for variable %s") %
+             var_to_string(make_var_id(s_req->var_grp, s_req->var_name)));
          auto rep = handle_subscription_request(session, *s_req);
          write_message(
-                  session,
+                  session->conn,
                   rep,
                   std::bind(
                      &flight_vars_server::read_request,
@@ -186,6 +225,13 @@ flight_vars_server::on_read_request(
       session->input_buffer->reset();
       read_request(session);
    }
+   catch (...)
+   {
+      log(log_level::FAIL,
+          boost::format(
+             "@server; unexpected exception thrown while "
+             "waiting for a request"));
+   }
 }
 
 proto::subscription_reply_message
@@ -195,15 +241,17 @@ flight_vars_server::handle_subscription_request(
 {
    try
    {
+      auto var_id = make_var_id(req.var_grp, req.var_name);
       auto subs_id = _delegate->subscribe(
-            make_var_id(req.var_grp, req.var_name),
-            [this, session](
-               const variable_id& var,
-               const variable_value& value)
-            {
-               // TODO: write var update message to the client
-            });
-      session->subscriptions.push_back(subs_id);
+               var_id,
+               std::bind(
+                  &flight_vars_server::send_var_update,
+                  shared_from_this(),
+                  session,
+                  std::placeholders::_1,
+                  std::placeholders::_2));
+      log(log_level::INFO, boost::format("@server; subscription for %s registered by delegate") % var_to_string(var_id));
+      session->subscriptions.register_subscription(var_id, subs_id);
       return proto::subscription_reply_message(
             proto::subscription_reply_message::STATUS_SUCCESS,
             req.var_grp,
@@ -222,20 +270,41 @@ flight_vars_server::handle_subscription_request(
 }
 
 void
-flight_vars_server::write_message(
+flight_vars_server::send_var_update(
       const session::ptr_type& session,
+      const variable_id& var_id,
+      const variable_value& var_value)
+{
+   try
+   {
+      auto subs_id = session->subscriptions.get_subscription_id(var_id);
+      proto::var_update_message msg(subs_id, var_value);
+      write_message(session->conn, msg, [](){});
+   }
+   catch (subscription_mapper::unknown_variable_error&)
+   {
+      log(log_level::WARN,
+          boost::format(
+             "@server; Internal state error: a var update was notified for "
+             "variable %s, but there is no subscription ID associated with "
+             "it") % var_to_string(var_id));
+   }
+}
+
+void
+flight_vars_server::write_message(
+      const async_tcp_connection::ptr_type& conn,
       const proto::message& msg,
       const after_write_handler& after_write)
 {
-   proto::serialize<proto::binary_message_serializer>(
-            msg,
-            *session->output_buffer);
-   session->conn->write(
-            *session->output_buffer,
+   auto buff = linear_buffer::create(1024);
+   proto::serialize<proto::binary_message_serializer>(msg, *buff);
+   conn->write(
+            *buff,
             std::bind(
                &flight_vars_server::on_write_message,
                shared_from_this(),
-               session,
+               buff,
                after_write,
                std::placeholders::_1,
                std::placeholders::_2));
@@ -243,7 +312,7 @@ flight_vars_server::write_message(
 
 void
 flight_vars_server::on_write_message(
-      const session::ptr_type& session,
+      const linear_buffer::ptr_type& buffer,
       const after_write_handler& after_write,
       const boost::system::error_code& ec,
       std::size_t bytes_transferred)

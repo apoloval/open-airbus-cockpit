@@ -27,6 +27,7 @@
 
 #include "server.h"
 #include "core.h"
+#include "fake.h"
 #include "subscription.h"
 
 using namespace oac;
@@ -39,26 +40,6 @@ struct setup_log
       set_main_logger(make_logger(log_level::INFO, file_output_stream::STDERR));
    }
 };
-
-struct fake_flight_vars : public flight_vars
-{
-   static variable_group VAR_GROUP;
-
-   virtual subscription_id subscribe(
-         const variable_id& var,
-         const var_update_handler& handler) throw (unknown_variable_error)
-   {
-      if (get_var_group(var) != VAR_GROUP)
-         BOOST_THROW_EXCEPTION(unknown_variable_group_error());
-      return make_subscription_id();
-   }
-
-   virtual void unsubscribe(const subscription_id& id)
-   {
-   }
-};
-
-variable_group fake_flight_vars::VAR_GROUP("testing");
 
 proto::begin_session_message handshake(tcp_client& cli)
 {
@@ -74,26 +55,56 @@ void terminate(tcp_client& cli)
 {
    auto msg = proto::end_session_message("Client disconnected, bye!");
    proto::serialize<proto::binary_message_serializer>(
-            msg, *cli.output());
+            msg, *cli.output());   
 }
 
-proto::subscription_reply_message request_subscription(
+void request_subscription(
       tcp_client& cli,
       const variable_group& var_grp,
       const variable_name& var_name)
 {
    auto req = proto::subscription_request_message(var_grp, var_name);
    proto::serialize<proto::binary_message_serializer>(req, *cli.output());
-   auto rep = proto::deserialize<proto::binary_message_deserializer>(
-            *cli.input());
+}
+
+proto::message
+read_message(
+      tcp_client& cli)
+{
+   return proto::deserialize<proto::binary_message_deserializer>(*cli.input());
+}
+
+proto::subscription_reply_message
+as_subscription_reply(
+      proto::message& rep)
+{
    return boost::get<proto::subscription_reply_message>(rep);
+}
+
+proto::var_update_message
+as_var_update(
+      proto::message& rep)
+{
+   return boost::get<proto::var_update_message>(rep);
+}
+
+proto::subscription_reply_message
+read_subscription_reply(
+      tcp_client& cli)
+{
+   while (true)
+   {
+      auto msg = read_message(cli);
+      if (auto rep = boost::get<proto::subscription_reply_message>(&msg))
+         return *rep;
+   }
 }
 
 BOOST_FIXTURE_TEST_SUITE(FlightVarsServerTest, setup_log);
 
 BOOST_AUTO_TEST_CASE(ServerShouldHandshake)
 {   
-   ptr<flight_vars_server> server = new flight_vars_server();
+   auto server = flight_vars_server::create();
    server->run_in_background();
 
    {
@@ -107,17 +118,18 @@ BOOST_AUTO_TEST_CASE(ServerShouldHandshake)
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToSubscriptionRequest)
 {
-   ptr<flight_vars_server> server = new flight_vars_server(
-            new fake_flight_vars());
+   auto server = flight_vars_server::create(
+            std::make_shared<fake_flight_vars>());
    server->run_in_background();
 
    {
       tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
       auto bs_msg = handshake(cli);
-      auto rep = request_subscription(
+      request_subscription(
                cli,
                variable_group("testing"),
                variable_name("foobar"));
+      auto rep = read_subscription_reply(cli);
       BOOST_CHECK_EQUAL(
                proto::subscription_reply_message::STATUS_SUCCESS,
                rep.st);
@@ -129,17 +141,18 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToSubscriptionRequest)
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
 {
-   ptr<flight_vars_server> server = new flight_vars_server(
-            new fake_flight_vars());
+   auto server = flight_vars_server::create(
+            std::make_shared<fake_flight_vars>());
    server->run_in_background();
 
    {
       tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
       auto bs_msg = handshake(cli);
-      auto rep = request_subscription(
+      request_subscription(
                cli,
                variable_group("weezer"),
                variable_name("foobar"));
+      auto rep = read_subscription_reply(cli);
       BOOST_CHECK_EQUAL(
                proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
                rep.st);
@@ -151,8 +164,8 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
 {
-   ptr<flight_vars_server> server = new flight_vars_server(
-            new fake_flight_vars());
+   auto server = flight_vars_server::create(
+            std::make_shared<fake_flight_vars>());
    server->run_in_background();
 
    {
@@ -161,10 +174,11 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
       for (int i = 0; i < 8192; i++)
       {
          auto var_name = str(boost::format("foobar-%d") % i);
-         auto rep = request_subscription(
+         request_subscription(
                   cli,
                   variable_group("testing"),
                   variable_name(var_name));
+         auto rep = read_subscription_reply(cli);
          BOOST_CHECK_EQUAL(
                   proto::subscription_reply_message::STATUS_SUCCESS,
                   rep.st);
@@ -175,6 +189,29 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
    }
 }
 
+BOOST_AUTO_TEST_CASE(ServerShouldNotifyVarUpdates)
+{
+   auto server = flight_vars_server::create(
+            std::make_shared<fake_flight_vars>());
+   server->run_in_background();
 
+   {
+      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
+      auto bs_msg = handshake(cli);
+      request_subscription(
+               cli,
+               variable_group("testing"),
+               variable_name("foobar"));
+
+      auto subs_id = as_subscription_reply(read_message(cli)).subs_id;
+      for (int i = 0; i < 3; i++)
+      {
+         auto rep = as_var_update(read_message(cli));
+         BOOST_CHECK_EQUAL(subs_id, rep.subs_id);
+         BOOST_CHECK_EQUAL(VAR_DWORD, rep.var_value.get_type());
+      }
+      terminate(cli);
+   }
+}
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -51,10 +51,24 @@ public:
     */
    OAC_DECL_ERROR(duplicated_subscription_error, invalid_input_error);
 
+   /**
+    * Clear all registered subscriptions.
+    */
+   void clear();
+
+   /**
+    * Register a new subscription.
+    */
    void register_subscription(
          const variable_id& var_id,
          const subscription_id& subs_id)
    throw (duplicated_variable_error, duplicated_subscription_error);
+
+   /**
+    * Execute the given action for each mapped subscription.
+    */
+   void for_each_subscription(
+         const std::function<void(const subscription_id&)>& action);
 
    /**
     * Obtain the variable ID for given subscription ID.
