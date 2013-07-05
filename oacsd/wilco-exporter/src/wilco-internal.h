@@ -21,6 +21,7 @@
 
 #include <string>
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 #include "wilco.h"
@@ -229,7 +230,7 @@ struct wilco_fmgc
    BYTE unused_00000[0x1F0];              // 0x00000
    DWORD cost_index;                      // 0x001F0
    BYTE unused_001F4[0x7F230];            // 0x001F4
-   DOUBLE perf_factor;                    // 0x7F420
+   double perf_factor;                    // 0x7F420
 
 };
 
@@ -246,7 +247,7 @@ struct wilco_gpws
 struct wilco_pedestal
 {
    BYTE unused_0000[0x08];                // 0x00
-   DOUBLE ctl_value;                      // 0x08
+   double ctl_value;                      // 0x08
    BYTE unused_0010[0x18];                // 0x10
    DWORD sd_page_selected;                // 0x28
    DWORD unused_002c;                     // 0x2C

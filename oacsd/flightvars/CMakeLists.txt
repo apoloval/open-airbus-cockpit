@@ -32,7 +32,7 @@ include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}/src/module
    ${Boost_INCLUDE_DIR}
    ${SIM_CONNECT_INCLUDE_DIR}
-   ${FSUIPC_INTERNAL_INCLUDE_DIR}
+   ${fsuipc_user_HEADERS}
    ${liboac-commons_HEADERS}
    )
 
@@ -44,7 +44,7 @@ target_link_libraries(FlightVars
    libflightvars
    ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
+   fsuipc_user_internal
    liboac-commons
 )
 
@@ -54,7 +54,7 @@ test_link_libraries(
    FlightVars_Static
    ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
+   fsuipc_user_internal
 )
 
 add_unit_test(api-test)

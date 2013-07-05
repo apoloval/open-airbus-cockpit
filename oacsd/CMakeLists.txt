@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(oacsd)
 
 set(OACSD_VERSION_MAJOR 0)
-set(OACSD_VERSION_MINOR 1)
+set(OACSD_VERSION_MINOR 2)
 set(OACSD_VERSION_PATH beta-1)
 set(OACSD_VERSION
    "${OACSD_VERSION_MAJOR}.${OACSD_VERSION_MINOR}.${OACSD_VERSION_PATH}")
@@ -28,7 +28,6 @@ find_package(Boost COMPONENTS
    unit_test_framework
 REQUIRED)
 find_package(SimConnect REQUIRED)
-find_package(FSUIPC_Internal REQUIRED)
 
 enable_testing()
 
@@ -61,6 +60,7 @@ set(CPACK_NSIS_MENU_LINKS
 )
 
 # Add the subdirs
+add_subdirectory(fsuipc)
 add_subdirectory(liboac-commons)
 add_subdirectory(wilco-exporter)
 add_subdirectory(flightvars)

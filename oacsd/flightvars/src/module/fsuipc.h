@@ -22,6 +22,7 @@
 #include <list>
 #include <map>
 
+#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 #include <boost/uuid/uuid_generators.hpp>

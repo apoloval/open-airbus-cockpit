@@ -17,7 +17,7 @@ include_directories(
    include
    ${Boost_INCLUDE_DIR}
    ${SIM_CONNECT_INCLUDE_DIR}
-   ${FSUIPC_INTERNAL_INCLUDE_DIR}
+   ${fsuipc_user_HEADERS}
    ${liboac-commons_HEADERS}
    )
 
@@ -26,6 +26,6 @@ add_library(WilcoExporter SHARED ${wilco-exporter_SOURCES})
 target_link_libraries(WilcoExporter
    ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
-   ${FSUIPC_INTERNAL_LIBRARY}
+   fsuipc_user_internal
    liboac-commons
 )
