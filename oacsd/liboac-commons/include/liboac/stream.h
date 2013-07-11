@@ -215,7 +215,9 @@ public:
             return 0;
          else
             BOOST_THROW_EXCEPTION(
-                     stream::read_error() << boost_system_error_info(e));
+                     stream::read_error() <<
+                     boost_system_error_info(e) <<
+                     message_info(e.what()));
       }
    }
 
@@ -246,7 +248,9 @@ public:
             return 0;
          else
             BOOST_THROW_EXCEPTION(
-                     stream::write_error() << boost_system_error_info(e));
+                     stream::write_error() <<
+                     boost_system_error_info(e) <<
+                     message_info(e.what()));
       }
    }
 
