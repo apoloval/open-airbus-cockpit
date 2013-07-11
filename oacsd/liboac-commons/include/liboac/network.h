@@ -30,6 +30,14 @@ namespace oac {
 
 namespace network {
 
+/**
+ * An error while binding a socket.
+ */
+OAC_DECL_ERROR(bind_error, invalid_input_error);
+
+/**
+ * An attempt to execute an action on a closed connection.
+ */
 OAC_DECL_ERROR(connection_closed_error, illegal_state_error);
 
 typedef std::function<void(const io_error&)> error_handler;
@@ -75,7 +83,8 @@ public:
     * Creates a new TCP server on the given port, using the given worker
     * to submit the incoming connections.
     */
-   tcp_server(std::uint16_t port, const Worker& worker);
+   tcp_server(std::uint16_t port,
+              const Worker& worker) throw (network::bind_error);
 
    /**
     * Run the server. It uses the current thread to execute the accept loop.
@@ -175,14 +184,18 @@ public:
    async_tcp_server(
          std::uint16_t port,
          const ConnectionHandler& handler,
-         const ErrorHandler& ehandler);
+         const ErrorHandler& ehandler)
+   throw (network::bind_error);
 
    /**
     * Creates a new asynchronous TCP server on the given port with given
     * connection handler.
     */
    template <typename ConnectionHandler>
-   async_tcp_server(std::uint16_t port, const ConnectionHandler& handler);
+   async_tcp_server(
+         std::uint16_t port,
+         const ConnectionHandler& handler)
+   throw (network::bind_error);
 
    ~async_tcp_server();
 

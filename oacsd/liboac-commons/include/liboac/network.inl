@@ -23,6 +23,32 @@
 
 namespace oac {
 
+namespace {
+
+inline void
+bind_port(
+      boost::asio::ip::tcp::acceptor& acceptor,
+      std::uint16_t port)
+throw (network::bind_error)
+{
+   using namespace boost::asio;
+   try
+   {
+      ip::tcp::endpoint ep(ip::tcp::v4(), port);
+      acceptor.open(ep.protocol());
+      acceptor.bind(ep);
+      acceptor.listen();
+   } catch (boost::system::system_error& se)
+   {
+      BOOST_THROW_EXCEPTION(
+               network::bind_error() <<
+               boost_system_error_info(se) <<
+               message_info(se.what()));
+   }
+}
+
+} // anonymous namespace
+
 inline
 tcp_connection::tcp_connection()
    : _socket(new boost::asio::ip::tcp::socket(_io_service))
@@ -47,12 +73,15 @@ tcp_connection::output()
 
 
 template <typename Worker>
-tcp_server<Worker>::tcp_server(std::uint16_t port, const Worker& worker)
+tcp_server<Worker>::tcp_server(
+      std::uint16_t port,
+      const Worker& worker)
+throw (network::bind_error)
    : _worker(worker),
-     _acceptor(_io_service,
-               boost::asio::ip::tcp::endpoint(
-                  boost::asio::ip::tcp::v4(), port))
-{}
+     _acceptor(_io_service)
+{
+   bind_port(_acceptor, port);
+}
 
 template <typename Worker>
 void
@@ -174,21 +203,24 @@ async_tcp_server::async_tcp_server(
       std::uint16_t port,
       const ConnectionHandler& handler,
       const ErrorHandler& ehandler)
-   : _acceptor(_io_service,
-               boost::asio::ip::tcp::endpoint(
-                  boost::asio::ip::tcp::v4(), port)),
+throw (network::bind_error)
+   : _acceptor(_io_service),
      _handler(handler),
      _ehandler(ehandler)
-{}
+{
+   bind_port(_acceptor, port);
+}
 
 template <typename ConnectionHandler>
 async_tcp_server::async_tcp_server(
-      std::uint16_t port, const ConnectionHandler& handler)
-   : _acceptor(_io_service,
-               boost::asio::ip::tcp::endpoint(
-                  boost::asio::ip::tcp::v4(), port)),
+      std::uint16_t port,
+      const ConnectionHandler& handler)
+throw (network::bind_error)
+   : _acceptor(_io_service),
      _handler(handler)
-{}
+{
+   bind_port(_acceptor, port);
+}
 
 inline
 async_tcp_server::~async_tcp_server()

@@ -41,6 +41,14 @@ void test(const std::function<void(const ptr<tcp_connection>&)>& server_handler,
    server->stop();
 }
 
+BOOST_AUTO_TEST_CASE(ServerCreationMustFailWhenPortIsUnavailable)
+{
+   auto server_1 = network::make_tcp_server(9000, [](tcp_connection&){});
+   BOOST_CHECK_THROW(
+         network::make_tcp_server(9000, [](tcp_connection&){}),
+         network::bind_error);
+}
+
 BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)
 {
    test(
@@ -223,6 +231,16 @@ void receive_dwords(
          handler();
       }
    });
+}
+
+BOOST_AUTO_TEST_CASE(ServerCreationMustFailWhenPortIsUnavailable)
+{
+   auto handler = [](const async_tcp_connection::ptr_type&){};
+   async_tcp_server server(9000, handler);
+   BOOST_CHECK_THROW(
+            async_tcp_server(9000, handler),
+            network::bind_error);
+
 }
 
 BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)

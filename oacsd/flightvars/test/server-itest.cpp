@@ -58,6 +58,12 @@ void terminate(tcp_client& cli)
             msg, *cli.output());   
 }
 
+void stop_server(flight_vars_server::ptr_type& srv)
+{
+   srv.reset();
+   boost::this_thread::sleep_for(boost::chrono::seconds(3));
+}
+
 void request_subscription(
       tcp_client& cli,
       const variable_group& var_grp,
@@ -137,6 +143,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToSubscriptionRequest)
       BOOST_CHECK_EQUAL("foobar", rep.var_name.get_tag());
       terminate(cli);
    }
+   stop_server(server);
 }
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
@@ -160,6 +167,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
       BOOST_CHECK_EQUAL("foobar", rep.var_name.get_tag());
       terminate(cli);
    }
+   stop_server(server);
 }
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
@@ -175,18 +183,19 @@ BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
       {
          auto var_name = str(boost::format("foobar-%d") % i);
          request_subscription(
-                  cli,
-                  variable_group("testing"),
-                  variable_name(var_name));
+                cli,
+                variable_group("testing"),
+                variable_name(var_name));
          auto rep = read_subscription_reply(cli);
          BOOST_CHECK_EQUAL(
-                  proto::subscription_reply_message::STATUS_SUCCESS,
-                  rep.st);
+                proto::subscription_reply_message::STATUS_SUCCESS,
+                rep.st);
          BOOST_CHECK_EQUAL("testing", rep.var_grp.get_tag());
          BOOST_CHECK_EQUAL(var_name, rep.var_name.get_tag());
       }
       terminate(cli);
    }
+   stop_server(server);
 }
 
 BOOST_AUTO_TEST_CASE(ServerShouldNotifyVarUpdates)
@@ -212,6 +221,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldNotifyVarUpdates)
       }
       terminate(cli);
    }
+   stop_server(server);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
