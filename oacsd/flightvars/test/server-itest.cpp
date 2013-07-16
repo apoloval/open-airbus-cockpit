@@ -120,6 +120,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldHandshake)
       BOOST_CHECK_EQUAL(proto::CURRENT_PROTOCOL_VERSION, bs_msg.proto_ver);
       terminate(cli);
    }
+   stop_server(server);
 }
 
 BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToSubscriptionRequest)
