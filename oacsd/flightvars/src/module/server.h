@@ -119,6 +119,9 @@ private:
          const after_write_handler& after_write,
          const boost::system::error_code& ec,
          std::size_t bytes_transferred);
+
+   void handle_var_update_request(
+         const proto::var_update_message& req);
 };
 
 }} // namespace oac::fv

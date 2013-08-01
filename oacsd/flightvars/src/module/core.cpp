@@ -35,13 +35,9 @@ flight_vars_core::subscribe(
       const var_update_handler& handler)
 throw (unknown_variable_error)
 {
-   auto grp = get_var_group(var);
-   auto entry = _group_masters.find(grp);
-   if (entry == _group_masters.end())
-      BOOST_THROW_EXCEPTION(unknown_variable_group_error() <<
-            variable_group_info(grp));
-   auto id = entry->second->subscribe(var, handler);
-   _subscriptions[id] = entry->second;
+   auto& master = get_master_by_var_id(var);
+   auto id = master->subscribe(var, handler);
+   _subscriptions[id] = master;
    return id;
 }
 
@@ -57,6 +53,16 @@ flight_vars_core::unsubscribe(const subscription_id& id)
 }
 
 void
+flight_vars_core::update(
+      const subscription_id& subs_id,
+      const variable_value& var_value)
+throw (unknown_variable_error, illegal_value_error)
+{
+   if (auto master = get_master_by_subs_id(subs_id))
+      master->update(subs_id, var_value);
+}
+
+void
 flight_vars_core::register_group_master(
       const variable_group& grp,
       const ptr<flight_vars>& master)
@@ -67,6 +73,27 @@ throw (master_already_registered)
       BOOST_THROW_EXCEPTION(master_already_registered() <<
                   variable_group_info(grp));
    _group_masters[grp] = master;
+}
+
+std::shared_ptr<flight_vars>&
+flight_vars_core::get_master_by_var_id(
+      const variable_id& var_id)
+throw (unknown_variable_error)
+{
+   auto grp = get_var_group(var_id);
+   auto entry = _group_masters.find(grp);
+   if (entry == _group_masters.end())
+      BOOST_THROW_EXCEPTION(unknown_variable_group_error() <<
+            variable_group_info(grp));
+   return entry->second;
+}
+
+std::shared_ptr<flight_vars>
+flight_vars_core::get_master_by_subs_id(
+      const subscription_id& subs_id)
+{
+   auto entry = _subscriptions.find(subs_id);
+   return (entry != _subscriptions.end()) ? entry->second : nullptr;
 }
 
 }} // namespace oac::fv

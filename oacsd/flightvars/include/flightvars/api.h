@@ -76,12 +76,16 @@ public:
    variable_group(const tag_type& tag) : tagged_element(tag) {}
 };
 
+OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
+
 class variable_name : public tagged_element<variable_name>
 {
 public:
 
    variable_name(const tag_type& tag) : tagged_element(tag) {}
 };
+
+OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
 /**
  * The variable ID, which comprises the var group and the var name.
@@ -184,12 +188,19 @@ private:
  */
 typedef std::uint32_t subscription_id;
 
+OAC_DECL_ERROR_INFO(subscription_info, subscription_id);
+
 /**
  * Flight vars API interface.
  */
 class flight_vars
 {
-public:      
+public:
+
+   /**
+    * An illegal value was provided for a variable.
+    */
+   OAC_DECL_ERROR(illegal_value_error, invalid_input_error);
 
    /**
     * An operation was requested on a unknown variable.
@@ -208,8 +219,11 @@ public:
     */
    OAC_DECL_ERROR(unknown_variable_name_error, unknown_variable_error);
 
-   OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
-   OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
+   /**
+    * An operation was requested for an unknown subscription. Contains:
+    * - subscription_info, indicating the subscription that was unknown
+    */
+   OAC_DECL_ERROR(unknown_subscription_error, invalid_input_error);
 
 
    /**
@@ -237,6 +251,18 @@ public:
     * nothing is done.
     */
    virtual void unsubscribe(const subscription_id& id) = 0;
+
+   /**
+    * Update a variable by replacing its value with the given one.
+    *
+    * @param subs_id the ID of the subscription to the variable (previously
+    *                obtained from subscribe() function.
+    * @param var_value the new value of the variable
+    */
+   virtual void update(
+         const subscription_id& subs_id,
+         const variable_value& var_value)
+   throw (unknown_subscription_error, illegal_value_error) = 0;
 };
 
 }} // namespace oac::fv

@@ -58,6 +58,11 @@ public:
 
    virtual void unsubscribe(const subscription_id& id);
 
+   virtual void update(
+         const subscription_id& subs_id,
+         const variable_value& var_value)
+   throw (unknown_variable_error, illegal_value_error);
+
    /**
     * Register a master for given variable group. If there is already a
     * master for given group, a master_already_registered is thrown.
@@ -69,14 +74,24 @@ public:
 
 private:
 
-   typedef std::map<variable_group::tag_type, ptr<flight_vars>> group_master_dict;
-   typedef std::map<subscription_id, ptr<flight_vars>> subscription_master_dict;
+   typedef std::map<
+         variable_group::tag_type,
+         std::shared_ptr<flight_vars>> group_master_dict;
+   typedef std::map<
+         subscription_id,
+         std::shared_ptr<flight_vars>> subscription_master_dict;
 
    group_master_dict _group_masters;
    subscription_master_dict _subscriptions;
 
-   inline flight_vars_core() {}
+   flight_vars_core() {}
 
+   std::shared_ptr<flight_vars>& get_master_by_var_id(
+         const variable_id& var_id)
+   throw (unknown_variable_error);
+
+   std::shared_ptr<flight_vars> get_master_by_subs_id(
+         const subscription_id& subs_id);
 };
 
 }} // namespace oac::fv

@@ -199,7 +199,8 @@ flight_vars_server::on_read_request(
              boost::format("@server; Session closed by peer (%s)") %
              es_msg->cause);
          return;
-      } else if (auto s_req = boost::get<subscription_request_message>(&msg))
+      }
+      else if (auto s_req = boost::get<subscription_request_message>(&msg))
       {
          log(log_level::INFO,
              boost::format("@server; processing subscription request "
@@ -213,7 +214,13 @@ flight_vars_server::on_read_request(
                      &flight_vars_server::read_request,
                      shared_from_this(),
                      session));
-      } else {
+      }
+      else if (auto vu_req = boost::get<var_update_message>(&msg))
+      {
+         handle_var_update_request(*vu_req);
+      }
+      else
+      {
          log(log_level::WARN,
              "@server; Protocol error: unexpected message while expecting "
              "an end session, supscription request or variable update message");
@@ -331,6 +338,13 @@ flight_vars_server::on_write_message(
    }
    else
       after_write();
+}
+
+void
+flight_vars_server::handle_var_update_request(
+      const proto::var_update_message& req)
+{
+   _delegate->update(req.subs_id, req.var_value);
 }
 
 }} // namespace oac::fv

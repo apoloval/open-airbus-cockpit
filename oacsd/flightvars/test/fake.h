@@ -81,7 +81,34 @@ public:
          _subscriptions.erase(subs);
    }
 
+   virtual void update(
+         const subscription_id& subs_id,
+         const variable_value& var_value)
+   throw (unknown_variable_error, illegal_value_error)
+   {
+      try
+      {
+         auto& var = var_info_by_subs_id(subs_id);
+         var.val = var_value;
+         var.dirty = true;
+      }
+      catch (illegal_value_error&)
+      {}
+   }
+
 private:
+
+   struct var_info
+   {
+      variable_id id;
+      variable_value val;
+      bool dirty;
+
+      var_info(
+            const variable_id& id)
+         : id(id), val(variable_value::from_bool(true)), dirty(false)
+      {}
+   };
 
    struct subscription
    {
@@ -93,8 +120,12 @@ private:
 
    typedef std::list<subscription> subscription_list;
 
+   typedef std::map<variable_id, var_info> variable_status;
+
+
    std::atomic_bool _must_run;
    subscription_list _subscriptions;
+   variable_status _var_status;
    boost::mutex _mutex;
    boost::thread _runner;
 
@@ -121,7 +152,6 @@ private:
             else
                it++;
          };
-         // std::cerr << "Subscriptions removed" << std::endl;
          _mutex.unlock();
       }
    }
@@ -129,6 +159,21 @@ private:
    variable_value random_var_value()
    {
       return variable_value::from_dword(std::rand());
+   }
+
+   var_info& var_info_by_subs_id(
+         const subscription_id& subs_id)
+   throw (illegal_value_error)
+   {
+      for (auto& subs : _subscriptions)
+         if (subs.id == subs_id)
+            return get_or_create_var_info(subs.var);
+      BOOST_THROW_EXCEPTION(illegal_value_error());
+   }
+
+   var_info& get_or_create_var_info(const variable_id& var_id)
+   {
+      return (*_var_status.emplace(var_id, var_info(var_id)).first).second;
    }
 };
 
