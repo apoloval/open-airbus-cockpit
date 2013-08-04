@@ -23,10 +23,6 @@
 #include "FSUIPC.h"
 #include "logging.h"
 
-#ifndef LOCAL_FSUIPC_BUFFER_SIZE
-#define LOCAL_FSUIPC_BUFFER_SIZE (65*1024) // 1KB more for headers
-#endif
-
 namespace oac {
 
 namespace {
@@ -53,17 +49,17 @@ const char* fsuipc_error_msg[] =
 };
 
 const char*
-GetResultMessage(DWORD result)
+get_result_message(DWORD result)
 {
    return (result < sizeof(fsuipc_error_msg) / sizeof(const char*))
          ? fsuipc_error_msg[result] : nullptr;
 }
 
 std::string
-IOErrorMessage(const std::string& action, DWORD result)
+io_error_message(const std::string& action, DWORD result)
 {
    return str(boost::format("IO error while %s: %s") %
-      action.c_str() % GetResultMessage(result));
+      action.c_str() % get_result_message(result));
 }
 
 class local_fsuipc_handler
@@ -97,7 +93,7 @@ private:
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
          BOOST_THROW_EXCEPTION(
                   local_fsuipc::init_error() <<
-                  message_info(GetResultMessage(result)));
+                  message_info(get_result_message(result)));
    }
 
 };
@@ -122,7 +118,7 @@ throw (buffer::out_of_bounds_error, buffer::read_error)
          return;
    BOOST_THROW_EXCEPTION(buffer::read_error() <<
          error_code_info(error) <<
-         error_msg_info(GetResultMessage(error)));
+         error_msg_info(get_result_message(error)));
 }
 
 void
@@ -135,7 +131,166 @@ throw (buffer::out_of_bounds_error, buffer::write_error)
          return;
    BOOST_THROW_EXCEPTION(buffer::write_error() <<
          error_code_info(error) <<
-         error_msg_info(GetResultMessage(error)));
+         error_msg_info(get_result_message(error)));
+}
+
+
+
+std::uint32_t local_fsuipc_user_adapter::_instance_count(0);
+
+std::uint8_t local_fsuipc_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
+
+local_fsuipc_user_adapter::local_fsuipc_user_adapter()
+throw (operation_error)
+{
+   if (_instance_count == 0)
+   {
+      // No previous instance, let's open FSUIPC
+      DWORD result;
+      if (!FSUIPC_Open2(
+             SIM_ANY,
+             &result,
+             _buffer,
+             LOCAL_FSUIPC_BUFFER_SIZE))
+      {
+         BOOST_THROW_EXCEPTION(
+                  operation_error() <<
+                  function_name_info("FSUIPC_Open") <<
+                  error_code_info(result) <<
+                  error_msg_info(get_result_message(result)));
+      }
+   }
+   _instance_count++;
+}
+
+local_fsuipc_user_adapter::~local_fsuipc_user_adapter()
+{
+   _instance_count--;
+   if (_instance_count == 0)
+   {
+      // Surprisingly this function has no return code. It's like nothing
+      // could go wrong while closing a connection... It's like some functions
+      // in FSUIPC deserve to be a third-class citizens... Bad code!
+      FSUIPC_Close();
+   }
+}
+
+void
+local_fsuipc_user_adapter::read(
+      fsuipc_valued_offset& valued_offset)
+throw (operation_error)
+{
+   DWORD error;
+   if (!FSUIPC_Read(
+            valued_offset.address,
+            valued_offset.length,
+            &valued_offset.value,
+            &error))
+   {
+      BOOST_THROW_EXCEPTION(
+               operation_error() <<
+               function_name_info("FSUIPC_Read") <<
+               error_code_info(error) <<
+               error_msg_info(get_result_message(error)));
+   }
+}
+
+void
+local_fsuipc_user_adapter::write(
+      const fsuipc_valued_offset& valued_offset)
+throw (operation_error)
+{
+   DWORD error;
+   if (!FSUIPC_Write(
+            valued_offset.address,
+            valued_offset.length,
+            (void*) valued_offset.value,
+            &error))
+   {
+      BOOST_THROW_EXCEPTION(
+               operation_error() <<
+               function_name_info("FSUIPC_Write") <<
+               error_code_info(error) <<
+               error_msg_info(get_result_message(error)));
+   }
+}
+
+void
+local_fsuipc_user_adapter::process()
+throw (operation_error)
+{
+   DWORD error;
+   if (!FSUIPC_Process(&error))
+   {
+      BOOST_THROW_EXCEPTION(
+               operation_error() <<
+               function_name_info("FSUIPC_Process") <<
+               error_code_info(error) <<
+               error_msg_info(get_result_message(error)));
+   }
+}
+
+
+
+void
+dummy_fsuipc_user_adapter::process_read_requests()
+{
+   for (auto& req : _read_requests)
+   {
+      *req.value = read_value_from_buffer(
+               req.offset.address, req.offset.length);
+   }
+   _read_requests.clear();
+}
+
+void
+dummy_fsuipc_user_adapter::process_write_requests()
+{
+   for (auto& req : _write_requests)
+   {
+      write_value_to_buffer(
+               req.offset.address,
+               req.offset.length,
+               req.offset.value);
+   }
+   _write_requests.clear();
+}
+
+fsuipc_offset_value
+dummy_fsuipc_user_adapter::read_value_from_buffer(
+      fsuipc_offset_address addr,
+      fsuipc_offset_length len)
+{
+   fsuipc_offset_value value = 0;
+   switch (len)
+   {
+      case OFFSET_LEN_DWORD:
+         value += _buffer[addr+3] << 24;
+         value += _buffer[addr+2] << 16;
+      case OFFSET_LEN_WORD:
+         value += _buffer[addr+1] << 8;
+      case OFFSET_LEN_BYTE:
+         value += _buffer[addr];
+   }
+   return value;
+}
+
+void
+dummy_fsuipc_user_adapter::write_value_to_buffer(
+      fsuipc_offset_address addr,
+      fsuipc_offset_length len,
+      fsuipc_offset_value val)
+{
+   switch (len)
+   {
+      case OFFSET_LEN_DWORD:
+         _buffer[addr+3] = val >> 24;
+         _buffer[addr+2] = val >> 16;
+      case OFFSET_LEN_WORD:
+         _buffer[addr+1] = val >> 8;
+      case OFFSET_LEN_BYTE:
+         _buffer[addr] = val;
+   }
 }
 
 } // namespace oac

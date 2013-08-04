@@ -30,21 +30,30 @@ endmacro(test_link_libraries)
 #
 # Internal function. Do not use.
 function(add_simple_test testname)
-   add_executable(${testname} test/${testname}.cpp)
-   target_link_libraries(${testname} ${test_libraries})
+   set(target_name_prefix ${ARGV1})
+   if (target_name_prefix)
+      set(target_name "${target_name_prefix}_${testname}")
+   else()
+      set(target_name ${testname})
+   endif()
+
+   add_executable(${target_name} test/${testname}.cpp)
+   target_link_libraries(${target_name} ${test_libraries})
 endfunction(add_simple_test)
 
 #
 # Add a new integration test. This generates a executable target but doesn't
 # include it as a test target
 function(add_integration_test testname)
-   add_simple_test(${testname})
+   set(target_name_prefix ${ARGV1})
+   add_simple_test(${testname} ${target_name_prefix})
 endfunction(add_integration_test)
 
 #
 # Add a new unit test. This generates a executable target and adds it as test
 # target.
 function(add_unit_test testname)
-   add_simple_test(${testname})
+   set(target_name_prefix ${ARGV1})
+   add_simple_test(${testname} ${target_name_prefix})
    add_test(NAME ${testname} COMMAND ${testname})
 endfunction(add_unit_test)

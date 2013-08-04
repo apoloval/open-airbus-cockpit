@@ -41,6 +41,7 @@ add_library(liboac-commons STATIC
 
 test_link_libraries(
       liboac-commons
+      fsuipc_user_internal
       ${SIM_CONNECT_LIBRARY}
       ${Boost_LIBRARIES}
 )
@@ -48,6 +49,7 @@ test_link_libraries(
 add_unit_test(buffer-test)
 add_unit_test(concurrency-test)
 add_unit_test(filesystem-test)
+add_unit_test(fsuipc-test liboac)
 add_unit_test(lang-utils-test)
 add_unit_test(network-test)
 add_unit_test(stream-test)
