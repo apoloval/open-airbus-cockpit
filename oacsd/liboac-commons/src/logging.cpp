@@ -1,6 +1,6 @@
 /*
  * This file is part of Open Airbus Cockpit
- * Copyright (C) 2012 Alvaro Polo
+ * Copyright (C) 2012, 2013 Alvaro Polo
  *
  * Open Airbus Cockpit is free software: you can redistribute it and/or 
  * modify it under the terms of the GNU General Public License as published 
