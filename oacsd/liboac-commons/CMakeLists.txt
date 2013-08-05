@@ -18,6 +18,7 @@ set(liboac-commons_HEADERS
    include/liboac/network.inl
    include/liboac/simconn.h
    include/liboac/stream.h
+   include/liboac/timing.h
    include/liboac/worker.h
 )
 
@@ -53,6 +54,7 @@ add_unit_test(fsuipc-test liboac)
 add_unit_test(lang-utils-test liboac)
 add_unit_test(network-test liboac)
 add_unit_test(stream-test liboac)
+add_unit_test(timing-test liboac)
 
 add_integration_test(simconn-itest liboac)
 add_integration_test(logging-itest liboac)
