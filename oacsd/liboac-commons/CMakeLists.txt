@@ -46,13 +46,13 @@ test_link_libraries(
       ${Boost_LIBRARIES}
 )
 
-add_unit_test(buffer-test)
-add_unit_test(concurrency-test)
-add_unit_test(filesystem-test)
+add_unit_test(buffer-test liboac)
+add_unit_test(concurrency-test liboac)
+add_unit_test(filesystem-test liboac)
 add_unit_test(fsuipc-test liboac)
-add_unit_test(lang-utils-test)
-add_unit_test(network-test)
-add_unit_test(stream-test)
+add_unit_test(lang-utils-test liboac)
+add_unit_test(network-test liboac)
+add_unit_test(stream-test liboac)
 
-add_integration_test(simconn-itest)
-add_integration_test(logging-itest)
+add_integration_test(simconn-itest liboac)
+add_integration_test(logging-itest liboac)
