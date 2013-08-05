@@ -22,7 +22,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <liboac/logging.h>
 
 #include "fsuipc.h"
 
@@ -95,24 +94,23 @@ parse_textual_length(
 
 } // anonymous namespace
 
-std::size_t
-fsuipc_offset_meta::hash(
-      const fsuipc_offset_meta& meta)
-{
-   return 0;
-}
 
-fsuipc_offset_meta::fsuipc_offset_meta(
+
+fsuipc_offset
+to_fsuipc_offset(
       const variable_id& var_id)
 throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
 {
+   fsuipc_offset_address addr;
+   unsigned int len;
    auto var_group = get_var_group(var_id);
+   auto var_name = get_var_name(var_id);
+
    if (var_group.get_tag() != VAR_GROUP_TAG)
       BOOST_THROW_EXCEPTION(
                fsuipc::invalid_var_group_error() <<
                variable_group_info(var_group));
 
-   auto var_name = get_var_name(var_id);
    std::vector<std::string> parts;
    boost::split(parts, var_name.get_tag(), boost::is_any_of(":"));
    if (parts.size() <= 2)
@@ -121,21 +119,56 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
       if (parts.size() == 1)
          parts.push_back("1");
 
-      if (!parse_dec_number(parts[0], _address) &&
-          !parse_hex_number(parts[0], _address))
+      if (!parse_dec_number(parts[0], addr) &&
+          !parse_hex_number(parts[0], addr))
          goto syntax_error;
 
-      if (!parse_dec_number(parts[1], _length) &&
-          !parse_hex_number(parts[1], _length) &&
-          !parse_textual_length(parts[1], _length))
+      if (!parse_dec_number(parts[1], len) &&
+          !parse_hex_number(parts[1], len) &&
+          !parse_textual_length(parts[1], len))
          goto syntax_error;
-      if (_length != 1 && _length != 2 && _length != 4)
+      if (len != 1 && len != 2 && len != 4)
          goto syntax_error;
-      return;
+
+      return fsuipc_offset(addr, fsuipc_offset_length(len));
    }
 syntax_error:
    BOOST_THROW_EXCEPTION(
             fsuipc::var_name_syntax_error() << variable_name_info(var_name));
+}
+
+variable_value
+to_variable_value(
+      const fsuipc_valued_offset& valued_offset)
+{
+   switch (valued_offset.length)
+   {
+      case OFFSET_LEN_BYTE:
+         return variable_value::from_byte(valued_offset.value);
+      case OFFSET_LEN_WORD:
+         return variable_value::from_word(valued_offset.value);
+      case OFFSET_LEN_DWORD:
+         return variable_value::from_dword(valued_offset.value);
+      default:
+         BOOST_THROW_EXCEPTION(illegal_state_error()); // never reached
+   }
+}
+
+fsuipc_offset_value
+to_fsuipc_offset_value(
+      const variable_value& var_value)
+{
+   // The float case is controversial. What kind of conversion should be done?
+   // Rounding to integer? Binary conversion? Exception?
+   switch (var_value.get_type())
+   {
+      case VAR_BOOLEAN: return var_value.as_bool();
+      case VAR_BYTE: return var_value.as_byte();
+      case VAR_WORD: return var_value.as_word();
+      case VAR_DWORD: return var_value.as_dword();
+      case VAR_FLOAT: return fsuipc_offset_value(var_value.as_float());
+      default: return 0; // never reached
+   }
 }
 
 
@@ -146,7 +179,7 @@ fsuipc_offset_db::create_subscription(
       const flight_vars::var_update_handler& callback)
 throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
 {
-   fsuipc_offset_meta offset(var_id);
+   auto offset = to_fsuipc_offset(var_id);
    insert_known_offset(offset);
    return insert_subscription(offset, var_id, callback);
 }
@@ -171,7 +204,7 @@ fsuipc_offset_db::remove_subscription(
 
 const fsuipc_offset_db::subscription_list&
 fsuipc_offset_db::get_subscriptions_for_offset(
-      const fsuipc_offset_meta& offset) const
+      const fsuipc_offset& offset) const
 throw (unknown_offset_error)
 {
    auto match = _offset_handlers.find(offset);
@@ -180,7 +213,7 @@ throw (unknown_offset_error)
    return match->second;
 }
 
-fsuipc_offset_meta
+fsuipc_offset
 fsuipc_offset_db::get_offset_for_subscription(
       const subscription_id& subs_id)
 throw (unknown_subscription_error)
@@ -198,12 +231,12 @@ throw (unknown_subscription_error)
 
 void
 fsuipc_offset_db::insert_known_offset(
-      const fsuipc_offset_meta& offset)
+      const fsuipc_offset& offset)
 {
    if (std::none_of(
           _known_offsets.begin(),
           _known_offsets.end(),
-          [&offset](const fsuipc_offset_meta& elem) { return elem == offset; }))
+          [&offset](const fsuipc_offset& elem) { return elem == offset; }))
    {
       _known_offsets.push_back(offset);
    }
@@ -211,14 +244,14 @@ fsuipc_offset_db::insert_known_offset(
 
 void
 fsuipc_offset_db::remove_known_offset(
-      const fsuipc_offset_meta& offset)
+      const fsuipc_offset& offset)
 {
    _known_offsets.remove(offset);
 }
 
 subscription_meta
 fsuipc_offset_db::insert_subscription(
-      const fsuipc_offset_meta& offset,
+      const fsuipc_offset& offset,
       const variable_id& var_id,
       const flight_vars::var_update_handler& callback)
 {
@@ -229,7 +262,7 @@ fsuipc_offset_db::insert_subscription(
 
 std::size_t
 fsuipc_offset_db::remove_subscription(
-      const fsuipc_offset_meta& offset,
+      const fsuipc_offset& offset,
       const subscription_id& subs_id)
 {
    auto& list = _offset_handlers[offset];
@@ -240,159 +273,6 @@ fsuipc_offset_db::remove_subscription(
    return list.size();
 }
 
-
-
-const variable_group fsuipc_flight_vars::VAR_GROUP(VAR_GROUP_TAG);
-
-fsuipc_flight_vars::fsuipc_flight_vars()
-   : _sc("flight_vars - FSUIPC"),
-     _fsuipc(new local_fsuipc()),
-     _buffer(double_buffer<>::factory(
-                new linear_buffer::factory(0xffff)).create_buffer())
-{
-   /**
-    * Register a timed callback on SimConnect to check var changes
-    * every 1/6 seconds.
-    */
-   log(INFO, "@FSUIPC; Registering 6HZ event in SimConnect...");
-   _sc.register_on_event_callback(
-            [this](simconnect_client&, const SIMCONNECT_RECV_EVENT&) {
-      // We only register SYSTEM_EVENT_6HZ event, so args check is not needed
-      notify_changes();
-   });
-   _sc.subscribe_to_system_event(simconnect_client::SYSTEM_EVENT_6HZ);
-   _sc.dispatch_message();
-   log(INFO, "@FSUIPC; 6HZ event successfully registered!");
-}
-
-subscription_id
-fsuipc_flight_vars::subscribe(
-      const variable_id& var,
-      const var_update_handler& handler)
-throw (unknown_variable_error)
-{
-   auto subs = _db.create_subscription(var, handler);
-   auto subs_id = subs.get_subscription_id();
-
-   log(
-      INFO,
-      boost::format("@FSUIPC; Subscribing on %s with ID %d...") %
-         var_to_string(var) % subs_id);
-
-   return subs_id;
-}
-
-void
-fsuipc_flight_vars::unsubscribe(const subscription_id& id)
-{
-   _db.remove_subscription(id);
-}
-
-void
-fsuipc_flight_vars::update(
-      const subscription_id& subs_id,
-      const variable_value& var_value)
-throw (unknown_subscription_error, illegal_value_error)
-{
-   try
-   {
-      auto offset = _db.get_offset_for_subscription(subs_id);
-      write_offset(offset, var_value);
-   }
-   catch (fsuipc_offset_db::unknown_subscription_error&)
-   {
-      BOOST_THROW_EXCEPTION(
-         unknown_subscription_error() << subscription_info(subs_id));
-   }
-   catch (variable_value::invalid_type_error&)
-   {
-      BOOST_THROW_EXCEPTION(illegal_value_error());
-   }
-}
-
-void
-fsuipc_flight_vars::notify_changes()
-{
-   auto& offsets = _db.get_all_offsets();
-   for (auto& offset : offsets)
-   {
-      sync_offset(offset);
-      if (is_offset_updated(offset))
-      {
-         auto offset_value = read_offset(offset);
-         for (auto& subs : _db.get_subscriptions_for_offset(offset))
-            subs.get_update_handler()(subs.get_variable(), offset_value);
-      }
-   }
-   _buffer->swap();
-}
-
-void
-fsuipc_flight_vars::sync_offset(const fsuipc_offset_meta& offset)
-{
-   auto address = offset.address();
-   auto length = offset.length();
-   _buffer->copy(*_fsuipc, address, address, length);
-}
-
-bool
-fsuipc_flight_vars::is_offset_updated(
-      const fsuipc_offset_meta& offset) const
-{
-   auto address = offset.address();
-   auto length = offset.length();
-   switch (length)
-   {
-      case 1: return _buffer->is_modified_as<std::uint8_t>(address);
-      case 2: return _buffer->is_modified_as<std::uint16_t>(address);
-      case 4: return _buffer->is_modified_as<std::uint32_t>(address);
-      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
-   }
-}
-
-variable_value
-fsuipc_flight_vars::read_offset(
-      const fsuipc_offset_meta& offset) const
-{
-   auto address = offset.address();
-   auto length = offset.length();
-   switch (length)
-   {
-      case 1:
-         return variable_value::from_byte(
-               buffer::read_as<std::uint8_t>(*_buffer, address));
-      case 2:
-         return variable_value::from_word(
-               buffer::read_as<std::uint16_t>(*_buffer, address));
-      case 4:
-         return variable_value::from_dword(
-               buffer::read_as<std::uint32_t>(*_buffer, address));
-      default:
-         BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
-   }
-}
-
-void
-fsuipc_flight_vars::write_offset(
-      const fsuipc_offset_meta& offset,
-      const variable_value& value)
-{
-   auto address = offset.address();
-   auto length = offset.length();
-   switch (length)
-   {
-      case 1:
-         buffer::write_as<std::uint8_t>(
-            *_fsuipc, address, value.as_byte());
-      case 2:
-         buffer::write_as<std::uint16_t>(
-            *_fsuipc, address, value.as_word());
-      case 4:
-         buffer::write_as<std::uint32_t>(
-            *_fsuipc, address, value.as_dword());
-      default:
-         BOOST_THROW_EXCEPTION(illegal_state_error()); // never happens
-   }
-}
+const variable_group local_fsuipc_flight_vars::VAR_GROUP(VAR_GROUP_TAG);
 
 }} // namespace oac::fv

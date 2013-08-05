@@ -48,7 +48,8 @@ void __stdcall DLLStart(void)
 
       auto core = flight_vars_core::instance();
       core->register_group_master(
-            fsuipc_flight_vars::VAR_GROUP, new fsuipc_flight_vars());
+            local_fsuipc_flight_vars::VAR_GROUP,
+            new local_fsuipc_flight_vars());
 
       server = new flight_vars_server();
 

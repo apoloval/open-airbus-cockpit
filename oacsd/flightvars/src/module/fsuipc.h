@@ -30,6 +30,7 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <liboac/fsuipc.h>
 #include <liboac/lang-utils.h>
+#include <liboac/logging.h>
 #include <liboac/simconn.h>
 
 #include "api.h"
@@ -54,31 +55,27 @@ OAC_DECL_ERROR(var_name_syntax_error, invalid_input_error);
 }
 
 /**
- * FSUIPC offset metadata.  It is used internally by fsuipc_flight_vars to
- * implement its logic.
+ * Convert a variable ID to a FSUIPC offset.
+ *
+ * @param var_id The variable ID to be converted into FSUIPC offset
+ * @throws fsuipc::invalid_var_group_error if var group is not fsuipc/offset
+ * @throws fsuipc::var_name_syntax_error if the variable ID has a syntax error
  */
-class fsuipc_offset_meta
-{
-public:
+fsuipc_offset to_fsuipc_offset(
+      const variable_id& var_id)
+throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error);
 
-   static std::size_t hash(const fsuipc_offset_meta& meta);
+/**
+ * Convert a FSUIPC valued offset into a variable value object.
+ */
+variable_value to_variable_value(
+      const fsuipc_valued_offset& valued_offset);
 
-   fsuipc_offset_meta(
-         const variable_id& var_id)
-   throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error);
-
-   bool operator == (const fsuipc_offset_meta& meta) const
-   { return _address == meta._address && _length == meta._length; }
-
-   std::uint16_t address() const { return _address;  }
-
-   std::size_t length() const { return _length;  }
-
-private:
-
-   std::uint16_t _address;
-   std::size_t _length;
-};
+/**
+ * Convert a variable value into a FSUIPC offset value.
+ */
+fsuipc_offset_value to_fsuipc_offset_value(
+      const variable_value& var_value);
 
 /**
  * Subscription metadata. It is used internally by fsuipc_flight_vars to
@@ -133,10 +130,8 @@ public:
     */
    OAC_DECL_ERROR(unknown_subscription_error, invalid_input_error);
 
-   typedef std::list<fsuipc_offset_meta> offset_list;
-   typedef std::list<subscription_meta> subscription_list;
-
-   fsuipc_offset_db() : _offset_handlers(512, fsuipc_offset_meta::hash) {}
+   typedef std::list<fsuipc_offset> offset_list;
+   typedef std::list<subscription_meta> subscription_list;   
 
    subscription_meta create_subscription(
          const variable_id& var_id,
@@ -150,36 +145,36 @@ public:
    { return _known_offsets; }
 
    const subscription_list& get_subscriptions_for_offset(
-         const fsuipc_offset_meta& offset) const
+         const fsuipc_offset& offset) const
    throw (unknown_offset_error);
 
-   fsuipc_offset_meta get_offset_for_subscription(
+   fsuipc_offset get_offset_for_subscription(
          const subscription_id& subs_id)
    throw (unknown_subscription_error);
 
 private:
 
    typedef std::unordered_map<
-         fsuipc_offset_meta,
+         fsuipc_offset,
          subscription_list,
-         std::size_t(*)(const fsuipc_offset_meta&)> offset_handler_map;
+         fsuipc_offset::hash> offset_handler_map;
 
    offset_list _known_offsets;
    offset_handler_map _offset_handlers;
 
    void insert_known_offset(
-         const fsuipc_offset_meta& offset);
+         const fsuipc_offset& offset);
 
    void remove_known_offset(
-         const fsuipc_offset_meta& offset);
+         const fsuipc_offset& offset);
 
    subscription_meta insert_subscription(
-         const fsuipc_offset_meta& offset,
+         const fsuipc_offset& offset,
          const variable_id& var_id,
          const flight_vars::var_update_handler& callback);
 
    std::size_t remove_subscription(
-         const fsuipc_offset_meta& offset,
+         const fsuipc_offset& offset,
          const subscription_id& subs_id);
 };
 
@@ -191,46 +186,106 @@ private:
  * indicating a value in bytes (BYTE, WORD and DWORD, respectively). E.g.,
  * 0x0354:2 means a WORD variable at offset 0x0354 (transponder code).
  */
+template <typename FsuipcUserAdapter>
 class fsuipc_flight_vars : public flight_vars
 {
 public:
 
-   static const variable_group VAR_GROUP;
-
-   fsuipc_flight_vars();
+   fsuipc_flight_vars()
+      : _update_observer(
+           std::bind(
+              &fsuipc_flight_vars::on_offset_update,
+              this,
+              std::placeholders::_1))
+   {
+   }
 
    virtual subscription_id subscribe(
          const variable_id& var,
-         const var_update_handler& handler) throw (unknown_variable_error);
+         const var_update_handler& handler) throw (unknown_variable_error)
+   {
+      auto subs = _db.create_subscription(var, handler);
+      auto subs_id = subs.get_subscription_id();
+      auto offset = _db.get_offset_for_subscription(subs_id);
 
-   virtual void unsubscribe(const subscription_id& id);
+      _update_observer.start_observing(offset);
+
+      log(
+         INFO,
+         boost::format("@FSUIPC; Subscribing on %s with ID %d...") %
+            var_to_string(var) % subs_id);
+
+      return subs_id;
+   }
+
+   virtual void unsubscribe(const subscription_id& id)
+   {
+      auto offset = _db.get_offset_for_subscription(id);
+      _db.remove_subscription(id);
+      auto offsets = _db.get_all_offsets();
+      if (std::find(offsets.begin(), offsets.end(), offset) == offsets.end())
+         _update_observer.stop_observing(offset);
+   }
 
    virtual void update(
          const subscription_id& subs_id,
          const variable_value& var_value)
-   throw (unknown_variable_error, illegal_value_error);
+   throw (unknown_variable_error, illegal_value_error)
+   {
+      try
+      {
+         auto offset = _db.get_offset_for_subscription(subs_id);
+         update_offset(offset, var_value);
+      }
+      catch (fsuipc_offset_db::unknown_subscription_error&)
+      {
+         BOOST_THROW_EXCEPTION(
+            unknown_subscription_error() << subscription_info(subs_id));
+      }
+      catch (variable_value::invalid_type_error&)
+      {
+         BOOST_THROW_EXCEPTION(illegal_value_error());
+      }
+   }
+
+   void check_for_updates()
+   { _update_observer.check_for_updates(); }
 
 private:
 
    fsuipc_offset_db _db;
-   simconnect_client _sc;
-   ptr<local_fsuipc> _fsuipc;
-   ptr<double_buffer<>> _buffer;
+   fsuipc_update_observer<FsuipcUserAdapter> _update_observer;
 
-   void notify_changes();
+   void on_offset_update(
+         const fsuipc_valued_offset valued_offset)
+   {
+      for (auto& subs : _db.get_subscriptions_for_offset(valued_offset))
+      {
+         subs.get_update_handler()(
+                  subs.get_variable(),
+                  to_variable_value(valued_offset));
+      }
+   }
 
-   void sync_offset(
-         const fsuipc_offset_meta& offset);
+   void update_offset(
+         const fsuipc_offset& offset,
+         const variable_value& value)
+   {
+      std::list<fsuipc_valued_offset> updates(
+               1,
+               fsuipc_valued_offset(
+                  offset,
+                  to_fsuipc_offset_value(value)));
+      _update_observer.get_client().update(updates);
+   }
+};
 
-   bool is_offset_updated(
-         const fsuipc_offset_meta& offset) const;
+class local_fsuipc_flight_vars :
+      public fsuipc_flight_vars<local_fsuipc_user_adapter>
+{
+public:
 
-   variable_value read_offset(
-         const fsuipc_offset_meta& offset) const;
-
-   void write_offset(
-         const fsuipc_offset_meta& offset,
-         const variable_value& value);
+   static const variable_group VAR_GROUP;
 };
 
 }} // namespace oac::fv

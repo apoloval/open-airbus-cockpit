@@ -26,102 +26,200 @@
 using namespace oac;
 using namespace oac::fv;
 
-BOOST_AUTO_TEST_SUITE(FsuipcOffsetMeta)
+BOOST_AUTO_TEST_SUITE(VariableIdToFsuipcOffsetConversion)
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddress)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithHexName)
 {
-   fsuipc_offset_meta meta(make_var_id("fsuipc/offset", "0x200"));
-   BOOST_CHECK_EQUAL(0x200, meta.address());
-   BOOST_CHECK_EQUAL(1, meta.length());
+   auto offset = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200"));
+   BOOST_CHECK_EQUAL(0x200, offset.address);
+   BOOST_CHECK_EQUAL(1, offset.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddressWithDecimalSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithHexAddressWithDecimalSize)
 {
-   fsuipc_offset_meta meta(make_var_id("fsuipc/offset", "0x200:2"));
-   BOOST_CHECK_EQUAL(0x200, meta.address());
-   BOOST_CHECK_EQUAL(2, meta.length());
+   auto offset = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:2"));
+   BOOST_CHECK_EQUAL(0x200, offset.address);
+   BOOST_CHECK_EQUAL(2, offset.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromDecimalAddressWithSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithDecimalAddress)
 {
-   fsuipc_offset_meta meta(make_var_id("fsuipc/offset", "512:2"));
-   BOOST_CHECK_EQUAL(512, meta.address());
-   BOOST_CHECK_EQUAL(2, meta.length());
+   auto offset = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "512"));
+   BOOST_CHECK_EQUAL(512, offset.address);
+   BOOST_CHECK_EQUAL(1, offset.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddressWithHexSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithDecimalAddressWithDecimalSize)
 {
-   fsuipc_offset_meta meta(make_var_id("fsuipc/offset", "0x200:0x2"));
-   BOOST_CHECK_EQUAL(0x200, meta.address());
-   BOOST_CHECK_EQUAL(2, meta.length());
+   auto offset = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "512:2"));
+   BOOST_CHECK_EQUAL(512, offset.address);
+   BOOST_CHECK_EQUAL(2, offset.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddressWithTextualByteSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithWithHexSize)
 {
-   fsuipc_offset_meta meta1(make_var_id("fsuipc/offset", "0x200:byte"));
-   fsuipc_offset_meta meta2(make_var_id("fsuipc/offset", "0x200:BYTE"));
-
-   BOOST_CHECK_EQUAL(0x200, meta1.address());
-   BOOST_CHECK_EQUAL(1, meta1.length());
-   BOOST_CHECK_EQUAL(0x200, meta2.address());
-   BOOST_CHECK_EQUAL(1, meta2.length());
+   auto offset = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:0x2"));
+   BOOST_CHECK_EQUAL(0x200, offset.address);
+   BOOST_CHECK_EQUAL(2, offset.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddressWithTextualWordSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithTextualByteSize)
 {
-   fsuipc_offset_meta meta1(make_var_id("fsuipc/offset", "0x200:word"));
-   fsuipc_offset_meta meta2(make_var_id("fsuipc/offset", "0x200:WORD"));
+   auto offset1 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:byte"));
+   auto offset2 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:BYTE"));
 
-   BOOST_CHECK_EQUAL(0x200, meta1.address());
-   BOOST_CHECK_EQUAL(2, meta1.length());
-   BOOST_CHECK_EQUAL(0x200, meta2.address());
-   BOOST_CHECK_EQUAL(2, meta2.length());
+   BOOST_CHECK_EQUAL(0x200, offset1.address);
+   BOOST_CHECK_EQUAL(1, offset1.length);
+   BOOST_CHECK_EQUAL(0x200, offset2.address);
+   BOOST_CHECK_EQUAL(1, offset2.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustCreateFromHexAddressWithTextualDoubleWordSize)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithTextualWordSize)
 {
-   fsuipc_offset_meta meta1(make_var_id("fsuipc/offset", "0x200:dword"));
-   fsuipc_offset_meta meta2(make_var_id("fsuipc/offset", "0x200:DWORD"));
+   auto offset1 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:word"));
+   auto offset2 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:WORD"));
 
-   BOOST_CHECK_EQUAL(0x200, meta1.address());
-   BOOST_CHECK_EQUAL(4, meta1.length());
-   BOOST_CHECK_EQUAL(0x200, meta2.address());
-   BOOST_CHECK_EQUAL(4, meta2.length());
+   BOOST_CHECK_EQUAL(0x200, offset1.address);
+   BOOST_CHECK_EQUAL(2, offset1.length);
+   BOOST_CHECK_EQUAL(0x200, offset2.address);
+   BOOST_CHECK_EQUAL(2, offset2.length);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowWhenCreatingFromNoFsuipcVarGroup)
+BOOST_AUTO_TEST_CASE(MustConvertVarNameWithTextualDoubleWordSize)
+{
+   auto offset1 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:dword"));
+   auto offset2 = to_fsuipc_offset(
+            make_var_id("fsuipc/offset", "0x200:DWORD"));
+
+   BOOST_CHECK_EQUAL(0x200, offset1.address);
+   BOOST_CHECK_EQUAL(4, offset1.length);
+   BOOST_CHECK_EQUAL(0x200, offset2.address);
+   BOOST_CHECK_EQUAL(4, offset2.length);
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingFromNoFsuipcVarGroup)
 {
    BOOST_CHECK_THROW(
-            fsuipc_offset_meta(make_var_id("simconnect/var", "0x200:2")),
+            to_fsuipc_offset(make_var_id("simconnect/var", "0x200:2")),
             fsuipc::invalid_var_group_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowWhenCreatingFromHexBeginningNotANumberVarName)
+BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithTextualNameWithHexPrefix)
 {
    BOOST_CHECK_THROW(
-            fsuipc_offset_meta(make_var_id("fsuipc/offset", "foobar")),
+            to_fsuipc_offset(make_var_id("fsuipc/offset", "foobar")),
             fsuipc::var_name_syntax_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowWhenCreatingFromNonHexBeginningNotANumberVarName)
+BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithTextualNameNonHexPrefix)
 {
    BOOST_CHECK_THROW(
-            fsuipc_offset_meta(make_var_id("fsuipc/offset", "zulu")),
+            to_fsuipc_offset(make_var_id("fsuipc/offset", "zulu")),
             fsuipc::var_name_syntax_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowWhenCreatingFromHexAddressWithInvalidSizeNumber)
+BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithHexAddressWithWrongSizeNumber)
 {
    BOOST_CHECK_THROW(
-            fsuipc_offset_meta(make_var_id("fsuipc/offset", "0x200:3")),
+            to_fsuipc_offset(make_var_id("fsuipc/offset", "0x200:3")),
             fsuipc::var_name_syntax_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowWhenCreatingFromHexAddressWithNotNumberSize)
+BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithHexAddressWithWrongTextualSize)
 {
    BOOST_CHECK_THROW(
-            fsuipc_offset_meta(make_var_id("fsuipc/offset", "0x200:foobar")),
+            to_fsuipc_offset(make_var_id("fsuipc/offset", "0x200:foobar")),
             fsuipc::var_name_syntax_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(FsuipcValuedOffsetToVariableValueConversion)
+
+BOOST_AUTO_TEST_CASE(MustConvertByteOffset)
+{
+   auto var_value = to_variable_value(
+            fsuipc_valued_offset(
+               fsuipc_offset(0x700, OFFSET_LEN_BYTE),
+               0x0a));
+   BOOST_CHECK_EQUAL(VAR_BYTE, var_value.get_type());
+   BOOST_CHECK_EQUAL(0x0a, var_value.as_byte());
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertWordOffset)
+{
+   auto var_value = to_variable_value(
+            fsuipc_valued_offset(
+               fsuipc_offset(0x700, OFFSET_LEN_WORD),
+               0x0a0b));
+   BOOST_CHECK_EQUAL(VAR_WORD, var_value.get_type());
+   BOOST_CHECK_EQUAL(0x0a0b, var_value.as_word());
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertDoubleWordOffset)
+{
+   auto var_value = to_variable_value(
+            fsuipc_valued_offset(
+               fsuipc_offset(0x700, OFFSET_LEN_DWORD),
+               0x0a0b0c0d));
+   BOOST_CHECK_EQUAL(VAR_DWORD, var_value.get_type());
+   BOOST_CHECK_EQUAL(0x0a0b0c0d, var_value.as_dword());
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(VariableValueToFsuipcValuedOffsetConversion)
+
+BOOST_AUTO_TEST_CASE(MustConvertBoolVariable)
+{
+   auto valued_offset1 = to_fsuipc_offset_value(
+            variable_value::from_bool(true));
+   auto valued_offset2 = to_fsuipc_offset_value(
+            variable_value::from_bool(false));
+   BOOST_CHECK_EQUAL(1, valued_offset1);
+   BOOST_CHECK_EQUAL(0, valued_offset2);
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertByteVariable)
+{
+   auto valued_offset = to_fsuipc_offset_value(
+            variable_value::from_byte(0x0a));
+   BOOST_CHECK_EQUAL(0x0a, valued_offset);
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertWordVariable)
+{
+   auto valued_offset = to_fsuipc_offset_value(
+            variable_value::from_word(0x0a0b));
+   BOOST_CHECK_EQUAL(0x0a0b, valued_offset);
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertDoubleWordVariable)
+{
+   auto valued_offset = to_fsuipc_offset_value(
+            variable_value::from_dword(0x0a0b0c0d));
+   BOOST_CHECK_EQUAL(0x0a0b0c0d, valued_offset);
+}
+
+BOOST_AUTO_TEST_CASE(MustConvertFloatVariable)
+{
+   auto valued_offset = to_fsuipc_offset_value(
+            variable_value::from_float(3.1415f));
+   BOOST_CHECK_EQUAL(3, valued_offset);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -133,7 +231,7 @@ BOOST_AUTO_TEST_SUITE(FsuipcOffsetDb)
 auto example_var_1 = make_var_id("fsuipc/offset", "0x200:2");
 auto last_var_updated = make_var_id("fsuipc/offset", "no name");
 
-auto example_offset_1 = fsuipc_offset_meta(example_var_1);
+auto example_offset_1 = to_fsuipc_offset(example_var_1);
 
 void update_handler(
       const variable_id& id,

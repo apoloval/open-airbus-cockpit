@@ -57,10 +57,10 @@ test_link_libraries(
    fsuipc_user_internal
 )
 
-add_unit_test(api-test)
-add_unit_test(fsuipc-test)
-add_unit_test(protocol-test)
-add_unit_test(subscription-test)
+add_unit_test(api-test flightvars)
+add_unit_test(fsuipc-test flightvars)
+add_unit_test(protocol-test flightvars)
+add_unit_test(subscription-test flightvars)
 
-add_integration_test(server-itest)
+add_integration_test(server-itest flightvars)
 
