@@ -131,6 +131,21 @@ inline std::string var_to_string(const variable_id& id)
             get_var_name(id).get_tag());
 }
 
+/**
+ * A hash function for a variable ID.
+ */
+struct variable_id_hash
+{
+   std::hash<std::string> str_hash;
+
+   std::size_t operator()(const variable_id& var_id) const
+   {
+      auto var_group_tag = get_var_group(var_id).get_tag();
+      auto var_name_tag = get_var_name(var_id).get_tag();
+      return str_hash(var_group_tag) + str_hash(var_name_tag);
+   }
+};
+
 enum variable_type
 {
    VAR_BOOLEAN,
@@ -167,6 +182,8 @@ public:
    std::uint16_t as_word() const throw (invalid_type_error);
    std::uint32_t as_dword() const throw (invalid_type_error);
    float as_float() const throw (invalid_type_error);
+
+   std::string to_string() const;
 
 private:
 

@@ -92,6 +92,20 @@ throw (invalid_type_error)
    return buffer::read_as<float>(*_buffer, 0);
 }
 
+std::string
+variable_value::to_string() const
+{
+   switch (_type)
+   {
+      case VAR_BOOLEAN: return as_bool() ? "true(bool)" : "false(bool)";
+      case VAR_BYTE: return str(boost::format("%d(byte)") % int(as_byte()));
+      case VAR_WORD: return str(boost::format("%d(word)") % as_word());
+      case VAR_DWORD: return str(boost::format("%d(dword)") % as_dword());
+      case VAR_FLOAT: return str(boost::format("%f(float)") % as_float());
+      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never reached
+   }
+}
+
 void
 variable_value::checkType(const variable_type& type) const
 throw (invalid_type_error)
