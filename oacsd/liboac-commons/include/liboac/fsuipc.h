@@ -185,6 +185,13 @@ struct fsuipc_valued_offset : fsuipc_offset
          fsuipc_offset_value val)
       : fsuipc_offset(offset), value(val)
    {}
+
+   fsuipc_valued_offset(
+         fsuipc_offset_address addr,
+         fsuipc_offset_length len,
+         fsuipc_offset_value val)
+      : fsuipc_offset(addr, len), value(val)
+   {}
 };
 
 /**

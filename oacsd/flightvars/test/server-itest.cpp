@@ -12,12 +12,14 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License
+ * You Must have received a copy of the GNU General Public License
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
+
+#include <cstdlib>
 
 #include <liboac/network.h>
 
@@ -28,201 +30,342 @@
 #include "server.h"
 #include "core.h"
 #include "fake.h"
+#include "fsuipc.h"
 #include "subscription.h"
 
 using namespace oac;
 using namespace oac::fv;
 
-struct setup_log
+BOOST_AUTO_TEST_SUITE(FlightVarsServerTest);
+
+struct let_test
 {
-   inline setup_log()
+   let_test()
    {
+      // Comment in/out this line to enable/disable logging to stderr
       set_main_logger(make_logger(log_level::INFO, file_output_stream::STDERR));
+
+      // A random port between 1025 and 7025 ensures socket is not occupied
+      // by a previous test
+      _port = rand() % 7000 + 1025;
+
+      _fsuipc = std::make_shared<dummy_fsuipc_flight_vars>();
+      _server = flight_vars_server::create(_fsuipc, _port);
+      _server->run_in_background();
    }
-};
 
-proto::begin_session_message handshake(tcp_client& cli)
-{
-   proto::message cli_msg = proto::begin_session_message("Test Client");
-   proto::serialize<proto::binary_message_serializer>(
-            cli_msg, *cli.output());
-   auto srv_msg = proto::deserialize<proto::binary_message_deserializer>(
-            *cli.input());
-   return boost::get<proto::begin_session_message>(srv_msg);
-}
-
-void terminate(tcp_client& cli)
-{
-   auto msg = proto::end_session_message("Client disconnected, bye!");
-   proto::serialize<proto::binary_message_serializer>(
-            msg, *cli.output());   
-}
-
-void stop_server(flight_vars_server::ptr_type& srv)
-{
-   srv.reset();
-   boost::this_thread::sleep_for(boost::chrono::seconds(3));
-}
-
-void request_subscription(
-      tcp_client& cli,
-      const variable_group& var_grp,
-      const variable_name& var_name)
-{
-   auto req = proto::subscription_request_message(var_grp, var_name);
-   proto::serialize<proto::binary_message_serializer>(req, *cli.output());
-}
-
-proto::message
-read_message(
-      tcp_client& cli)
-{
-   return proto::deserialize<proto::binary_message_deserializer>(*cli.input());
-}
-
-proto::subscription_reply_message
-as_subscription_reply(
-      proto::message& rep)
-{
-   return boost::get<proto::subscription_reply_message>(rep);
-}
-
-proto::var_update_message
-as_var_update(
-      proto::message& rep)
-{
-   return boost::get<proto::var_update_message>(rep);
-}
-
-proto::subscription_reply_message
-read_subscription_reply(
-      tcp_client& cli)
-{
-   while (true)
+   let_test& connect()
    {
-      auto msg = read_message(cli);
-      if (auto rep = boost::get<proto::subscription_reply_message>(&msg))
-         return *rep;
+      _client = std::make_shared<tcp_client>(
+            "localhost", _port);
+      return *this;
    }
-}
 
-BOOST_FIXTURE_TEST_SUITE(FlightVarsServerTest, setup_log);
-
-BOOST_AUTO_TEST_CASE(ServerShouldHandshake)
-{   
-   auto server = flight_vars_server::create();
-   server->run_in_background();
-
+   let_test& handshake()
    {
-      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
-      auto bs_msg = handshake(cli);
-      BOOST_CHECK_EQUAL(flight_vars_server::PEER_NAME, bs_msg.pname);
-      BOOST_CHECK_EQUAL(proto::CURRENT_PROTOCOL_VERSION, bs_msg.proto_ver);
-      terminate(cli);
+      proto::message open_req = proto::begin_session_message("Test Client");
+      send_message_as(open_req);
+
+      auto open_rep = receive_message_as<proto::begin_session_message>();
+
+      BOOST_CHECK_EQUAL(flight_vars_server::PEER_NAME, open_rep.pname);
+      BOOST_CHECK_EQUAL(proto::CURRENT_PROTOCOL_VERSION, open_rep.proto_ver);
+
+      return *this;
    }
-   stop_server(server);
-}
 
-BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToSubscriptionRequest)
-{
-   auto server = flight_vars_server::create(
-            std::make_shared<fake_flight_vars>());
-   server->run_in_background();
-
+   let_test& disconnect()
    {
-      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
-      auto bs_msg = handshake(cli);
-      request_subscription(
-               cli,
-               variable_group("testing"),
-               variable_name("foobar"));
-      auto rep = read_subscription_reply(cli);
-      BOOST_CHECK_EQUAL(
-               proto::subscription_reply_message::STATUS_SUCCESS,
-               rep.st);
-      BOOST_CHECK_EQUAL("testing", rep.var_grp.get_tag());
-      BOOST_CHECK_EQUAL("foobar", rep.var_name.get_tag());
-      terminate(cli);
+      auto msg = proto::end_session_message("Client disconnected, bye!");
+      send_message_as(msg);
+
+      // Have to wait a little while to let the server process the message
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+
+      BOOST_CHECK(connection_is_closed());
+
+      _client.reset();
+
+      return *this;
    }
-   stop_server(server);
-}
 
-BOOST_AUTO_TEST_CASE(ServerShouldRespondErrorToWrongSubscriptionRequest)
-{
-   auto server = flight_vars_server::create(
-            std::make_shared<fake_flight_vars>());
-   server->run_in_background();
-
+   let_test& subscribe(
+         const variable_group::tag_type& var_group_tag,
+         const variable_name::tag_type& var_name_tag,
+         bool expect_success = true)
    {
-      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
-      auto bs_msg = handshake(cli);
-      request_subscription(
-               cli,
-               variable_group("weezer"),
-               variable_name("foobar"));
-      auto rep = read_subscription_reply(cli);
-      BOOST_CHECK_EQUAL(
+      auto var_group = variable_group(var_group_tag);
+      auto var_name = variable_name(var_name_tag);
+      auto var_id = make_var_id(var_group, var_name);
+
+      auto req = proto::subscription_request_message(var_group, var_name);
+      send_message_as(req);
+
+      auto rep = receive_message_as<proto::subscription_reply_message>();
+
+      if (expect_success)
+      {
+         _subscriptions[var_id] = rep.subs_id;
+         BOOST_CHECK_EQUAL(
+                  proto::subscription_reply_message::STATUS_SUCCESS,
+                  rep.st);
+      }
+      else
+         BOOST_CHECK_EQUAL(
                proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
                rep.st);
-      BOOST_CHECK_EQUAL("weezer", rep.var_grp.get_tag());
-      BOOST_CHECK_EQUAL("foobar", rep.var_name.get_tag());
-      terminate(cli);
+      BOOST_CHECK_EQUAL(var_group.get_tag(), rep.var_grp.get_tag());
+      BOOST_CHECK_EQUAL(var_name.get_tag(), rep.var_name.get_tag());
+      return *this;
    }
-   stop_server(server);
+
+   let_test& receive_var_update(
+         const variable_group::tag_type& var_group_tag,
+         const variable_name::tag_type& var_name_tag,
+         const variable_value& value)
+   {
+      auto var_id = make_var_id(var_group_tag, var_name_tag);
+      auto rep = receive_message_as<proto::var_update_message>();
+      auto expected_subs_id = _subscriptions[var_id];
+
+      BOOST_CHECK_EQUAL(expected_subs_id, rep.subs_id);
+      BOOST_CHECK_EQUAL(value.get_type(), rep.var_value.get_type());
+      switch (value.get_type())
+      {
+         case VAR_BOOLEAN:
+            BOOST_CHECK_EQUAL(value.as_bool(), rep.var_value.as_bool());
+            break;
+         case VAR_BYTE:
+            BOOST_CHECK_EQUAL(value.as_byte(), rep.var_value.as_byte());
+            break;
+         case VAR_WORD:
+            BOOST_CHECK_EQUAL(value.as_word(), rep.var_value.as_word());
+            break;
+         case VAR_DWORD:
+            BOOST_CHECK_EQUAL(value.as_dword(), rep.var_value.as_dword());
+            break;
+         case VAR_FLOAT:
+            BOOST_CHECK_EQUAL(value.as_float(), rep.var_value.as_float());
+            break;
+      }
+
+      return *this;
+   }
+
+   let_test& on_offset_change(
+         const fsuipc_offset_address& address,
+         const fsuipc_offset_length& length,
+         const fsuipc_offset_value& value)
+   {
+      _fsuipc->user_adapter().write_value_to_buffer(address, length, value);
+      return *this;
+   }
+
+   let_test& assert_offset_value(
+         const fsuipc_offset_address& address,
+         const fsuipc_offset_length& length,
+         const fsuipc_offset_value& value)
+   {
+      auto val = _fsuipc->user_adapter()
+            .read_value_from_buffer(address, length);
+      BOOST_CHECK_EQUAL(value, val);
+      return *this;
+   }
+
+   let_test& fsuipc_polls_for_changes()
+   {
+      _fsuipc->check_for_updates();
+      return *this;
+   }
+
+   let_test& send_var_update(
+         const variable_group::tag_type& var_group_tag,
+         const variable_name::tag_type& var_name_tag,
+         const variable_value& value)
+   {
+      auto var_id = make_var_id(var_group_tag, var_name_tag);
+      auto subs_id = _subscriptions[var_id];
+      return send_var_update(subs_id, value);
+   }
+
+   let_test& send_var_update(
+         const subscription_id& subs_id,
+         const variable_value& value)
+   {
+      auto req = proto::var_update_message(subs_id, value);
+      send_message_as(req);
+
+      // Have to wait a little while to let the server process the message
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+
+      return *this;
+   }
+
+private:
+
+   std::uint16_t _port;
+   std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
+   flight_vars_server::ptr_type _server;
+   std::shared_ptr<tcp_client> _client;
+   std::unordered_map<
+         variable_id,
+         subscription_id,
+         variable_id_hash> _subscriptions;
+
+   proto::message receive_message()
+   {
+      return proto::deserialize<proto::binary_message_deserializer>(
+            *_client->input());
+   }
+
+   template <typename MessageType>
+   MessageType receive_message_as()
+   {
+      auto msg = receive_message();
+      auto casted_msg = boost::get<MessageType>(&msg);
+      BOOST_CHECK(casted_msg != nullptr);
+      return *casted_msg;
+   }
+
+   template <typename MessageType>
+   void send_message_as(const MessageType& msg)
+   {
+      proto::serialize<proto::binary_message_serializer>(
+            msg, *_client->output());
+   }
+
+   bool connection_is_closed()
+   {
+      auto& socket = _client->connection().socket();
+      std::uint8_t byte;
+      boost::system::error_code ec;
+
+      boost::asio::read(
+            socket,
+            boost::asio::buffer(&byte, 1),
+            ec);
+      return ec.value() ==  boost::asio::error::eof;
+   }
+
+};
+
+BOOST_AUTO_TEST_CASE(MustHandshake)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .disconnect();
 }
 
-BOOST_AUTO_TEST_CASE(ServerShouldRespondSuccessToManySubscriptionRequests)
+BOOST_AUTO_TEST_CASE(MustRespondSuccessToSubscriptionRequest)
 {
-   auto server = flight_vars_server::create(
-            std::make_shared<fake_flight_vars>());
-   server->run_in_background();
-
-   {
-      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
-      auto bs_msg = handshake(cli);
-      for (int i = 0; i < 8192; i++)
-      {
-         auto var_name = str(boost::format("foobar-%d") % i);
-         request_subscription(
-                cli,
-                variable_group("testing"),
-                variable_name(var_name));
-         auto rep = read_subscription_reply(cli);
-         BOOST_CHECK_EQUAL(
-                proto::subscription_reply_message::STATUS_SUCCESS,
-                rep.st);
-         BOOST_CHECK_EQUAL("testing", rep.var_grp.get_tag());
-         BOOST_CHECK_EQUAL(var_name, rep.var_name.get_tag());
-      }
-      terminate(cli);
-   }
-   stop_server(server);
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .disconnect();
 }
 
-BOOST_AUTO_TEST_CASE(ServerShouldNotifyVarUpdates)
+BOOST_AUTO_TEST_CASE(MustRespondErrorToWrongSubscriptionRequest)
 {
-   auto server = flight_vars_server::create(
-            std::make_shared<fake_flight_vars>());
-   server->run_in_background();
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("unexisting/group", "unexisting/variable", false)
+         .disconnect();
+}
 
-   {
-      tcp_client cli("localhost", flight_vars_server::DEFAULT_PORT);
-      auto bs_msg = handshake(cli);
-      request_subscription(
-               cli,
-               variable_group("testing"),
-               variable_name("foobar"));
+BOOST_AUTO_TEST_CASE(MustRespondSuccessToManySubscriptionRequests)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .subscribe("fsuipc/offset", "0x704:4")
+         .subscribe("fsuipc/offset", "0x708:2")
+         .subscribe("unexisting/group", "unexisting/variable", false)
+         .subscribe("fsuipc/offset", "0x70a:2")
+         .subscribe("fsuipc/offset", "0x70c:4")
+         .disconnect();
+}
 
-      auto subs_id = as_subscription_reply(read_message(cli)).subs_id;
-      for (int i = 0; i < 3; i++)
-      {
-         auto rep = as_var_update(read_message(cli));
-         BOOST_CHECK_EQUAL(subs_id, rep.subs_id);
-         BOOST_CHECK_EQUAL(VAR_DWORD, rep.var_value.get_type());
-      }
-      terminate(cli);
-   }
-   stop_server(server);
+BOOST_AUTO_TEST_CASE(MustNotifyVarUpdates)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .subscribe("fsuipc/offset", "0x800:1")
+         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .fsuipc_polls_for_changes()
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x700:4",
+               variable_value::from_dword(0x0a0b0c0d))
+         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x01020304)
+         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x05060708)
+         .fsuipc_polls_for_changes()
+         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0xab)
+         .fsuipc_polls_for_changes()
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x700:4",
+               variable_value::from_dword(0x05060708))
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x800:1",
+               variable_value::from_byte(0xab))
+         .disconnect();
+}
+
+BOOST_AUTO_TEST_CASE(MustAcceptVarUpdatesFromClient)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .subscribe("fsuipc/offset", "0x700:4")
+         .send_var_update(
+               "fsuipc/offset",
+               "0x700:4",
+               variable_value::from_dword(0x01020304))
+         .assert_offset_value(0x700, OFFSET_LEN_DWORD, 0x01020304)
+         .fsuipc_polls_for_changes()
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x700:4",
+               variable_value::from_dword(0x01020304))
+          // check server still responds
+         .subscribe("fsuipc/offset", "0x800:1")
+         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0x4a)
+         .fsuipc_polls_for_changes()
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x800:1",
+               variable_value::from_byte(0x4a))
+         .disconnect();
+}
+
+BOOST_AUTO_TEST_CASE(MustIgnoreVarUpdatesWithUnknownSubscriptionId)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .subscribe("fsuipc/offset", "0x700:4")
+         .send_var_update(
+               1234567,
+               variable_value::from_dword(0x01020304)) // ignored by server
+         .assert_offset_value(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+          // check server still responds
+         .subscribe("fsuipc/offset", "0x800:1")
+         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0x4a)
+         .fsuipc_polls_for_changes()
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x800:1",
+               variable_value::from_byte(0x4a))
+         .disconnect();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

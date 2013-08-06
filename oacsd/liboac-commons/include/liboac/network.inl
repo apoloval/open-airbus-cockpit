@@ -197,7 +197,6 @@ async_tcp_connection::write(
 
 
 
-
 template <typename ConnectionHandler, typename ErrorHandler>
 async_tcp_server::async_tcp_server(
       std::uint16_t port,

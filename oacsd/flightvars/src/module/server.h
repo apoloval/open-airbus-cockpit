@@ -59,14 +59,12 @@ private:
       std::shared_ptr<flight_vars_server> server;
       subscription_mapper subscriptions;
       ring_buffer::ptr_type input_buffer;
-      ring_buffer::ptr_type output_buffer;
       async_tcp_connection::ptr_type conn;
 
       session(const std::shared_ptr<flight_vars_server>& srv,
               const async_tcp_connection::ptr_type& c)
          : server(srv),
            input_buffer(ring_buffer::create(64*1024)),
-           output_buffer(ring_buffer::create(64*1024)),
            conn(c)
       {}
 

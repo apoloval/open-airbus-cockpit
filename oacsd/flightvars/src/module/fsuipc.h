@@ -202,20 +202,36 @@ public:
 
    virtual subscription_id subscribe(
          const variable_id& var,
-         const var_update_handler& handler) throw (unknown_variable_error)
+         const var_update_handler& handler)
+   throw (unknown_variable_error)
    {
-      auto subs = _db.create_subscription(var, handler);
-      auto subs_id = subs.get_subscription_id();
-      auto offset = _db.get_offset_for_subscription(subs_id);
+      try
+      {
+         auto subs = _db.create_subscription(var, handler);
+         auto subs_id = subs.get_subscription_id();
+         auto offset = _db.get_offset_for_subscription(subs_id);
 
-      _update_observer.start_observing(offset);
+         _update_observer.start_observing(offset);
 
-      log(
-         INFO,
-         boost::format("@FSUIPC; Subscribing on %s with ID %d...") %
-            var_to_string(var) % subs_id);
+         log(
+            INFO,
+            boost::format("@FSUIPC; Subscribing on %s with ID %d...") %
+               var_to_string(var) % subs_id);
 
-      return subs_id;
+         return subs_id;
+      }
+      catch (fsuipc::invalid_var_group_error&)
+      {
+         BOOST_THROW_EXCEPTION(
+               unknown_variable_group_error() <<
+               variable_group_info(get_var_group(var)));
+      }
+      catch (fsuipc::var_name_syntax_error&)
+      {
+         BOOST_THROW_EXCEPTION(
+               unknown_variable_name_error() <<
+               variable_name_info(get_var_name(var)));
+      }
    }
 
    virtual void unsubscribe(const subscription_id& id)
@@ -247,6 +263,12 @@ public:
          BOOST_THROW_EXCEPTION(illegal_value_error());
       }
    }
+
+   const FsuipcUserAdapter& user_adapter() const
+   { return _update_observer.get_client().user_adapter(); }
+
+   FsuipcUserAdapter& user_adapter()
+   { return _update_observer.get_client().user_adapter(); }
 
    void check_for_updates()
    { _update_observer.check_for_updates(); }
@@ -287,6 +309,8 @@ public:
 
    static const variable_group VAR_GROUP;
 };
+
+typedef fsuipc_flight_vars<dummy_fsuipc_user_adapter> dummy_fsuipc_flight_vars;
 
 }} // namespace oac::fv
 
