@@ -117,6 +117,27 @@ void log(log_level level, const std::string& msg);
  */
 void log(log_level level, const boost::format& fmt);
 
-}; // namespace oac
+/**
+ * Convenience function for logging INFO entries.
+ */
+template <typename LogLine>
+void log_info(const LogLine& line)
+{ log(log_level::INFO, line); }
+
+/**
+ * Convenience function for logging INFO entries.
+ */
+template <typename LogLine>
+void log_warn(const LogLine& line)
+{ log(log_level::WARN, line); }
+
+/**
+ * Convenience function for logging INFO entries.
+ */
+template <typename LogLine>
+void log_fail(const LogLine& line)
+{ log(log_level::FAIL, line); }
+
+} // namespace oac
 
 #endif
