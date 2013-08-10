@@ -42,14 +42,18 @@ const int flight_vars_server::DEFAULT_PORT(8642);
 const proto::peer_name flight_vars_server::PEER_NAME("FlightVars Server");
 
 flight_vars_server::flight_vars_server(
-      const std::shared_ptr<flight_vars>& delegate, int port)
+      const std::shared_ptr<flight_vars>& delegate,
+      int port,
+      const std::shared_ptr<boost::asio::io_service>& io_srv)
    : _delegate(delegate),
      _tcp_server(
-        port,
-        std::bind(
-           &flight_vars_server::accept_connection,
-           this,
-           std::placeholders::_1))
+           port,
+           std::bind(
+                 &flight_vars_server::accept_connection,
+                 this,
+                 std::placeholders::_1),
+           io_srv,
+           network::error_handler())
 {
    log_info(boost::format("@server; Initialized on port %d") % port);
    if (!_delegate)
@@ -59,7 +63,6 @@ flight_vars_server::flight_vars_server(
 flight_vars_server::~flight_vars_server()
 {
    log_info("@server; stopping service");
-   _tcp_server.stop();
 }
 
 flight_vars_server::session::~session()

@@ -135,15 +135,28 @@ tcp_server<Worker>::on_accept(const ptr<tcp_connection>& conn)
 
 
 inline
-tcp_client::tcp_client(const std::string& hostname, std::uint16_t port)
+tcp_client::tcp_client(
+      const std::string& hostname,
+      std::uint16_t port)
+throw (network::connection_error)
 {
    using namespace boost::asio;
 
-   _connection = new tcp_connection();
-   ip::tcp::resolver resolver(_connection->io_service());
-   ip::tcp::resolver::query query(
-         hostname, boost::lexical_cast<std::string>(port));
-   connect(_connection->socket(), resolver.resolve(query));
+   try
+   {
+      _connection = new tcp_connection();
+      ip::tcp::resolver resolver(_connection->io_service());
+      ip::tcp::resolver::query query(
+            hostname, boost::lexical_cast<std::string>(port));
+      connect(_connection->socket(), resolver.resolve(query));
+   }
+   catch (boost::system::system_error& e)
+   {
+      BOOST_THROW_EXCEPTION(
+               network::connection_error() <<
+               boost_system_error_info(e) <<
+               message_info(e.what()));
+   }
 }
 
 inline tcp_connection&
@@ -197,81 +210,35 @@ async_tcp_connection::write(
 
 
 
-template <typename ConnectionHandler, typename ErrorHandler>
+inline
 async_tcp_server::async_tcp_server(
       std::uint16_t port,
-      const ConnectionHandler& handler,
-      const ErrorHandler& ehandler)
+      const connection_handler& handler,
+      const std::shared_ptr<boost::asio::io_service>& io_srv =
+            std::make_shared<boost::asio::io_service>(),
+      const network::error_handler& ehandler = network::error_handler())
 throw (network::bind_error)
-   : _acceptor(_io_service),
+   : _acceptor(*io_srv),
      _handler(handler),
+     _io_service(io_srv),
      _ehandler(ehandler)
 {
    bind_port(_acceptor, port);
-}
-
-template <typename ConnectionHandler>
-async_tcp_server::async_tcp_server(
-      std::uint16_t port,
-      const ConnectionHandler& handler)
-throw (network::bind_error)
-   : _acceptor(_io_service),
-     _handler(handler)
-{
-   bind_port(_acceptor, port);
-}
-
-inline
-async_tcp_server::~async_tcp_server()
-{ stop(); }
-
-/**
- * Run the server. It uses the current thread to execute the accept loop.
- * It stops running after a call to stop().
- */
-inline void
-async_tcp_server::run()
-{
-   _io_service.reset();
    start_accept();
-   _is_started.notify_all();
-   _io_service.run();
 }
 
-/**
- * Run the server in background. It creates a background thread which
- * executes the accept loop. It returns the control once the thread is
- * sucessfuly created and accept loop is started. Any immediate subsequent
- * call to stop shall work.
- */
-inline void
-async_tcp_server::run_in_background()
-{
-   _bg_server = boost::thread([this]() { run(); });
-   {
-      boost::mutex mutex;
-      boost::unique_lock<boost::mutex> lock(mutex);
-      _is_started.wait(lock);
-   }
-}
+inline const boost::asio::io_service&
+async_tcp_server::io_service() const
+{ return *_io_service; }
 
-/**
- * Stop the server. If running in background, it waits for the background
- * thread to finish before returning.
- */
-inline void
-async_tcp_server::stop()
-{
-   _io_service.stop();
-   if (boost::this_thread::get_id() != _bg_server.get_id() &&
-       _bg_server.joinable())
-      _bg_server.join();
-}
+inline boost::asio::io_service&
+async_tcp_server::io_service()
+{ return *_io_service; }
 
 inline void
 async_tcp_server::start_accept()
 {
-   auto conn = async_tcp_connection::create(_io_service, _ehandler);
+   auto conn = async_tcp_connection::create(*_io_service, _ehandler);
    _acceptor.async_accept(
             conn->socket(),
             std::bind(&async_tcp_server::on_accept, this, conn));

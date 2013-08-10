@@ -41,16 +41,19 @@ public:
    static const int DEFAULT_PORT;
    static const proto::peer_name PEER_NAME;
 
-   flight_vars_server(const std::shared_ptr<flight_vars>& delegate = nullptr,
-                      int port = DEFAULT_PORT);
+   flight_vars_server(
+         const std::shared_ptr<flight_vars>& delegate = nullptr,
+         int port = DEFAULT_PORT,
+         const std::shared_ptr<boost::asio::io_service>& io_srv =
+            std::shared_ptr<boost::asio::io_service>(new boost::asio::io_service));
 
    ~flight_vars_server();
 
-   void run()
-   { _tcp_server.run(); }
+   const boost::asio::io_service& io_service() const
+   { return _tcp_server.io_service(); }
 
-   void run_in_background()
-   { _tcp_server.run_in_background(); }
+   boost::asio::io_service& io_service()
+   { return _tcp_server.io_service(); }
 
 private:
 

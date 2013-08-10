@@ -25,19 +25,55 @@
 
 using namespace oac;
 
+BOOST_AUTO_TEST_SUITE(TcpClientTest)
+
+BOOST_AUTO_TEST_CASE(MustConnectToExistingHostWithAvailablePort)
+{
+   tcp_client cli("www.google.com", 80);
+   stream::write_as_string(*cli.output(), "GET / HTTP/1.1\n");
+   stream::write_as_string(*cli.output(), "Host: www.google.com\n");
+   stream::write_as_string(*cli.output(), "User-Agent: liboac-network\n");
+   stream::write_as_string(*cli.output(), "\n");
+
+   BOOST_CHECK_EQUAL(
+         "HTTP/1.1 302",
+         stream::read_as_string(*cli.input(), 12));
+}
+
+BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnexistingHost)
+{
+   BOOST_CHECK_THROW(
+         tcp_client("www.bartolohizocaca.com", 80), // hope it never exists
+         network::connection_error);
+}
+
+BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnavailablePort)
+{
+   BOOST_CHECK_THROW(
+         tcp_client("localhost", 1234),
+         network::connection_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
+
 BOOST_AUTO_TEST_SUITE(TcpServerTest)
 
 void test(const std::function<void(const ptr<tcp_connection>&)>& server_handler,
           const std::function<void(tcp_connection&)>& client_handler)
 {
-   auto server = network::make_tcp_server(9000, server_handler);
+   auto port = rand() % 7000 + 1025;
+   auto server = network::make_tcp_server(port, server_handler);
    server->run_in_background();
 
    {
-      tcp_client cli("localhost", 9000);
+      tcp_client cli("localhost", port);
       client_handler(cli.connection());
    }
 
+   // Sleep a little while to give time to the server to respond
+   boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
    server->stop();
 }
 
@@ -156,18 +192,23 @@ void test(
       const ClientHandler& client_handler,
       std::uint32_t millis_before_stop)
 {
-   async_tcp_server server(9000, conn_handler);
-   server.run_in_background();
+   auto port = rand() % 7000 + 1025;
+   async_tcp_server server(port, conn_handler);
+   boost::thread bg_thread([&server]() {
+      server.io_service().run();
+   });
 
    {
-      tcp_client cli("localhost", 9000);
+      tcp_client cli("localhost", port);
       client_handler(cli.connection());
    }
 
    /* Must wait for the server to respond before stopping it. */
    boost::this_thread::sleep_for(
             boost::chrono::milliseconds(millis_before_stop));
-   server.stop();
+
+   server.io_service().stop();
+   bg_thread.join();
 }
 
 void write_msg(

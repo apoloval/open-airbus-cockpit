@@ -51,7 +51,15 @@ struct let_test
 
       _fsuipc = std::make_shared<dummy_fsuipc_flight_vars>();
       _server = flight_vars_server::create(_fsuipc, _port);
-      _server->run_in_background();
+      _server_thread = boost::thread([this]() {
+         _server->io_service().run();
+      });
+   }
+
+   ~let_test()
+   {
+      _server->io_service().stop();
+      _server_thread.join();
    }
 
    let_test& connect()
@@ -206,6 +214,7 @@ private:
    std::uint16_t _port;
    std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
    flight_vars_server::ptr_type _server;
+   boost::thread _server_thread;
    std::shared_ptr<tcp_client> _client;
    std::unordered_map<
          variable_id,

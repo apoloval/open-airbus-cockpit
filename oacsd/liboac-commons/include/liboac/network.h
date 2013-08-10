@@ -36,6 +36,11 @@ namespace network {
 OAC_DECL_ERROR(bind_error, invalid_input_error);
 
 /**
+ * An error while connecting to a remove peer.
+ */
+OAC_DECL_ERROR(connection_error, oac::connection_error);
+
+/**
  * An attempt to execute an action on a closed connection.
  */
 OAC_DECL_ERROR(connection_closed_error, illegal_state_error);
@@ -44,13 +49,24 @@ typedef std::function<void(const io_error&)> error_handler;
 
 } // namespace network
 
+/**
+ * A synchronous TCP connection. This object is the result of creating a new
+ * TCP connection, either after accepting a new client by a server or
+ * encapsulated in a client.
+ */
 class tcp_connection
 {
 public:
 
+   /**
+    * The type of input stream used by TCP connections.
+    */
    typedef sync_read_stream_adapter<
          boost::asio::ip::tcp::socket> input_stream;
 
+   /**
+    * The type of output stream used by TCP connections.
+    */
    typedef sync_write_stream_adapter<
          boost::asio::ip::tcp::socket> output_stream;
 
@@ -119,16 +135,41 @@ private:
    void on_accept(const ptr<tcp_connection>& conn);
 };
 
+/**
+ * A synchronous TCP client. It may be constructed indicating a hostname
+ * and a port, and after successful connection it wraps a tcp_connection
+ * object representing the communication with the other TCP peer.
+ */
 class tcp_client
 {
 public:
 
-   tcp_client(const std::string& hostname, std::uint16_t port);
+   /**
+    * Create a new TCP client.
+    *
+    * @param hostname   The hostname of the remote peer
+    * @param port       The port of the remote peer
+    */
+   tcp_client(
+         const std::string& hostname,
+         std::uint16_t port)
+   throw (network::connection_error);
 
+   /**
+    * Obtain the TCP connection corresponding to this client.
+    */
    tcp_connection& connection() throw (network::connection_closed_error);
 
+   /**
+    * A convenience function to obtain the input stream
+    * from the TCP connection.
+    */
    ptr<tcp_connection::input_stream> input();
 
+   /**
+    * A convenience function to obtain the output stream
+    * from the TCP connection.
+    */
    ptr<tcp_connection::output_stream> output();
 
 private:
@@ -172,59 +213,58 @@ private:
    socket_ptr _socket;
 };
 
+/**
+ * An asynchronous TCP server. This class provides an async TCP server
+ * based on Boost ASIO library. It provides some glue code to make it
+ * easier to manage incoming connections.
+ *
+ * Important note! This class operates on a boost::asio::io_service object
+ * passed as argument to its constructor. It has no control over the lifecycle
+ * of either the IO service object or the thread executing on its event loop.
+ * Therefore, before destroying the async_tcp_server object, you must be sure
+ * that IO service is stopped and the thread executing its event loop is not
+ * processing any request. Otherwise the internal handlers of async_tcp_server
+ * may execute on an already destroyed object.
+ */
 class async_tcp_server
 {
 public:
 
    /**
-    * Creates a new asynchronous TCP server on the given port with given
-    * connection handler and error handler.
+    * A handler able to process new TCP connections once they are received.
     */
-   template <typename ConnectionHandler, typename ErrorHandler>
-   async_tcp_server(
-         std::uint16_t port,
-         const ConnectionHandler& handler,
-         const ErrorHandler& ehandler)
-   throw (network::bind_error);
-
-   /**
-    * Creates a new asynchronous TCP server on the given port with given
-    * connection handler.
-    */
-   template <typename ConnectionHandler>
-   async_tcp_server(
-         std::uint16_t port,
-         const ConnectionHandler& handler)
-   throw (network::bind_error);
-
-   ~async_tcp_server();
-
-   /**
-    * Run the server. It uses the current thread to execute the accept loop.
-    * It stops running after a call to stop().
-    */
-   void run();
-
-   /**
-    * Run the server in background. It creates a background thread which
-    * executes the accept loop. It returns the control once the thread is
-    * sucessfuly created and accept loop is started. Any immediate subsequent
-    * call to stop shall work.
-    */
-   void run_in_background();
-
-   /**
-    * Stop the server. If running in background, it waits for the background
-    * thread to finish before returning.
-    */
-   void stop();
-
-private:
-
    typedef std::function<
          void(const async_tcp_connection::ptr_type&)> connection_handler;
 
-   boost::asio::io_service _io_service;
+   /**
+    * Creates a new asynchronous TCP server.
+    *
+    * @param port       The TCP port the server will be bounded
+    * @param handler    The handler to be invoked when a new connection arrives
+    * @param io_srv     The Boost IO service to use for handling IO operations
+    * @param ehandler   The handler to be invoked when an error occurs while
+    *                   waiting for a connection
+    */
+   async_tcp_server(
+         std::uint16_t port,
+         const connection_handler& handler,
+         const std::shared_ptr<boost::asio::io_service>& io_srv,
+         const network::error_handler& ehandler)
+   throw (network::bind_error);
+
+   /**
+    * Obtain the IO service used by this server.
+    */
+   const boost::asio::io_service& io_service() const;
+
+   /**
+    * Obtain the IO service used by this server.
+    */
+   boost::asio::io_service& io_service();
+
+private:
+
+   std::shared_ptr<boost::asio::io_service> _io_service;
    boost::asio::ip::tcp::acceptor _acceptor;
    boost::thread _bg_server;
    boost::condition_variable _is_started;
