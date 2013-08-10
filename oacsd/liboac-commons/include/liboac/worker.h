@@ -23,18 +23,35 @@
 
 namespace oac {
 
+/**
+ * @concept Worker
+ *
+ * Any class with the ability to process a generic unit of work. It must
+ * provide the following elements.
+ *
+ *  void operator() (const WorkUnit& work_unit);
+ *
+ * Where WorkUnit is a unit of work the worker is able to process.
+ */
+
+/**
+ * A Worker compliant class which wraps a worker in order to it to run in
+ * a separate execution thread.
+ */
 template <typename Worker, typename WorkUnit>
 class thread_worker
 {
 public:
 
-   inline thread_worker(const Worker& worker) : _worker(worker) {}
+   thread_worker(const Worker& worker) : _worker(worker) {}
 
    void operator() (const WorkUnit& work_unit)
    { work(work_unit); }
 
    void work(const WorkUnit& work_unit)
-   { boost::thread([this, work_unit]() { _worker(work_unit); }); }
+   {
+      boost::thread(std::bind(_worker, work_unit));
+   }
 
 private:
 
