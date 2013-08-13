@@ -36,7 +36,7 @@
 using namespace oac;
 using namespace oac::fv;
 
-BOOST_AUTO_TEST_SUITE(FlightVarsServerTest);
+BOOST_AUTO_TEST_SUITE(FlightVarsServerTest)
 
 struct let_test
 {
@@ -45,14 +45,16 @@ struct let_test
       // Comment in/out this line to enable/disable logging to stderr
       set_main_logger(make_logger(log_level::INFO, file_output_stream::STDERR));
 
+      _io_service = std::make_shared<boost::asio::io_service>();
+
       // A random port between 1025 and 7025 ensures socket is not occupied
       // by a previous test
       _port = rand() % 7000 + 1025;
 
       _fsuipc = std::make_shared<dummy_fsuipc_flight_vars>();
-      _server = flight_vars_server::create(_fsuipc, _port);
+      _server = flight_vars_server::create(_fsuipc, _port, _io_service);
       _server_thread = boost::thread([this]() {
-         _server->io_service().run();
+         _io_service->run();
       });
    }
 
@@ -182,7 +184,8 @@ struct let_test
 
    let_test& fsuipc_polls_for_changes()
    {
-      _fsuipc->check_for_updates();
+      _io_service->dispatch(
+            std::bind(&dummy_fsuipc_flight_vars::check_for_updates, _fsuipc));
       return *this;
    }
 
@@ -211,6 +214,7 @@ struct let_test
 
 private:
 
+   std::shared_ptr<boost::asio::io_service> _io_service;
    std::uint16_t _port;
    std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
    flight_vars_server::ptr_type _server;
