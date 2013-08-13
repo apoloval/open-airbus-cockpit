@@ -21,6 +21,8 @@
 
 #include <list>
 
+#include "simconn.h"
+
 namespace oac {
 
 /**
@@ -58,6 +60,14 @@ public:
 
 protected:
 
+   void notify_all()
+   {
+      for (auto& handler : _on_tick_handlers)
+         handler();
+   }
+
+private:
+
    std::list<on_tick_handler> _on_tick_handlers;
 };
 
@@ -69,10 +79,43 @@ class dummy_tick_observer : public tick_observer_base
 public:
 
    void tick()
-   {
-      for (auto& handler : _on_tick_handlers)
-         handler();
-   }
+   { notify_all(); }
+};
+
+/**
+ * A tick observer supported by SimConnect. This observer is bounded to
+ * SimConnect's time events, so for each tick notified by SimConnect, the
+ * tick observers are in turn notified.
+ */
+class simconnect_tick_observer : public tick_observer_base
+{
+public:
+
+   /**
+    * Create a new SimConnect observer for given event.
+    *
+    * @param sc_event The SimConnect event whose notification will be
+    *                 considered as a tick.
+    */
+   simconnect_tick_observer(
+         const simconnect_client::event_name& sc_event =
+               simconnect_client::SYSTEM_EVENT_6HZ)
+   throw (connection_error);
+
+   /**
+    * Invoke the dispatch message function of SimConnect client. This
+    * is used to dispatch any pending message from SimConnect when running
+    * as a stand-alone process. For FS/Prepar3D plugins, it is not necessary.
+    */
+   void dispatch();
+
+private:
+
+   simconnect_client _simconnect;
+
+   void on_event(
+         simconnect_client& client,
+         const SIMCONNECT_RECV_EVENT& msg);
 };
 
 } // namespace oac

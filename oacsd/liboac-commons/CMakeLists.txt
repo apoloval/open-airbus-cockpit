@@ -30,6 +30,7 @@ set(liboac-commons_SOURCES
    src/logging.cpp
    src/simconn.cpp
    src/stream.cpp
+   src/timing.cpp
 )
 
 include_directories(
@@ -58,3 +59,4 @@ add_unit_test(timing-test liboac)
 
 add_integration_test(simconn-itest liboac)
 add_integration_test(logging-itest liboac)
+add_integration_test(timing-itest liboac)
