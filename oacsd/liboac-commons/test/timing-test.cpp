@@ -44,3 +44,27 @@ BOOST_AUTO_TEST_CASE(MustInvokeHandlersOnTick)
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+
+
+BOOST_AUTO_TEST_SUITE(AsioTickObserverAdapter)
+
+BOOST_AUTO_TEST_CASE(MustInvokeHandlersOnTick)
+{
+   auto io_srv = std::make_shared<boost::asio::io_service>();
+   asio_tick_observer_adapter<dummy_tick_observer> obs(io_srv);
+   int num1 = 0, num2 = 0;
+   obs.register_handler([&num1]() { num1++; });
+   obs.register_handler([&num2]() { num2--; });
+
+   for (int i = 1; i < 64; i++)
+   {
+      obs.delegate().tick();
+      int runs = 0;
+      while (runs < 2) { runs += io_srv->run_one(); }
+      BOOST_CHECK_EQUAL(i, num1);
+      BOOST_CHECK_EQUAL(-i, num2);
+   }
+}
+
+BOOST_AUTO_TEST_SUITE_END()
