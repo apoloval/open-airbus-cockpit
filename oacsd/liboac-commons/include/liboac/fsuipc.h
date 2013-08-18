@@ -304,6 +304,9 @@ public:
          const FsuipcOffsetCollection& offsets,
          const FsuipcValuedOffsetEvaluator& evaluate)
    {
+      if (offsets.empty())
+         return;
+
       std::list<fsuipc_valued_offset> values;
       for (auto& offset : offsets)
       {
@@ -329,6 +332,9 @@ public:
    void update(
          const FsuipcValuedOffsetCollection& valued_offsets)
    {
+      if (valued_offsets.empty())
+         return;
+
       for (auto& val : valued_offsets)
       {
          _user_adapter.write(val);
@@ -484,6 +490,8 @@ public:
    OAC_DECL_ERROR_INFO(error_msg_info, std::string);
 
    local_fsuipc_user_adapter() throw(operation_error);
+
+   local_fsuipc_user_adapter(const local_fsuipc_user_adapter& adapter);
 
    ~local_fsuipc_user_adapter();
 

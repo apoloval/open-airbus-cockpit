@@ -29,6 +29,11 @@ With acknowledgements to Adam Szofran (author of original FS6IPC).
 #define LIB_VERSION 2001 // 2.001
 #define MAX_SIZE 0x7F00 // Largest data (kept below 32k to avoid
 								// any possible 16-bit sign problems)
+#ifdef UNICODE
+#define UIPC_MAIN L"UIPCMAIN"
+#else
+#define UIPC_MAIN "UIPCMAIN"
+#endif
 
 #include "IPCuser.h"
 
@@ -78,7 +83,7 @@ BOOL FSUIPC_Open2(DWORD dwFSReq, DWORD *pdwResult, BYTE *pMem, DWORD dwSize)
 	
 	// Connect via FSUIPC, which is known to be FSUIPC's own
 	// and isn't subject to user modificiation
-	m_hWnd = FindWindowEx(NULL, NULL, "UIPCMAIN", NULL);
+   m_hWnd = FindWindowEx(NULL, NULL, UIPC_MAIN, NULL);
 	if (!m_hWnd)
 	{	*pdwResult = FSUIPC_ERR_NOFS;
 		return FALSE;

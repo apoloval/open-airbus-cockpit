@@ -146,6 +146,7 @@ throw (operation_error)
    if (_instance_count == 0)
    {
       // No previous instance, let's open FSUIPC
+      log_info("Opening local channel to FSUIPC");
       DWORD result;
       if (!FSUIPC_Open2(
              SIM_ANY,
@@ -159,7 +160,14 @@ throw (operation_error)
                   error_code_info(result) <<
                   error_msg_info(get_result_message(result)));
       }
+      log_info("Local channel to FSUIPC successfully open");
    }
+   _instance_count++;
+}
+
+local_fsuipc_user_adapter::local_fsuipc_user_adapter(
+      const local_fsuipc_user_adapter& adapter)
+{
    _instance_count++;
 }
 
@@ -168,10 +176,12 @@ local_fsuipc_user_adapter::~local_fsuipc_user_adapter()
    _instance_count--;
    if (_instance_count == 0)
    {
+      log_info("Closing local channel to FSUIPC");
       // Surprisingly this function has no return code. It's like nothing
       // could go wrong while closing a connection... It's like some functions
       // in FSUIPC deserve to be a third-class citizens... Bad code!
       FSUIPC_Close();
+      log_info("Local channel to FSUIPC successfully closed");
    }
 }
 

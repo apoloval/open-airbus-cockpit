@@ -20,12 +20,12 @@
 
 namespace oac { namespace fv {
 
-ptr<flight_vars_core>
+std::shared_ptr<flight_vars_core>
 flight_vars_core::instance()
 {
-   static ptr<flight_vars_core> core(nullptr);
+   static std::shared_ptr<flight_vars_core> core(nullptr);
    if (!core)
-      core = new flight_vars_core();
+      core = std::shared_ptr<flight_vars_core>(new flight_vars_core());
    return core;
 }
 
@@ -65,7 +65,7 @@ throw (unknown_variable_error, illegal_value_error)
 void
 flight_vars_core::register_group_master(
       const variable_group& grp,
-      const ptr<flight_vars>& master)
+      const std::shared_ptr<flight_vars>& master)
 throw (master_already_registered)
 {
    auto entry = _group_masters.find(grp);

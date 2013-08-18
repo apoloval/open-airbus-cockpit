@@ -41,7 +41,7 @@ public:
    /**
     * Obtain the singleton instance of Flight Vars core object.
     */
-   static ptr<flight_vars_core> instance();
+   static std::shared_ptr<flight_vars_core> instance();
 
    /**
     * Thrown in a group master registering attempt when there is already
@@ -69,7 +69,7 @@ public:
     */
    void register_group_master(
          const variable_group& grp,
-         const ptr<flight_vars>& master)
+         const std::shared_ptr<flight_vars>& master)
    throw (master_already_registered);
 
 private:
