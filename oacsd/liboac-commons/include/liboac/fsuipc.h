@@ -32,6 +32,7 @@
 
 #include "buffer.h"
 #include "exception.h"
+#include "logging.h"
 
 #ifndef LOCAL_FSUIPC_BUFFER_SIZE
 #define LOCAL_FSUIPC_BUFFER_SIZE (65*1024) // 1KB more for headers
@@ -472,7 +473,7 @@ private:
  * A FsuipcUserAdapter which wraps the local FSUIPC functions from
  * ModuleUser.lib
  */
-class local_fsuipc_user_adapter
+class local_fsuipc_user_adapter : public logger_component
 {
 public:
 

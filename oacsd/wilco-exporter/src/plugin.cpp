@@ -43,8 +43,11 @@ enum Event
 
 }; // anonymous namespace
 
-plugin::plugin() : _sc(
-   "Wilco Exporter Plugin", std::bind(&plugin::on_simconnect_open, this, _1, _2))
+plugin::plugin()
+ : logger_component("plugin"),
+   _sc(
+         "Wilco Exporter Plugin",
+         std::bind(&plugin::on_simconnect_open, this, _1, _2))
 {
    _sc.register_on_quit_callback(
          std::bind(&plugin::on_simconnect_quit, this, _1, _2));
@@ -79,8 +82,7 @@ void
 plugin::on_simconnect_exception(
       simconnect_client& client, const SIMCONNECT_RECV_EXCEPTION& msg)
 {
-   log(WARN, boost::format("unexpected exception raised: code %d")
-         % msg.dwException);
+   log(WARN, "unexpected exception raised: code %d", msg.dwException);
 }
 
 void
@@ -133,14 +135,15 @@ void plugin::on_1sec_elapsed()
 void
 plugin::on_new_aircraft(const aircraft_title& title)
 {
-   log(INFO, boost::format("New aircraft loaded: %s") % title);
+   log(INFO, "New aircraft loaded: %s", title);
    try
    {
       this->reset_cockpit(aircraft(title));
    } catch (aircraft::invalid_title& e) {
-      log(INFO, boost::format(
-            "No Wilco Airbus aircraft resolved for title '%s'") %
-                  GetErrorInfo<aircraft::title_info>(e));
+      log(
+            INFO,
+            "No Wilco Airbus aircraft resolved for title '%s'",
+            GetErrorInfo<aircraft::title_info>(e));
       this->reset_cockpit();
    }
 }
@@ -177,8 +180,10 @@ plugin::reset_cockpit(const aircraft& aircraft)
 {
    try
    {
-      log(INFO, boost::format("Initializing Wilco cockpit for %s... ")
-            % aircraft.title);
+      log(
+            INFO,
+            "Initializing Wilco cockpit for %s... ",
+            aircraft.title);
       _wilco = wilco_cockpit::new_cockpit(aircraft);
       _fsuipc = new fsuipc_cockpit_back(new local_fsuipc::factory());
       log(INFO, "Wilco Cockpit successfully initialized");

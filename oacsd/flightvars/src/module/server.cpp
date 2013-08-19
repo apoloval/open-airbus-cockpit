@@ -45,7 +45,8 @@ flight_vars_server::flight_vars_server(
       const std::shared_ptr<flight_vars>& delegate,
       int port,
       const std::shared_ptr<boost::asio::io_service>& io_srv)
-   : _delegate(delegate),
+   : logger_component("flight_vars_server"),
+     _delegate(delegate),
      _tcp_server(
            port,
            std::bind(
@@ -55,14 +56,14 @@ flight_vars_server::flight_vars_server(
            io_srv,
            network::error_handler())
 {
-   log_info(boost::format("@server; Initialized on port %d") % port);
+   log(log_level::INFO, "Initialized on port %d", port);
    if (!_delegate)
       _delegate = flight_vars_core::instance();
 }
 
 flight_vars_server::~flight_vars_server()
 {
-   log_info("@server; stopping service");
+   log_info("Stopping service");
 }
 
 flight_vars_server::session::~session()
@@ -112,7 +113,7 @@ flight_vars_server::on_read_begin_session(
 
    if (bytes_transferred == 0)
    {
-      log_warn("@server; EOF while expecting begin session message");
+      log_warn("EOF while expecting begin session message");
       return;
    }
    try
@@ -120,11 +121,12 @@ flight_vars_server::on_read_begin_session(
       auto msg = unmarshall(*session->input_buffer);
       if (auto* bs_msg = boost::get<begin_session_message>(&msg))
       {
-         log_info(
-             boost::format("@server; New client %s with protocol %d.%d") %
-                  bs_msg->pname %
-                  (bs_msg->proto_ver >> 8) %
-                  (bs_msg->proto_ver & 0x00ff));
+         log(
+               log_level::INFO,
+               "New client %s with protocol %d.%d",
+               bs_msg->pname,
+               (bs_msg->proto_ver >> 8),
+               (bs_msg->proto_ver & 0x00ff));
          auto rep = begin_session_message(PEER_NAME);
          write_message(
                   session->conn,
@@ -137,8 +139,8 @@ flight_vars_server::on_read_begin_session(
       else
       {
          log_warn(
-             "@server; Protocol error: unexpected message "
-             "while expecting begin session");
+               "Protocol error: unexpected message "
+               "while expecting begin session");
       }
    }
    catch (stream::eof_error&)
@@ -167,7 +169,7 @@ flight_vars_server::read_request(
    catch (...)
    {
       log_fail(
-            "@server; unexpected exception thrown while waiting for a request");
+            "Unexpected exception thrown while waiting for a request");
    }
 }
 
@@ -185,17 +187,18 @@ flight_vars_server::on_read_request(
       if (auto es_msg = boost::get<proto::end_session_message>(&msg))
       {
          session->unsubscribe_all();
-         log_info(
-               boost::format("@server; Session closed by peer (%s)") %
-                  es_msg->cause);
+         log(
+               log_level::INFO,
+               "Session closed by peer (%s)",
+               es_msg->cause);
          return;
       }
       else if (auto s_req = boost::get<subscription_request_message>(&msg))
       {
-         log_info(boost::format(
-               "@server; processing subscription request for variable %s") %
-                     var_to_string(
-                           make_var_id(s_req->var_grp, s_req->var_name)));
+         log(
+               log_level::INFO,
+               "Processing subscription request for variable %s",
+               var_to_string(make_var_id(s_req->var_grp, s_req->var_name)));
          auto rep = handle_subscription_request(session, *s_req);
          write_message(
                   session->conn,
@@ -214,7 +217,7 @@ flight_vars_server::on_read_request(
       {
          session->unsubscribe_all();
          log_warn(
-             "@server; Protocol error: unexpected message while expecting "
+             "Protocol error: unexpected message while expecting "
              "an end session, supscription request or variable update message");
       }
    }
@@ -227,15 +230,16 @@ flight_vars_server::on_read_request(
    catch (error& e)
    {
       session->unsubscribe_all();
-      log_fail(boost::format(
-             "@server; unexpected exception thrown while "
-             "waiting for a request: %s") % e.what());
+      log(
+            log_level::FAIL,
+            "Unexpected exception thrown while waiting for a request: %s",
+            e.what());
    }
    catch (...)
    {
       session->unsubscribe_all();
       log_fail(
-            "@server; unexpected exception thrown while waiting for a request");
+            "Unexpected exception thrown while waiting for a request");
    }
 }
 
@@ -256,8 +260,9 @@ flight_vars_server::handle_subscription_request(
                   session,
                   std::placeholders::_1,
                   std::placeholders::_2));
-      log_info(boost::format(
-            "@server; subscription for %s registered by delegate") % var_str);
+      log(
+            log_level::INFO,
+            "Subscription for %s registered by delegate", var_str);
       session->subscriptions.register_subscription(var_id, subs_id);
       return proto::subscription_reply_message(
             proto::subscription_reply_message::STATUS_SUCCESS,
@@ -267,9 +272,10 @@ flight_vars_server::handle_subscription_request(
             "");
    } catch (flight_vars::unknown_variable_error&)
    {
-      log_warn(boost::format(
-            "@server; cannot register variable "
-            "subscription: unknown variable %s") % var_str);
+      log(
+            log_level::WARN,
+            "cannot register variable subscription: unknown variable %s",
+            var_str);
       return proto::subscription_reply_message(
             proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
             req.var_grp,
@@ -293,10 +299,11 @@ flight_vars_server::send_var_update(
    }
    catch (subscription_mapper::unknown_variable_error&)
    {
-      log_warn(boost::format(
-            "@server; Internal state error: a var update was notified for "
-            "variable %s, but no associated subscription ID was found") %
-                  var_to_string(var_id));
+      log(
+            log_level::WARN,
+            "Internal state error: a var update was notified for "
+            "variable %s, but no associated subscription ID was found",
+            var_to_string(var_id));
    }
 }
 
@@ -328,14 +335,13 @@ flight_vars_server::on_write_message(
 {
    if (ec)
    {
-      log_fail(boost::format(
-            "@server; an error was returned while writing message: %s") %
-                  ec.message());
+      log(
+            log_level::FAIL,
+            "An error was returned while writing message: %s", ec.message());
    }
    else if (bytes_transferred == 0)
    {
-      log_warn(
-          "@server; peer disconnected while trying to write a message");
+      log_warn("Peer disconnected while trying to write a message");
    }
    else
       after_write();
@@ -351,17 +357,18 @@ flight_vars_server::handle_var_update_request(
    }
    catch (flight_vars::unknown_subscription_error&)
    {
-      log_warn(boost::format(
-            "@server; received a var update for unknown subscription ID %d") %
-                  req.subs_id);
+      log(
+            log_level::WARN,
+            "Received a var update for unknown subscription ID %d",
+            req.subs_id);
    }
    catch (flight_vars::illegal_value_error&)
    {
-      log_warn(boost::format(
-            "@server; received a var update for subscription "
-            "ID %d with invalid value %s") %
-                  req.subs_id %
-                  req.var_value.to_string());
+      log(
+            log_level::WARN,
+            "Received a var update for subscription ID %d with invalid value %s",
+            req.subs_id,
+            req.var_value.to_string());
    }
 }
 

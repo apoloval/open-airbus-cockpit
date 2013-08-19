@@ -24,6 +24,7 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <liboac/logging.h>
 #include <liboac/network.h>
 
 #include "api.h"
@@ -34,7 +35,8 @@ namespace oac { namespace fv {
 
 class flight_vars_server :
       public shared_by_ptr<flight_vars_server>,
-      public std::enable_shared_from_this<flight_vars_server>
+      public std::enable_shared_from_this<flight_vars_server>,
+      public logger_component
 {
 public:
 

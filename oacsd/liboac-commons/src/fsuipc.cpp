@@ -21,7 +21,6 @@
 #include <Boost/format.hpp>
 
 #include "FSUIPC.h"
-#include "logging.h"
 
 namespace oac {
 
@@ -142,6 +141,7 @@ std::uint8_t local_fsuipc_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
 local_fsuipc_user_adapter::local_fsuipc_user_adapter()
 throw (operation_error)
+ : logger_component("local_fsuipc_user_adapter")
 {
    if (_instance_count == 0)
    {
@@ -167,6 +167,7 @@ throw (operation_error)
 
 local_fsuipc_user_adapter::local_fsuipc_user_adapter(
       const local_fsuipc_user_adapter& adapter)
+ : logger_component("local_fsuipc_user_adapter")
 {
    _instance_count++;
 }

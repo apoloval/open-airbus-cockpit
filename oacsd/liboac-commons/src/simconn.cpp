@@ -33,7 +33,7 @@ void CALLBACK DispatchMessage(
       auto receiver = static_cast<simconnect_client*>(pContext);
       receiver->on_message(pData, cbData);
    } catch (std::exception& ex) {
-      log(WARN, ex.what());
+      log("SimConnect-DispatchMessage", WARN, ex.what());
    }
 }
 
@@ -145,18 +145,22 @@ simconnect_client::SYSTEM_EVENT_AIRCRAFT_LOADED("AircraftLoaded");
 const simconnect_client::event_name
 simconnect_client::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
 
-simconnect_client::simconnect_client(const std::string& name)
-throw (connection_error) :
-   _name(name)
+simconnect_client::simconnect_client(
+      const std::string& name)
+throw (connection_error)
+   : logger_component("simconnect_client"),
+     _name(name)
 { 
    this->open(); 
    this->register_on_open_callback(OnOpenIgnore);
 }
 
-simconnect_client::simconnect_client(const std::string& name,
-         const on_open_callback& open_callback)
-throw (connection_error) :
-   _name(name)
+simconnect_client::simconnect_client(
+      const std::string& name,
+      const on_open_callback& open_callback)
+throw (connection_error)
+   : logger_component("simconnect_client"),
+     _name(name)
 {
    this->open();
    this->register_on_open_callback(open_callback);

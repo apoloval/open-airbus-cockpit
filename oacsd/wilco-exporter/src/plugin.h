@@ -20,13 +20,14 @@
 #define OAC_WE_PLUGIN_H
 
 #include <liboac/fsuipc.h>
+#include <liboac/logging.h>
 #include <liboac/simconn.h>
 
 #include "wilco.h"
 
 namespace oac { namespace we {
 
-class plugin
+class plugin : public logger_component
 {
 public:
 

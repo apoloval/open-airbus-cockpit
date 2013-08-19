@@ -30,10 +30,11 @@
 
 #include "exception.h"
 #include "lang-utils.h"
+#include "logging.h"
 
 namespace oac {
 
-class simconnect_client
+class simconnect_client : public logger_component
 {
 public:
 

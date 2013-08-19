@@ -28,6 +28,9 @@
 
 namespace oac { 
 
+/**
+ * The level of severity of the logged entries.
+ */
 enum log_level
 {
 	INFO,
@@ -35,38 +38,78 @@ enum log_level
 	FAIL,
 };
 
-class abstract_logger
+/**
+ * The author of each log entry.
+ */
+typedef std::string log_author;
+
+/**
+ * The message reported on each log entry.
+ */
+typedef std::string log_message;
+
+/**
+ * An abstraction for a log entity.
+ */
+class logger
 {
 public:
 
-   inline virtual ~abstract_logger() {}
+   inline virtual ~logger() {}
 
-   virtual void log(log_level level, const std::string& msg) = 0;
+   /**
+    * Write a new log entry.
+    *
+    * @param author  The author (typically a program module or class) of the
+    *                log entry
+    * @param level   The severity level of the log entry
+    * @param msg     The message of the log entry
+    */
+   virtual void log(
+         const log_author& author,
+         log_level level,
+         const log_message& msg) = 0;
 
 protected:
 
+   /**
+    * Converts the given log level into a string object.
+    */
    const char* level_str(log_level level);
 
    std::string get_time();
 };
 
+/**
+ * A logger able to print log messages into an output stream.
+ */
 template <typename OutputStream>
-class logger : public abstract_logger
+class output_stream_logger : public logger
 {
 public:
 
-   inline logger(const log_level& level, const ptr<OutputStream>& output)
-      : _output(output), _level(level) {}
-
    /**
-    * Log a message to indicated log level.
+    * Create a new logger for given level and output stream.
+    *
+    * @param level   The minimum level of log entries that will be accepted.
+    *                any log entry with a level below this one will be ignored.
+    * @param output  The output stream where log messages will be printed
     */
-   inline virtual void log(log_level level, const std::string& msg)
+   output_stream_logger(
+         const log_level& level,
+         const std::shared_ptr<OutputStream>& output)
+      : _output(output), _level(level)
+   {}
+
+   virtual void log(
+         const log_author& author,
+         log_level level,
+         const log_message& msg)
    {
       if (_level <= level)
       {
-         auto line = str(boost::format("[%s] %s : %s\n") %
-                         level_str(level) % get_time() % msg);
+         auto line = str(boost::format("[%s] %s <%s> : %s\n") %
+                         level_str(level) % get_time() % author % msg);
          stream::write_as_string(*_output, line);
          _output->flush();
       }
@@ -80,19 +123,134 @@ private:
    static ptr<logger> _main;
 };
 
+class logger_component : public logger
+{
+public:
+
+   logger_component(
+         const log_author& author,
+         const std::shared_ptr<logger>& parent = nullptr)
+      : _author(author),
+        _parent(parent)
+   {}
+
+   virtual void log(
+            const log_author& author,
+            log_level level,
+            const log_message& msg);
+
+protected:
+
+   /**
+    * A convenience function to log a message using the author passed to
+    * the logger component upon construction.
+    */
+   void log(
+      log_level level,
+      const log_message& msg)
+   { log(_author, level, msg); }
+
+   /**
+    * Convenient function for logging Boost format objects using the author
+    * passed to the logger component upon construction.
+    *
+    * @param level      The severity level of the log entry
+    * @param msg_format The message format of the log entry
+    * @param msg_arg1   The first argument of the message format
+    */
+   template <typename T1>
+   void log(
+         log_level level,
+         const std::string& msg_format,
+         const T1& msg_arg1)
+   { log(_author, level, str(boost::format(msg_format) % msg_arg1)); }
+
+   /**
+    * Convenient function for logging Boost format objects in main logger.
+    * If no main logger was registered, nothing is done.
+    *
+    * @param level      The severity level of the log entry
+    * @param msg_format The message format of the log entry
+    * @param msg_arg1   The first argument of the message format
+    * @param msg_arg2   The second argument of the message format
+    */
+   template <typename T1, typename T2>
+   void log(
+         log_level level,
+         const std::string& msg_format,
+         const T1& msg_arg1,
+         const T2& msg_arg2)
+   {
+      log(
+            _author,
+            level,
+            str(boost::format(msg_format) % msg_arg1 % msg_arg2));
+   }
+
+   /**
+    * Convenient function for logging Boost format objects in main logger.
+    * If no main logger was registered, nothing is done.
+    *
+    * @param level      The severity level of the log entry
+    * @param msg_format The message format of the log entry
+    * @param msg_arg1   The first argument of the message format
+    * @param msg_arg2   The second argument of the message format
+    * @param msg_arg3   The third argument of the message format
+    */
+   template <typename T1, typename T2, typename T3>
+   void log(
+         log_level level,
+         const std::string& msg_format,
+         const T1& msg_arg1,
+         const T2& msg_arg2,
+         const T3& msg_arg3)
+   {
+      log(
+            _author,
+            level,
+            str(boost::format(msg_format) % msg_arg1 % msg_arg2 % msg_arg3));
+   }
+
+   /**
+    * Convenience function for logging INFO entries.
+    */
+   template <typename LogLine>
+   void log_info(const LogLine& line)
+   { log(_author, log_level::INFO, line); }
+
+   /**
+    * Convenience function for logging INFO entries.
+    */
+   template <typename LogLine>
+   void log_warn(const LogLine& line)
+   { log(_author, log_level::WARN, line); }
+
+   /**
+    * Convenience function for logging INFO entries.
+    */
+   template <typename LogLine>
+   void log_fail(const LogLine& line)
+   { log(_author, log_level::FAIL, line); }
+
+private:
+
+   log_author _author;
+   std::shared_ptr<logger> _parent;
+};
+
 /**
  * Create a new logger for given level and output stream.
  */
 template <typename OutputStream>
-ptr<logger<OutputStream>> make_logger(
+std::shared_ptr<output_stream_logger<OutputStream>> make_logger(
       const log_level& level,
       const std::shared_ptr<OutputStream>& output)
-{ return new logger<OutputStream>(level, output); }
+{ return std::make_shared<output_stream_logger<OutputStream>>(level, output); }
 
 /**
  * Set the main abstract logger.
  */
-void set_main_logger(const ptr<abstract_logger>& logger);
+void set_main_logger(const std::shared_ptr<logger>& logger);
 
 /**
  * Close the main logger.
@@ -103,40 +261,25 @@ inline void close_main_logger()
 /**
  * Obtain the main abstract logger.
  */
-ptr<abstract_logger> get_main_logger();
+std::shared_ptr<logger> get_main_logger();
 
 /**
  * Log a message to indicated log level in main logger. If no main logger
  * was registered, nothing is done.
  */
-void log(log_level level, const std::string& msg);
 
 /**
- * Convenient function for logging Boost format objects in main logger.
- * If no main logger was registered, nothing is done.
+ * Create a new log entry with given properties using the main logger. If no
+ * main logger was registered, nothing is done.
+ *
+ * @param author  The author of the log entry
+ * @param level   The severity level of the log entry
+ * @param msg     The message of the log entry
  */
-void log(log_level level, const boost::format& fmt);
-
-/**
- * Convenience function for logging INFO entries.
- */
-template <typename LogLine>
-void log_info(const LogLine& line)
-{ log(log_level::INFO, line); }
-
-/**
- * Convenience function for logging INFO entries.
- */
-template <typename LogLine>
-void log_warn(const LogLine& line)
-{ log(log_level::WARN, line); }
-
-/**
- * Convenience function for logging INFO entries.
- */
-template <typename LogLine>
-void log_fail(const LogLine& line)
-{ log(log_level::FAIL, line); }
+void log(
+      const log_author& author,
+      log_level level,
+      const log_message& msg);
 
 } // namespace oac
 

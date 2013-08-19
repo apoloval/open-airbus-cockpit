@@ -187,12 +187,13 @@ private:
  * 0x0354:2 means a WORD variable at offset 0x0354 (transponder code).
  */
 template <typename FsuipcUserAdapter>
-class fsuipc_flight_vars : public flight_vars
+class fsuipc_flight_vars : public flight_vars, public logger_component
 {
 public:
 
    fsuipc_flight_vars()
-      : _update_observer(
+      : logger_component("fsuipc_flight_vars"),
+        _update_observer(
            std::bind(
               &fsuipc_flight_vars::on_offset_update,
               this,
@@ -215,8 +216,9 @@ public:
 
          log(
             INFO,
-            boost::format("@FSUIPC; Subscribing on %s with ID %d...") %
-               var_to_string(var) % subs_id);
+            "Subscribing on %s with ID %d...",
+            var_to_string(var),
+            subs_id);
 
          return subs_id;
       }

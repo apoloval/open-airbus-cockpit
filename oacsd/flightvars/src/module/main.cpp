@@ -44,114 +44,124 @@ boost::thread srv_thread;
 
 }
 
-void
-start_io_service()
+struct flight_vars_component_launcher : logger_component
 {
-   if (!io_srv)
-      io_srv = std::make_shared<boost::asio::io_service>();
-}
 
-void
-start_tick_observer()
-{
-   if (!tick_obs)
+   flight_vars_component_launcher()
+      : logger_component("flight_vars_component_launcher")
+   {}
+
+   void
+   start_io_service()
+   {
+      if (!io_srv)
+         io_srv = std::make_shared<boost::asio::io_service>();
+   }
+
+   void
+   start_tick_observer()
+   {
+      if (!tick_obs)
+      {
+         try
+         {
+            log_info("Initializing tick observer via SimConnect");
+            tick_obs = std::make_shared<tick_observer>(io_srv);
+            log_info("Tick observer successfully initialized");
+         }
+         catch (error& e)
+         {
+            log(
+                  log_level::FAIL,
+                  "Unexpected error while initializing tick observer: %s",
+                  boost::diagnostic_information(e));
+         }
+      }
+   }
+
+   bool
+   start_fsuipc()
    {
       try
       {
-         log_info("Initializing tick observer via SimConnect");
-         tick_obs = std::make_shared<tick_observer>(io_srv);
-         log_info("tick observer successfully initialized");
+         log_info("Initializing FSUIPC FlightVars object");
+         auto fsuipc = std::make_shared<local_fsuipc_flight_vars>();
+               tick_obs->register_handler(
+                     std::bind(
+                           &local_fsuipc_flight_vars::check_for_updates,
+                           fsuipc));
+
+         flight_vars_core::instance()->register_group_master(
+               local_fsuipc_flight_vars::VAR_GROUP,
+               fsuipc);
+
+         log_info("FSUIPC FlightVars object successfully initialized");
+         return true;
       }
       catch (error& e)
       {
-         log_fail(
-               boost::format(
-                     "Unexpected error while initializing tick observer: %s") %
+         log(
+               log_level::FAIL,
+               "Unexpected error while initializing FSUIPC "
+               "Flight Vars object: %s",
                boost::diagnostic_information(e));
+         return false;
       }
    }
-}
 
-bool
-start_fsuipc()
-{
-   try
+   void
+   start_server()
    {
-      log_info("Initializing FSUIPC FlightVars object");
-      auto fsuipc = std::make_shared<local_fsuipc_flight_vars>();
-            tick_obs->register_handler(
-                  std::bind(
-                        &local_fsuipc_flight_vars::check_for_updates,
-                        fsuipc));
-
-      flight_vars_core::instance()->register_group_master(
-            local_fsuipc_flight_vars::VAR_GROUP,
-            fsuipc);
-
-      log_info("FSUIPC FlightVars object successfully initialized");
-      return true;
-   }
-   catch (error& e)
-   {
-      log_fail(
-               boost::format(
-                     "Unexpected error while initializing FSUIPC "
-                     "Flight Vars object: %s") %
-               boost::diagnostic_information(e));
-      return false;
-   }
-}
-
-void
-start_server()
-{
-   if (!server)
-   {
-      try
+      if (!server)
       {
-         log_info("Initializing FlightVars TCP server");
+         try
+         {
+            log_info("Initializing FlightVars TCP server");
 
-         auto core = flight_vars_core::instance();
-         server = std::make_shared<flight_vars_server>(
-               core,
-               flight_vars_server::DEFAULT_PORT,
-               io_srv);
+            auto core = flight_vars_core::instance();
+            server = std::make_shared<flight_vars_server>(
+                  core,
+                  flight_vars_server::DEFAULT_PORT,
+                  io_srv);
 
-         srv_thread = boost::thread([]() {
-            for (;;)
-            {
-               try
+            srv_thread = boost::thread([this]() {
+               for (;;)
                {
-                  io_srv->run();
-                  break; // run terminates, exit normally
+                  try
+                  {
+                     io_srv->run();
+                     break; // run terminates, exit normally
+                  }
+                  catch (error& e)
+                  {
+                     log(
+                           log_level::FAIL,
+                           "Unexpected error while running the IO service: %s",
+                           boost::diagnostic_information(e));
+                  }
                }
-               catch (error& e)
-               {
-                  log_fail(
-                        boost::format("Unexpected error while running "
-                                      "the IO service: %s") %
-                        boost::diagnostic_information(e));
-               }
-            }
-         });
+            });
 
-         log_info("FlightVars TCP server successfully initialized");
-      } catch (error& e)
-      {
-         log_fail(boost::format("Unexpected error: %s") %
-             boost::diagnostic_information(e));
+            log_info("FlightVars TCP server successfully initialized");
+         } catch (error& e)
+         {
+            log(
+                  log_level::FAIL,
+                  "Unexpected error: %s",
+                  boost::diagnostic_information(e));
+         }
       }
    }
-}
 
-void
-stop_server()
-{
-   log_info("Stopping FlightVars server");
-   io_srv->stop();
-   srv_thread.join();
-   log_info("FlightVars server stopped");
-}
+   void
+   stop_server()
+   {
+      log_info("Stopping FlightVars server");
+      io_srv->stop();
+      srv_thread.join();
+      log_info("FlightVars server stopped");
+   }
+};
 
 void __stdcall DLLStart(void)
 {
@@ -159,25 +169,34 @@ void __stdcall DLLStart(void)
    {
       file log_file(LOG_FILE);
       set_main_logger(make_logger(log_level::INFO, log_file.append()));
-      start_io_service();
-      start_tick_observer();
-      start_fsuipc();
-      start_server();
+
+      flight_vars_component_launcher launcher;
+
+      launcher.start_io_service();
+      launcher.start_tick_observer();
+      launcher.start_fsuipc();
+      launcher.start_server();
    }
    catch (std::exception& e)
    {
-      log_fail(boost::format("Unexpected error: %s") % e.what());
+      log(
+            "DLLStart",
+            log_level::FAIL,
+            str(boost::format("Unexpected error: %s") % e.what()));
    }
    catch (...)
    {
-      log_fail("Unexpected error: unknown exception thrown");
+      log(
+            "DLLStart",
+            log_level::FAIL,
+            "Unexpected error: unknown exception thrown");
    }
 }
 
 void __stdcall DLLStop(void)
 {
-   log(oac::INFO, "FlightVars module is stopping");
-   stop_server();
-   log(oac::INFO, "FlightVars module has been stopped");
+   flight_vars_component_launcher launcher;
+
+   launcher.stop_server();
    close_main_logger();
 }

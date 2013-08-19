@@ -30,16 +30,16 @@ const char* LEVEL_STR[] =
    "INFO", "WARN", "FAIL"
 };
 
-ptr<abstract_logger> main_logger;
+std::shared_ptr<logger> main_logger;
 
 } // anonymous namespace
 
 const char*
-abstract_logger::level_str(log_level level)
+logger::level_str(log_level level)
 { return LEVEL_STR[level]; }
 
 std::string
-abstract_logger::get_time()
+logger::get_time()
 {
    auto t = time(nullptr);
    char time_buf[26];
@@ -51,26 +51,38 @@ abstract_logger::get_time()
 }
 
 void
-set_main_logger(const ptr<abstract_logger>& logger)
+set_main_logger(const std::shared_ptr<logger>& logger)
 {
    main_logger = logger;
 }
 
-ptr<abstract_logger>
+std::shared_ptr<logger>
 get_main_logger()
 { return main_logger; }
 
 
+
 void
-log(log_level level, const std::string& msg)
+logger_component::log(
+      const log_author& author,
+      log_level level,
+      const log_message& msg)
 {
-   auto main = get_main_logger();
-   if (main)
-      main->log(level, msg);
+   if (_parent)
+      _parent->log(author, level, msg);
+   else if (auto main = get_main_logger())
+      main->log(author, level, msg);
 }
 
 void
-log(log_level level, const boost::format& fmt)
-{ log(level, str(fmt)); }
+log(
+      const log_author& author,
+      log_level level,
+      const log_message& msg)
+{
+   auto main = get_main_logger();
+   if (main)
+      main->log(author, level, msg);
+}
 
 } // namespace oac
