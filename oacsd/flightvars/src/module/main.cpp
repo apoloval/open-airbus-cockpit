@@ -35,10 +35,8 @@ using namespace oac::fv;
 
 namespace {
 
-typedef asio_tick_observer_adapter<simconnect_tick_observer> tick_observer;
-
 std::shared_ptr<boost::asio::io_service> io_srv;
-std::shared_ptr<tick_observer> tick_obs;
+std::shared_ptr<simconnect_tick_observer> tick_obs;
 std::shared_ptr<flight_vars_server> server;
 boost::thread srv_thread;
 
@@ -66,7 +64,7 @@ struct flight_vars_component_launcher : logger_component
          try
          {
             log_info("Initializing tick observer via SimConnect");
-            tick_obs = std::make_shared<tick_observer>(io_srv);
+            tick_obs = std::make_shared<simconnect_tick_observer>();
             log_info("Tick observer successfully initialized");
          }
          catch (error& e)

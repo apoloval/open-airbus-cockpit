@@ -255,7 +255,7 @@ flight_vars_server::handle_subscription_request(
       auto subs_id = _delegate->subscribe(
                var_id,
                std::bind(
-                  &flight_vars_server::send_var_update,
+                  &flight_vars_server::handle_var_update,
                   shared_from_this(),
                   session,
                   std::placeholders::_1,
@@ -286,11 +286,34 @@ flight_vars_server::handle_subscription_request(
 }
 
 void
+flight_vars_server::handle_var_update(
+      const session::ptr_type& session,
+      const variable_id& var_id,
+      const variable_value& var_value)
+{
+   // This function does not send the var update directly. Instead, it
+   // requests the IO service of the TCP server to do it. That avoids
+   // the delegate notification thread to handle the session at the same
+   // time the TCP server thread does. In other words, it guarantees only
+   // one thread accessing the internal state of the server.
+   _tcp_server.io_service().post(
+         std::bind(
+               &flight_vars_server::send_var_update,
+               shared_from_this(),
+               session,
+               var_id,
+               var_value));
+}
+
+void
 flight_vars_server::send_var_update(
       const session::ptr_type& session,
       const variable_id& var_id,
       const variable_value& var_value)
 {
+   // This function does send the var update. It is guaranteed to be invoked
+   // from the same thread that attends the TCP server, removing any chance
+   // of concurrency issues. See the comment in handle_var_update().
    try
    {
       auto subs_id = session->subscriptions.get_subscription_id(var_id);

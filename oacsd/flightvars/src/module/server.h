@@ -107,6 +107,11 @@ private:
          const session::ptr_type& session,
          const proto::subscription_request_message& req);
 
+   void handle_var_update(
+         const session::ptr_type& session,
+         const variable_id& var_id,
+         const variable_value& var_value);
+
    void send_var_update(
          const session::ptr_type& session,
          const variable_id& var_id,
