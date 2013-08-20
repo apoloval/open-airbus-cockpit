@@ -71,6 +71,13 @@ struct let_test
       return *this;
    }
 
+   let_test& send_garbage()
+   {
+      for (int i = 0; i < 12; i++)
+         stream::write_as<int>(*_client->output(), rand());
+      return *this;
+   }
+
    let_test& handshake()
    {
       proto::message open_req = proto::begin_session_message("Test Client");
@@ -96,6 +103,12 @@ struct let_test
 
       _client.reset();
 
+      return *this;
+   }
+
+   let_test& check_remote_peer_disconects()
+   {
+      BOOST_CHECK(connection_is_reset());
       return *this;
    }
 
@@ -249,6 +262,16 @@ private:
 
    bool connection_is_closed()
    {
+     return one_byte_read_error_code() ==  boost::asio::error::eof;
+   }
+
+   bool connection_is_reset()
+   {
+      return one_byte_read_error_code() ==  boost::asio::error::connection_reset;
+   }
+
+   int one_byte_read_error_code()
+   {
       auto& socket = _client->connection().socket();
       std::uint8_t byte;
       boost::system::error_code ec;
@@ -257,7 +280,7 @@ private:
             socket,
             boost::asio::buffer(&byte, 1),
             ec);
-      return ec.value() ==  boost::asio::error::eof;
+      return ec.value();
    }
 
 };
@@ -265,6 +288,35 @@ private:
 BOOST_AUTO_TEST_CASE(MustHandshake)
 {
    let_test()
+         .connect()
+         .handshake()
+         .disconnect();
+}
+
+BOOST_AUTO_TEST_CASE(MustDisconnectOnInvalidMessageReceivedBeforeHandshake)
+{
+   let_test()
+         .connect()
+         .send_garbage()
+         .check_remote_peer_disconects();
+}
+
+BOOST_AUTO_TEST_CASE(MustDisconnectOnInvalidMessageReceivedAfterHandshake)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .send_garbage()
+         .check_remote_peer_disconects();
+}
+
+BOOST_AUTO_TEST_CASE(MustRespondNormallyAfterDisconnected)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .send_garbage()
+         .check_remote_peer_disconects()
          .connect()
          .handshake()
          .disconnect();

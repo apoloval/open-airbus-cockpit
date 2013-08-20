@@ -149,6 +149,15 @@ flight_vars_server::on_read_begin_session(
       session->input_buffer->reset();
       read_begin_session(session);
    }
+   catch (error& e)
+   {
+      session->unsubscribe_all();
+      log(
+            log_level::FAIL,
+            "Unexpected exception thrown while "
+            "waiting for a begin session message: %s",
+            boost::diagnostic_information(e));
+   }
 }
 
 void
@@ -166,10 +175,13 @@ flight_vars_server::read_request(
                   std::placeholders::_1,
                   std::placeholders::_2));
    }
-   catch (...)
+   catch (error& e)
    {
-      log_fail(
-            "Unexpected exception thrown while waiting for a request");
+      session->unsubscribe_all();
+      log(
+            log_level::FAIL,
+            "Unexpected exception thrown while reading from connection: %s",
+            boost::diagnostic_information(e));
    }
 }
 
@@ -232,14 +244,8 @@ flight_vars_server::on_read_request(
       session->unsubscribe_all();
       log(
             log_level::FAIL,
-            "Unexpected exception thrown while waiting for a request: %s",
-            e.what());
-   }
-   catch (...)
-   {
-      session->unsubscribe_all();
-      log_fail(
-            "Unexpected exception thrown while waiting for a request");
+            "Unexpected exception thrown while processing a request: %s",
+            boost::diagnostic_information(e));
    }
 }
 
@@ -270,7 +276,8 @@ flight_vars_server::handle_subscription_request(
             req.var_name,
             subs_id,
             "");
-   } catch (flight_vars::unknown_variable_error&)
+   }
+   catch (flight_vars::unknown_variable_error&)
    {
       log(
             log_level::WARN,
@@ -327,6 +334,15 @@ flight_vars_server::send_var_update(
             "Internal state error: a var update was notified for "
             "variable %s, but no associated subscription ID was found",
             var_to_string(var_id));
+   }
+   catch (error& e)
+   {
+      session->unsubscribe_all();
+      log(
+            log_level::FAIL,
+            "Unexpected exception thrown while "
+            "sending a var update to the client: %s",
+            boost::diagnostic_information(e));
    }
 }
 
