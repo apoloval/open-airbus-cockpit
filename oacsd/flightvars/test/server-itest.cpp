@@ -108,6 +108,9 @@ struct let_test
 
    let_test& check_remote_peer_disconects()
    {
+      // Have to wait a little while to let the server process previous message
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+
       BOOST_CHECK(connection_is_reset());
       return *this;
    }
