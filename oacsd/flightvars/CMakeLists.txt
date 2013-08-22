@@ -4,12 +4,13 @@ project(FlightVars)
 
 set(libflightvars_HEADERS
    include/flightvars/api.h
+   include/flightvars/client.h
    include/flightvars/protocol.h
    include/flightvars/protocol.inl
 )
 
 set(libflightvars_SOURCES
-   src/module/api.cpp
+   src/lib/api.cpp
 )
 
 set(flightvars_HEADERS
