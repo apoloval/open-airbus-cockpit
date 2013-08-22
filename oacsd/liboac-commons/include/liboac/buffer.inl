@@ -256,7 +256,7 @@ linear_stream_buffer_base<Buffer>::on_async_read(
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {
-   _read_index += nbytes;
+   _write_index += nbytes;
    handler(ec, nbytes);
 }
 
@@ -267,7 +267,7 @@ linear_stream_buffer_base<Buffer>::on_async_write(
       const boost::system::error_code& ec,
       std::size_t nbytes)
 {
-   _write_index += nbytes;
+   _read_index += nbytes;
    handler(ec, nbytes);
 }
 
