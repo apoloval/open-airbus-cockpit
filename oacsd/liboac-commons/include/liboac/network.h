@@ -19,6 +19,8 @@
 #ifndef OAC_NETWORK_H
 #define OAC_NETWORK_H
 
+#include <future>
+
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 
@@ -30,6 +32,16 @@
 namespace oac {
 
 namespace network {
+
+/**
+ * A TCP protocol port.
+ */
+typedef std::uint16_t tcp_port;
+
+/**
+ * A hostname.
+ */
+typedef std::string hostname;
 
 /**
  * An error while binding a socket.
@@ -106,7 +118,7 @@ public:
     * to submit the incoming connections.
     */
    tcp_server(
-         std::uint16_t port,
+         network::tcp_port port,
          const Worker& worker)
    throw (network::bind_error);
 
@@ -159,8 +171,8 @@ public:
     * @param port       The port of the remote peer
     */
    tcp_client(
-         const std::string& hostname,
-         std::uint16_t port)
+         const network::hostname& hostname,
+         network::tcp_port port)
    throw (network::connection_refused);
 
    /**
@@ -200,7 +212,7 @@ class async_tcp_connection :
 public:  
 
    typedef boost::asio::ip::tcp::socket socket_type;
-   typedef std::shared_ptr<socket_type> socket_ptr;   
+   typedef std::shared_ptr<socket_type> socket_ptr;     
 
    async_tcp_connection(
          boost::asio::io_service& io_service,
@@ -226,6 +238,20 @@ public:
    void read(StreamBuffer& buff, ReadHandler handler);
 
    /**
+    * Read some bytes from this connection. After calling this function,
+    * as soon as one or more bytes are available they will be stored in the
+    * StreamBuffer object passed as argument. The returned value represents
+    * the future result of the read operation. This function is not blocking,
+    * so the control will be immediately returned to the caller.
+    *
+    * @param buff The stream-buffer where incoming data will be stored
+    * @return     The future object representing the number of bytes read
+    *             from the connection, or io_error exception if failed
+    */
+   template <typename StreamBuffer>
+   std::future<std::size_t> read(StreamBuffer& buff);
+
+   /**
     * Write some bytes to this connection. After calling this function,
     * as may bytes as possible will be transfered from the given buffer
     * into this connection. Then the given WriteHandler will be invoked.
@@ -240,9 +266,28 @@ public:
    template <typename StreamBuffer, typename WriteHandler>
    void write(StreamBuffer& buff, WriteHandler handler);
 
+   /**
+    * Write some bytes to this connection. After calling this function,
+    * as may bytes as possible will be transfered from the given buffer
+    * into this connection. The returned value represents the future result
+    * of the write operation. This function is not blocking, so the control
+    * will be immediately returned to the caller.
+    *
+    * @param buff The stream-buffer where outcoming data will be read
+    * @return     The future object representing the number of bytes written
+    *             to the connection, or io_error exception if failed
+    */
+   template <typename StreamBuffer>
+   std::future<std::size_t> write(StreamBuffer& buff);
+
 private:
 
    socket_ptr _socket;
+
+   static void on_io_completed_with_promise(
+         const std::shared_ptr<std::promise<std::size_t>>& promise,
+         const boost::system::error_code& ec,
+         std::size_t bytes_read);
 };
 
 /**
@@ -278,7 +323,7 @@ public:
     *                   waiting for a connection
     */
    async_tcp_server(
-         std::uint16_t port,
+         network::tcp_port port,
          const connection_handler& handler,
          const std::shared_ptr<boost::asio::io_service>& io_srv,
          const network::error_handler& ehandler)
@@ -334,10 +379,10 @@ public:
     * @param io_srv     The IO service to use for async IO
     */
    async_tcp_client(
-         const std::string& hostname,
-         std::uint16_t port,
+         const network::hostname& hostname,
+         network::tcp_port port,
          const std::shared_ptr<boost::asio::io_service>& io_srv)
-   throw (network::connection_error);
+   throw (network::connection_refused);
 
    /**
     * Obtain the connection object of this client.
@@ -362,7 +407,7 @@ typedef thread_worker<network::connection_handler,
  */
 template <typename Worker>
 ptr<tcp_server<thread_worker<Worker, ptr<tcp_connection>>>> make_tcp_server(
-      std::uint16_t port, const Worker& worker);
+      network::tcp_port port, const Worker& worker);
 
 } // namespace network
 

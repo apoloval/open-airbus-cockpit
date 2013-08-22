@@ -28,7 +28,7 @@ namespace {
 inline void
 bind_port(
       boost::asio::ip::tcp::acceptor& acceptor,
-      std::uint16_t port)
+      network::tcp_port port)
 throw (boost_asio_error)
 {
    using namespace boost::asio;
@@ -46,8 +46,8 @@ throw (boost_asio_error)
 
 inline void
 connect(
-      const std::string& remote_host,
-      std::uint16_t remote_port,
+      const network::hostname& remote_host,
+      network::tcp_port remote_port,
       boost::asio::io_service& io_srv,
       boost::asio::ip::tcp::socket& socket)
 throw (boost_asio_error)
@@ -95,7 +95,7 @@ tcp_connection::output()
 
 template <typename Worker>
 tcp_server<Worker>::tcp_server(
-      std::uint16_t port,
+      network::tcp_port port,
       const Worker& worker)
 throw (network::bind_error)
    : _worker(worker),
@@ -166,8 +166,8 @@ tcp_server<Worker>::on_accept(const ptr<tcp_connection>& conn)
 
 inline
 tcp_client::tcp_client(
-      const std::string& hostname,
-      std::uint16_t port)
+      const network::hostname& hostname,
+      network::tcp_port port)
 throw (network::connection_refused)
 {
    try
@@ -228,6 +228,23 @@ async_tcp_connection::read(
    buffer::async_read_some(*_socket, buff, handler);
 }
 
+template <typename StreamBuffer>
+std::future<std::size_t>
+async_tcp_connection::read(StreamBuffer& buff)
+{
+   auto promise = std::make_shared<std::promise<std::size_t>>();
+   auto fut = promise->get_future();
+
+   read(
+         buff,
+         std::bind(
+               &async_tcp_connection::on_io_completed_with_promise,
+               promise,
+               std::placeholders::_1,
+               std::placeholders::_2));
+   return fut;
+}
+
 template <typename StreamBuffer, typename WriteHandler>
 void
 async_tcp_connection::write(
@@ -237,11 +254,48 @@ async_tcp_connection::write(
    buffer::async_write_some(*_socket, buff, handler);
 }
 
+template <typename StreamBuffer>
+std::future<std::size_t>
+async_tcp_connection::write(StreamBuffer& buff)
+{
+   auto promise = std::make_shared<std::promise<std::size_t>>();
+   auto fut = promise->get_future();
+
+   write(
+         buff,
+         std::bind(
+               &async_tcp_connection::on_io_completed_with_promise,
+               promise,
+               std::placeholders::_1,
+               std::placeholders::_2));
+   return fut;
+}
+
+inline
+void
+async_tcp_connection::on_io_completed_with_promise(
+      const std::shared_ptr<std::promise<std::size_t>>& promise,
+      const boost::system::error_code& ec,
+      std::size_t bytes_read)
+{
+   try
+   {
+      if (!!ec)
+         OAC_THROW_EXCEPTION(boost_asio_error()
+               .with_error_code(ec));
+      promise->set_value(bytes_read);
+   }
+   catch (boost_asio_error& e)
+   {
+      promise->set_exception(std::make_exception_ptr(e));
+   }
+}
+
 
 
 inline
 async_tcp_server::async_tcp_server(
-      std::uint16_t port,
+      network::tcp_port port,
       const connection_handler& handler,
       const std::shared_ptr<boost::asio::io_service>& io_srv =
             std::make_shared<boost::asio::io_service>(),
@@ -294,10 +348,10 @@ async_tcp_server::on_accept(
 
 inline
 async_tcp_client::async_tcp_client(
-      const std::string& hostname,
-      std::uint16_t port,
+      const network::hostname& hostname,
+      network::tcp_port port,
       const std::shared_ptr<boost::asio::io_service>& io_srv)
-throw (network::connection_error)
+throw (network::connection_refused)
    : _io_service(io_srv),
      _connection(*io_srv)
 {
@@ -305,18 +359,14 @@ throw (network::connection_error)
 
    try
    {
-      io_service resolv_io_srv;
-      ip::tcp::resolver resolver(resolv_io_srv);
-      ip::tcp::resolver::query query(
-            hostname, boost::lexical_cast<std::string>(port));
-      connect(_connection.socket(), resolver.resolve(query));
+      connect(hostname, port, *_io_service, _connection.socket());
    }
-   catch (boost::system::system_error& e)
+   catch (boost_asio_error& e)
    {
-      BOOST_THROW_EXCEPTION(
-               network::connection_error() <<
-               boost_system_error_info(e) <<
-               message_info(e.what()));
+      OAC_THROW_EXCEPTION(network::connection_refused()
+            .with_remote_host(hostname)
+            .with_remote_port(port)
+            .with_cause(e));
    }
 }
 
@@ -326,7 +376,7 @@ namespace network {
 
 template <typename Worker>
 ptr<tcp_server<thread_worker<Worker, ptr<tcp_connection>>>> make_tcp_server(
-      std::uint16_t port, const Worker& worker)
+      network::tcp_port port, const Worker& worker)
 {
    return new tcp_server<thread_worker<Worker, ptr<tcp_connection>>>(
          port, worker);

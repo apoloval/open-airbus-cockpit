@@ -195,7 +195,7 @@ struct let_test
    {
    }
 
-   let_test& connect(const std::string& hostname, std::uint16_t port)
+   let_test& connect(const network::hostname& hostname, network::tcp_port port)
    {
       _client = std::unique_ptr<async_tcp_client>(
             new async_tcp_client(hostname, port, _io_srv));
@@ -232,6 +232,25 @@ struct let_test
       return *this;
    }
 
+   let_test& send_http_get_with_future()
+   {
+      linear_buffer output_buffer(4096);
+
+      stream::write_as_string(output_buffer, "GET / HTTP/1.1\n");
+      stream::write_as_string(output_buffer, "Host: www.google.com\n");
+      stream::write_as_string(output_buffer, "User-Agent: liboac-network\n");
+      stream::write_as_string(output_buffer, "\n");
+
+      auto result =_client->connection().write(output_buffer);
+
+      _io_srv->reset();
+      _io_srv->run();
+
+      BOOST_CHECK_EQUAL(15+21+27+1, result.get());
+
+      return *this;
+   }
+
    let_test& receive_http_response()
    {
       linear_buffer input_buffer(4096);
@@ -245,6 +264,23 @@ struct let_test
       _client->connection().read(input_buffer, on_read);
       _io_srv->reset();
       _io_srv->run();
+
+      BOOST_CHECK_EQUAL(
+         "HTTP/1.1 302",
+         stream::read_as_string(input_buffer, 12));
+
+      return *this;
+   }
+
+   let_test& receive_http_response_with_future()
+   {
+      linear_buffer input_buffer(4096);
+
+      auto result = _client->connection().read(input_buffer);
+      _io_srv->reset();
+      _io_srv->run();
+
+      result.get();
 
       BOOST_CHECK_EQUAL(
          "HTTP/1.1 302",
@@ -268,12 +304,21 @@ BOOST_AUTO_TEST_CASE(MustConnectToExistingHostWithAvailablePort)
          .close();
 }
 
+BOOST_AUTO_TEST_CASE(MustConnectToExistingHostWithAvailablePortUsingFutures)
+{
+   let_test()
+         .connect("www.google.com", 80)
+         .send_http_get_with_future()
+         .receive_http_response_with_future()
+         .close();
+}
+
 BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnexistingHost)
 {
    BOOST_CHECK_THROW(
          let_test()
                .connect("www.bartolohizocaca.com", 80), // hope it never exists
-         network::connection_error);
+         network::connection_refused);
 }
 
 BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnavailablePort)
@@ -281,7 +326,7 @@ BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnavailablePort)
    BOOST_CHECK_THROW(
          let_test()
                .connect("localhost", 1234),
-         network::connection_error);
+         network::connection_refused);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
