@@ -210,9 +210,33 @@ public:
 
    boost::asio::ip::tcp::socket& socket();
 
+   /**
+    * Read some bytes from this connection. After calling this function,
+    * as soon as one or more bytes are available they will be stored in the
+    * StreamBuffer object passed as argument. Then the given ReadHandler
+    * will be invoked. This function is not blocking, so the control will
+    * be immediately returned to the caller.
+    *
+    * @param buff    The stream-buffer where incoming data will be stored
+    * @param handler The handler that will be invoked once incoming data
+    *                is read. It conforms the ReadHandler concept of Boost ASIO
+    *                library.
+    */
    template <typename StreamBuffer, typename ReadHandler>
    void read(StreamBuffer& buff, ReadHandler handler);
 
+   /**
+    * Write some bytes to this connection. After calling this function,
+    * as may bytes as possible will be transfered from the given buffer
+    * into this connection. Then the given WriteHandler will be invoked.
+    * This function is not blocking, so the control will be immediately
+    * returned to the caller.
+    *
+    * @param buff    The stream-buffer where outcoming data will be read
+    * @param handler The handler that will be invoked once incoming data
+    *                is written. It conforms the WriteHandler concept of
+    *                Boost ASIO library.
+    */
    template <typename StreamBuffer, typename WriteHandler>
    void write(StreamBuffer& buff, WriteHandler handler);
 
@@ -282,6 +306,49 @@ private:
    void start_accept();
 
    void on_accept(const async_tcp_connection::ptr_type& conn);
+};
+
+/**
+ * An asynchronous TCP client. This class provides an async TCP client
+ * based on Boost ASIO library. It provides some glue code to create a
+ * async_tcp_connection communicating with a remote server.
+ *
+ * Important note! This class operates on a boost::asio::io_service object
+ * passed as argument to its constructor. It has no control over the lifecycle
+ * of either the IO service object or the thread executing on its event loop.
+ * Therefore, before destroying the async_tcp_client object, you must be sure
+ * that IO service is stopped and the thread executing its event loop is not
+ * processing any request. Otherwise the internal handlers of async_tcp_client
+ * may execute on an already destroyed object.
+ */
+class async_tcp_client
+{
+public:
+
+   /**
+    * Create a new async TCP client and connects to the server using the
+    * given paratemers.
+    *
+    * @param hostname   The hostname of the remote server
+    * @param port       The port of the remove server
+    * @param io_srv     The IO service to use for async IO
+    */
+   async_tcp_client(
+         const std::string& hostname,
+         std::uint16_t port,
+         const std::shared_ptr<boost::asio::io_service>& io_srv)
+   throw (network::connection_error);
+
+   /**
+    * Obtain the connection object of this client.
+    */
+   async_tcp_connection& connection()
+   { return _connection; }
+
+private:
+
+   std::shared_ptr<boost::asio::io_service> _io_service;
+   async_tcp_connection _connection;
 };
 
 namespace network {

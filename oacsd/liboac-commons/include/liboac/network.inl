@@ -290,6 +290,38 @@ async_tcp_server::on_accept(
    start_accept();
 }
 
+
+
+inline
+async_tcp_client::async_tcp_client(
+      const std::string& hostname,
+      std::uint16_t port,
+      const std::shared_ptr<boost::asio::io_service>& io_srv)
+throw (network::connection_error)
+   : _io_service(io_srv),
+     _connection(*io_srv)
+{
+   using namespace boost::asio;
+
+   try
+   {
+      io_service resolv_io_srv;
+      ip::tcp::resolver resolver(resolv_io_srv);
+      ip::tcp::resolver::query query(
+            hostname, boost::lexical_cast<std::string>(port));
+      connect(_connection.socket(), resolver.resolve(query));
+   }
+   catch (boost::system::system_error& e)
+   {
+      BOOST_THROW_EXCEPTION(
+               network::connection_error() <<
+               boost_system_error_info(e) <<
+               message_info(e.what()));
+   }
+}
+
+
+
 namespace network {
 
 template <typename Worker>

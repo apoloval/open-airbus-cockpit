@@ -16,6 +16,7 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
 #include <functional>
 
 #define BOOST_AUTO_TEST_MAIN
@@ -183,6 +184,109 @@ BOOST_AUTO_TEST_CASE(ClientShouldDetectIncompleteMessage)
 
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(AsyncTcpClientTest)
+
+struct let_test
+{
+
+   let_test()
+      : _io_srv(std::make_shared<boost::asio::io_service>())
+   {
+   }
+
+   let_test& connect(const std::string& hostname, std::uint16_t port)
+   {
+      _client = std::unique_ptr<async_tcp_client>(
+            new async_tcp_client(hostname, port, _io_srv));
+      return *this;
+   }
+
+   let_test& close()
+   {
+      _client.reset();
+      return *this;
+   }
+
+   let_test& send_http_get()
+   {
+      linear_buffer output_buffer(4096);
+
+      auto on_write = [](
+            const boost::system::error_code& ec,
+            std::size_t nbytes)
+      {
+         BOOST_CHECK(!ec);
+         BOOST_CHECK_EQUAL(15+21+27+1, nbytes);
+      };
+
+
+      stream::write_as_string(output_buffer, "GET / HTTP/1.1\n");
+      stream::write_as_string(output_buffer, "Host: www.google.com\n");
+      stream::write_as_string(output_buffer, "User-Agent: liboac-network\n");
+      stream::write_as_string(output_buffer, "\n");
+
+      _client->connection().write(output_buffer, on_write);
+      _io_srv->reset();
+      _io_srv->run();
+      return *this;
+   }
+
+   let_test& receive_http_response()
+   {
+      linear_buffer input_buffer(4096);
+
+      auto on_read = [](
+            const boost::system::error_code& ec,
+            std::size_t nbytes)
+      {
+      };
+
+      _client->connection().read(input_buffer, on_read);
+      _io_srv->reset();
+      _io_srv->run();
+
+      BOOST_CHECK_EQUAL(
+         "HTTP/1.1 302",
+         stream::read_as_string(input_buffer, 12));
+
+      return *this;
+   }
+
+private:
+
+   std::shared_ptr<boost::asio::io_service> _io_srv;
+   std::unique_ptr<async_tcp_client> _client;
+};
+
+BOOST_AUTO_TEST_CASE(MustConnectToExistingHostWithAvailablePort)
+{
+   let_test()
+         .connect("www.google.com", 80)
+         .send_http_get()
+         .receive_http_response()
+         .close();
+}
+
+BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnexistingHost)
+{
+   BOOST_CHECK_THROW(
+         let_test()
+               .connect("www.bartolohizocaca.com", 80), // hope it never exists
+         network::connection_error);
+}
+
+BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnavailablePort)
+{
+   BOOST_CHECK_THROW(
+         let_test()
+               .connect("localhost", 1234),
+         network::connection_error);
+}
+
+BOOST_AUTO_TEST_SUITE_END()
+
+
 
 BOOST_AUTO_TEST_SUITE(AsyncTcpServerTest)
 
