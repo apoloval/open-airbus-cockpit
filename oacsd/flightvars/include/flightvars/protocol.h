@@ -32,14 +32,9 @@
 namespace oac { namespace fv { namespace proto {
 
 /**
- * Thrown when a protocol error is found. Contains:
- *  - expected_input_info, indicating the expected protocol element
- *  - actual_input_info, indicating the actual protocol element found
+ * An exception indicating a protocol error.
  */
-OAC_DECL_ERROR(protocol_error, invalid_input_error);
-
-OAC_DECL_ERROR_INFO(expected_input_info, std::string);
-OAC_DECL_ERROR_INFO(actual_input_info, std::string);
+OAC_ABSTRACT_EXCEPTION(protocol_exception);
 
 /**
  * A 16-bits number indicating the version of the protocol.
@@ -175,12 +170,13 @@ typedef boost::variant<
 template <typename Serializer, typename OutputStream>
 void serialize(
       const message& msg,
-      OutputStream& output);
+      OutputStream& output)
+throw (io_exception);
 
 template <typename Deserializer, typename InputStream>
 message deserialize(
       InputStream& input)
-throw (protocol_error, stream::eof_error);
+throw (protocol_exception, io_exception);
 
 struct binary_message_serializer
 {
@@ -188,61 +184,81 @@ struct binary_message_serializer
    template <typename OutputStream>
    static void write_msg_begin(
          OutputStream& output,
-         message_type msg_type);
+         message_type msg_type)
+   throw (io_exception);
 
    template <typename OutputStream>
-   static void write_msg_end(OutputStream& output);
+   static void write_msg_end(
+         OutputStream& output)
+   throw (io_exception);
 
    template <typename OutputStream>
    static void write_string_value(
-         OutputStream& output, const std::string& value);
+         OutputStream& output,
+         const std::string& value)
+   throw (io_exception);
 
    template <typename OutputStream>
    static void write_uint8_value(
-         OutputStream& output, std::uint8_t value);
+         OutputStream& output,
+         std::uint8_t value)
+   throw (io_exception);
 
    template <typename OutputStream>
    static void write_uint16_value(
-         OutputStream& output, std::uint16_t value);
+         OutputStream& output,
+         std::uint16_t value)
+   throw (io_exception);
 
    template <typename OutputStream>
    static void write_uint32_value(
-         OutputStream& output, std::uint32_t value);
+         OutputStream& output,
+         std::uint32_t value)
+   throw (io_exception);
 
    template <typename OutputStream>
    static void write_float_value(
-         OutputStream& output, float value);
+         OutputStream& output,
+         float value)
+   throw (io_exception);
 };
 
 struct binary_message_deserializer
 {
    template <typename InputStream>
    static message_type read_msg_begin(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static void read_msg_end(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static std::string read_string_value(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static std::uint8_t read_uint8_value(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static std::uint16_t read_uint16_value(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static std::uint32_t read_uint32_value(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 
    template <typename InputStream>
    static float read_float_value(
-         InputStream& input) throw (protocol_error);
+         InputStream& input)
+   throw (protocol_exception);
 };
 
 }}} // namespace oac::fv::proto

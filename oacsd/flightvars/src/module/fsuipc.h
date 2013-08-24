@@ -41,16 +41,31 @@ namespace oac { namespace fv {
 namespace fsuipc {
 
 /**
- * The given var group is not FSUIPC offset. Contains:
- *   - variable_group_info, indicating the invalid variable group
+ * An exception indicating a non-fsuipc variable ID.
  */
-OAC_DECL_ERROR(invalid_var_group_error, invalid_input_error);
+OAC_ABSTRACT_EXCEPTION(invalid_var_exception);
 
 /**
- * A syntax error was found while parsing the variable name. Contains:
- *   - variable_name_info, indicating the erroneous variable name
+ * The given var group is not FSUIPC offset.
  */
-OAC_DECL_ERROR(var_name_syntax_error, invalid_input_error);
+OAC_EXCEPTION_BEGIN(invalid_var_group_error, invalid_var_exception)
+   OAC_EXCEPTION_FIELD(expected_var_group_tag, variable_group::tag_type)
+   OAC_EXCEPTION_FIELD(actual_var_group_tag, variable_group::tag_type)
+   OAC_EXCEPTION_MSG(
+         "invalid variable group %s for FSUIPC Flight Vars (%s was expected)",
+         actual_var_group_tag,
+         expected_var_group_tag)
+OAC_EXCEPTION_END()
+
+/**
+ * A syntax error was found while parsing the variable name.
+ */
+OAC_EXCEPTION_BEGIN(var_name_syntax_error, invalid_var_exception)
+   OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
+   OAC_EXCEPTION_MSG(
+         "syntax error in variable name '%s': not a FSUIPC offset",
+         var_name_tag)
+OAC_EXCEPTION_END()
 
 }
 
@@ -123,12 +138,24 @@ public:
    /**
     * An unknown offset was specified.
     */
-   OAC_DECL_ERROR(unknown_offset_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(no_such_offset_error, oac::exception)
+      OAC_EXCEPTION_FIELD(offset_addr, fsuipc_offset_address)
+      OAC_EXCEPTION_FIELD(offset_len, fsuipc_offset_length)
+      OAC_EXCEPTION_MSG(
+            "no such offset 0x%x:%d in FSUIPC offset database",
+            offset_addr,
+            offset_len)
+   OAC_EXCEPTION_END()
 
    /**
     * An unknown subscription was specified.
     */
-   OAC_DECL_ERROR(unknown_subscription_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(no_such_subscription_error, oac::exception)
+      OAC_EXCEPTION_FIELD(subscription, subscription_id)
+      OAC_EXCEPTION_MSG(
+            "no such subscription %d in FSUIPC offset database",
+            subscription)
+   OAC_EXCEPTION_END()
 
    typedef std::list<fsuipc_offset> offset_list;
    typedef std::list<subscription_meta> subscription_list;   
@@ -146,11 +173,11 @@ public:
 
    const subscription_list& get_subscriptions_for_offset(
          const fsuipc_offset& offset) const
-   throw (unknown_offset_error);
+   throw (no_such_offset_error);
 
    fsuipc_offset get_offset_for_subscription(
          const subscription_id& subs_id)
-   throw (unknown_subscription_error);
+   throw (no_such_subscription_error);
 
 private:
 
@@ -222,17 +249,12 @@ public:
 
          return subs_id;
       }
-      catch (fsuipc::invalid_var_group_error&)
+      catch (fsuipc::invalid_var_exception& e)
       {
-         BOOST_THROW_EXCEPTION(
-               unknown_variable_group_error() <<
-               variable_group_info(get_var_group(var)));
-      }
-      catch (fsuipc::var_name_syntax_error&)
-      {
-         BOOST_THROW_EXCEPTION(
-               unknown_variable_name_error() <<
-               variable_name_info(get_var_name(var)));
+         OAC_THROW_EXCEPTION(unknown_variable_error()
+               .with_var_group_tag(get_var_group(var).get_tag())
+               .with_var_name_tag(get_var_name(var).get_tag())
+               .with_cause(e));
       }
    }
 
@@ -255,14 +277,16 @@ public:
          auto offset = _db.get_offset_for_subscription(subs_id);
          update_offset(offset, var_value);
       }
-      catch (fsuipc_offset_db::unknown_subscription_error&)
+      catch (fsuipc_offset_db::no_such_subscription_error&)
       {
-         BOOST_THROW_EXCEPTION(
-            unknown_subscription_error() << subscription_info(subs_id));
+         OAC_THROW_EXCEPTION(unknown_subscription_error()
+               .with_subs_id(subs_id));
       }
       catch (variable_value::invalid_type_error&)
       {
-         BOOST_THROW_EXCEPTION(illegal_value_error());
+         OAC_THROW_EXCEPTION(invalid_value_type_error()
+               .with_subs_id(subs_id)
+               .with_var_type(var_value.get_type()));
       }
    }
 

@@ -78,13 +78,14 @@ dll_info::for_aircraft(const aircraft& aircraft)
 
 HINSTANCE
 load_dll_for_aircraft(const aircraft& aircraft)
-throw (wilco_cockpit::invalid_aircraft_error)
+throw (dll_load_error)
 {
-   auto dll_filename = dll_info::for_aircraft(aircraft).name.c_str();
+   auto dll = dll_info::for_aircraft(aircraft);
+   auto dll_filename = dll.name.c_str();
    HINSTANCE lib = LoadLibrary(dll_filename);
    if (lib == NULL)
-      BOOST_THROW_EXCEPTION(wilco_cockpit::invalid_aircraft_error() <<
-                  file_name_info(dll_filename));
+      OAC_THROW_EXCEPTION(dll_load_error()
+            .with_dll(dll.name));
    return lib;
 }
 

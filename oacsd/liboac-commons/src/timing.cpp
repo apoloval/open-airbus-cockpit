@@ -22,22 +22,38 @@ namespace oac {
 
 simconnect_tick_observer::simconnect_tick_observer(
       const simconnect_client::event_name& sc_event)
-throw (connection_error)
-   : _simconnect("OACSD Tick Observer")
+throw (simconnect_error)
 {
-   _simconnect.register_on_event_callback(
-         std::bind(
-               &simconnect_tick_observer::on_event,
-               this,
-               std::placeholders::_1,
-               std::placeholders::_2));
-   _simconnect.subscribe_to_system_event(sc_event);
+   try
+   {
+      _simconnect = std::unique_ptr<simconnect_client>(
+            new simconnect_client("OACSD Tick Observer"));
+      _simconnect->register_on_event_callback(
+            std::bind(
+                  &simconnect_tick_observer::on_event,
+                  this,
+                  std::placeholders::_1,
+                  std::placeholders::_2));
+      _simconnect->subscribe_to_system_event(sc_event);
+   }
+   catch (simconnect_client::invalid_operation_exception& e)
+   {
+      OAC_THROW_EXCEPTION(simconnect_error().with_cause(e));
+   }
 }
 
 void
 simconnect_tick_observer::dispatch()
+throw (simconnect_error)
 {
-   _simconnect.dispatch_message();
+   try
+   {
+      _simconnect->dispatch_message();
+   }
+   catch (simconnect_client::invalid_operation_exception& e)
+   {
+      OAC_THROW_EXCEPTION(simconnect_error().with_cause(e));
+   }
 }
 
 void

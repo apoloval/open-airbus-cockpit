@@ -53,7 +53,7 @@ BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingVarId)
    mapper.register_subscription(var_id, subs_id1);
    BOOST_CHECK_THROW(
             mapper.register_subscription(var_id, subs_id2),
-            subscription_mapper::duplicated_variable_error);
+            subscription_mapper::variable_already_exists_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingSubscriptionId)
@@ -66,7 +66,7 @@ BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingSubscriptionId)
    mapper.register_subscription(var_id1, subs_id);
    BOOST_CHECK_THROW(
             mapper.register_subscription(var_id2, subs_id),
-            subscription_mapper::duplicated_subscription_error);
+            subscription_mapper::subscription_already_exists_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionByVarId)
@@ -78,10 +78,10 @@ BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionByVarId)
    mapper.unregister(var_id);
    BOOST_CHECK_THROW(
             mapper.get_var_id(subs_id),
-            subscription_mapper::unknown_subscription_error);
+            subscription_mapper::no_such_subscription_error);
    BOOST_CHECK_THROW(
             mapper.get_subscription_id(var_id),
-            subscription_mapper::unknown_variable_error);
+            subscription_mapper::no_such_variable_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionBySubscriptionId)
@@ -93,10 +93,10 @@ BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionBySubscriptionId)
    mapper.unregister(subs_id);
    BOOST_CHECK_THROW(
             mapper.get_var_id(subs_id),
-            subscription_mapper::unknown_subscription_error);
+            subscription_mapper::no_such_subscription_error);
    BOOST_CHECK_THROW(
             mapper.get_subscription_id(var_id),
-            subscription_mapper::unknown_variable_error);
+            subscription_mapper::no_such_variable_error);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldExecuteActionForEachSubscription)

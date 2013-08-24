@@ -415,25 +415,17 @@ typedef void (__cdecl *wilco_set_nd_mode)(DWORD mode);
 
 typedef void (__cdecl *wilco_send_command)(DWORD cmd, const void* args);
 
-
-/**
- * Get the function with signature F or throw the exception E if not found.
- */
-template <typename F, typename E>
-F get_function_or_throw(HINSTANCE inst, const char* func_name)
-{
-   auto result = (F) GetProcAddress(inst, func_name);
-   if (!result)
-      BOOST_THROW_EXCEPTION(E() << function_nameInfo(func_name));
-   return result;
-}
+OAC_EXCEPTION_BEGIN(dll_load_error, oac::exception)
+   OAC_EXCEPTION_FIELD(dll, dll_name)
+   OAC_EXCEPTION_MSG("cannot load DLL %s", dll.c_str())
+OAC_EXCEPTION_END()
 
 /**
  * Load DLL library for given aircraft. invalid_aircraft_error is thrown if
  * given aircraft is unknown or DLL cannot be resolved for it.
  */
 HINSTANCE load_dll_for_aircraft(const aircraft& aircraft)
-      throw (wilco_cockpit::invalid_aircraft_error);
+      throw (dll_load_error);
 
 /**
  * Free a DLL instance previously loaded.

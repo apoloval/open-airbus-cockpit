@@ -30,6 +30,7 @@
 #include <boost/format.hpp>
 
 #include "exception.h"
+#include "io.h"
 #include "lang-utils.h"
 #include "stream.h"
 
@@ -117,22 +118,32 @@ namespace buffer
          const boost::system::error_code&,
          std::size_t)> async_io_handler;
 
-   OAC_DECL_ERROR(out_of_bounds_error, invalid_input_error);
-   OAC_DECL_ERROR(read_error, io_error);
-   OAC_DECL_ERROR(write_error, io_error);
+   /**
+    * An exception indicating a invalid index provided in a buffer operation.
+    */
+   OAC_EXCEPTION_BEGIN(index_out_of_bounds, exception)
+      OAC_EXCEPTION_FIELD(lower_bound, int)
+      OAC_EXCEPTION_FIELD(upper_bound, int)
+      OAC_EXCEPTION_FIELD(index, int)
+      OAC_EXCEPTION_MSG(
+            "buffer access with invalid index %d for bounds [%d, %d]",
+            index,
+            lower_bound,
+            upper_bound)
+   OAC_EXCEPTION_END()
 
    template <typename T, typename Buffer>
    T read_as(
          Buffer& b, std::uint32_t offset)
-         throw (out_of_bounds_error, read_error);
+         throw (index_out_of_bounds, io_exception);
 
    template <typename T, typename Buffer>
    void write_as(
          Buffer& b, std::uint32_t offset, const T& t)
-         throw (out_of_bounds_error, write_error);
+         throw (index_out_of_bounds, io_exception);
 
    template <typename Buffer>
-   void fill(Buffer& b, std::uint8_t value) throw (write_error);
+   void fill(Buffer& b, std::uint8_t value) throw (io_exception);
 
    template <typename AsyncReadStream,
              typename StreamBuffer,
@@ -334,30 +345,30 @@ public:
    std::size_t capacity() const;
 
    void read(void* dst, std::uint32_t offset, std::uint32_t length) const
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
    template <typename OutputStream>
    void read_to(
          OutputStream& dst,
          std::uint32_t offset,
          std::uint32_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error);
+   throw (buffer::index_out_of_bounds, io_exception);
 
    void write(const void* src, std::uint32_t offset, std::uint32_t length)
-         throw (buffer::out_of_bounds_error, buffer::write_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    template <typename InputStream>
    std::size_t write_from(
          InputStream& src,
          std::uint32_t offset,
          std::uint32_t length)
-   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error);
+   throw (buffer::index_out_of_bounds, io_exception);
 
    template <typename Buffer>
    void copy(
          const Buffer& src, std::uint32_t src_offset,
          std::uint32_t dst_offset, std::size_t length)
-   throw (buffer::out_of_bounds_error);
+   throw (buffer::index_out_of_bounds);
 
    /**
     * Obtain a pointer to the raw data for this buffer.
@@ -377,7 +388,7 @@ private:
    std::uint32_t _write_index;
 
    void check_bounds(std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 };
 
 class linear_buffer :
@@ -418,27 +429,27 @@ public:
    std::size_t capacity() const;
 
    void read(void* dst, std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
    template <typename OutputStream>
    void read_to(
          OutputStream& dst, std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error, stream::write_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    void write(
          const void* src, std::uint32_t offset, std::size_t length)
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
    template <typename InputStream>
    std::size_t write_from(
          InputStream& src, std::uint32_t offset, std::size_t length)
-         throw (buffer::out_of_bounds_error, stream::read_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    template <typename Buffer>
    void copy(
          const Buffer& src, std::uint32_t src_offset,
          std::uint32_t dst_offset, std::size_t length)
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
 private:
 
@@ -480,21 +491,21 @@ public:
    std::size_t capacity() const;
 
    void read(void* dst, std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
    template <typename OutputStream>
    void read_to(
          OutputStream& dst, std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error, stream::write_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    void write(
          const void* src, std::uint32_t offset, std::size_t length)
-         throw (buffer::out_of_bounds_error);
+         throw (buffer::index_out_of_bounds);
 
    template <typename InputStream>
    std::size_t write_from(
          InputStream& src, std::uint32_t offset, std::size_t length)
-         throw (buffer::out_of_bounds_error, stream::read_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    template <typename Buffer>
    void copy(
@@ -502,7 +513,7 @@ public:
          std::uint32_t src_offset,
          std::uint32_t dst_offset,
          std::size_t length)
-   throw (buffer::out_of_bounds_error);
+   throw (buffer::index_out_of_bounds);
 
 private:
 
@@ -568,7 +579,7 @@ public:
    { return _backed_buffer->capacity(); }
 
    inline void read(void* dst, std::uint32_t offset, std::size_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       check_bounds(offset, length);
       _backed_buffer->read(dst, shift(offset), length);
@@ -577,14 +588,14 @@ public:
    template <typename OutputStream>
    inline void read(
          OutputStream& dst, std::uint32_t offset, std::size_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       check_bounds(offset, length);
       _backed_buffer->read(dst, shift(offset), length);
    }
 
    inline void write(const void* src, std::uint32_t offset, std::size_t length)
-   throw (buffer::out_of_bounds_error, buffer::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       check_bounds(offset, length);
       _backed_buffer->write(src, shift(offset), length);
@@ -593,7 +604,7 @@ public:
    template <typename InputStream>
    inline std::size_t write(
          InputStream& src, std::uint32_t offset, std::size_t length)
-   throw (buffer::out_of_bounds_error, stream::read_error, buffer::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       check_bounds(offset, length);
       return _backed_buffer->write(src, shift(offset), length);
@@ -602,7 +613,7 @@ public:
    template <typename Buffer>
    inline void copy(const Buffer& src, std::uint32_t src_offset,
          std::uint32_t dst_offset, std::size_t length)
-   throw (buffer::out_of_bounds_error, buffer::read_error, buffer::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       check_bounds(dst_offset, length);
       _backed_buffer->copy(src, src_offset, shift(dst_offset), length);
@@ -615,13 +626,13 @@ private:
    std::uint32_t _offset_shift;
 
    inline void check_bounds(std::uint32_t offset, std::uint32_t length) const
-   throw (buffer::out_of_bounds_error)
+   throw (buffer::index_out_of_bounds)
    {
       if (offset < _offset_shift || shift(offset) + length > _backed_capacity)
-         BOOST_THROW_EXCEPTION(buffer::out_of_bounds_error() <<
-               lower_bound_info(0) <<
-               upper_bound_info(_backed_capacity - 1) <<
-               index_info(offset + length));
+         OAC_THROW_EXCEPTION(buffer::index_out_of_bounds()
+               .with_lower_bound(0)
+               .with_upper_bound(_backed_capacity - 1)
+               .with_index(offset + length));
    }
 
    inline std::uint32_t shift(std::uint32_t offset) const
@@ -678,25 +689,25 @@ public:
    { return _backed_buffer[_current_buffer]->capacity(); }
 
    inline void read(void* dst, std::uint32_t offset, std::size_t length) const
-   throw (buffer::out_of_bounds_error)
+   throw (buffer::index_out_of_bounds)
    { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
    template <typename OutputStream>
    inline void read(OutputStream& dst,
                     std::uint32_t offset,
                     std::size_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error, stream::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    { _backed_buffer[_current_buffer]->read(dst, offset, length); }
 
    inline void write(const void* src, std::uint32_t offset, std::size_t length)
-   throw (buffer::out_of_bounds_error)
+   throw (buffer::index_out_of_bounds)
    { _backed_buffer[_current_buffer]->write(src, offset, length); }
 
    template <typename InputStream>
    inline std::size_t write(InputStream& src,
                             std::uint32_t offset,
                             std::size_t length)
-   throw (buffer::out_of_bounds_error)
+   throw (buffer::index_out_of_bounds)
    { return _backed_buffer[_current_buffer]->write(src, offset, length); }
 
    template <typename Buffer>
@@ -704,7 +715,7 @@ public:
              std::uint32_t src_offset,
              std::uint32_t dst_offset,
              std::size_t length)
-   throw (buffer::out_of_bounds_error)
+   throw (buffer::index_out_of_bounds)
    {
       _backed_buffer[_current_buffer]->copy(
                src, src_offset, dst_offset, length);

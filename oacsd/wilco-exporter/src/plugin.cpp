@@ -142,8 +142,9 @@ plugin::on_new_aircraft(const aircraft_title& title)
    } catch (aircraft::invalid_title& e) {
       log(
             INFO,
-            "No Wilco Airbus aircraft resolved for title '%s'",
-            GetErrorInfo<aircraft::title_info>(e));
+            "No Wilco Airbus aircraft resolved for title '%s':\n%s",
+            title,
+            e.report());
       this->reset_cockpit();
    }
 }

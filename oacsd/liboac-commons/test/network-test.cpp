@@ -44,14 +44,14 @@ BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnexistingHost)
 {
    BOOST_CHECK_THROW(
          tcp_client("www.bartolohizocaca.com", 80), // hope it never exists
-         network::connection_error);
+         network::connection_refused);
 }
 
 BOOST_AUTO_TEST_CASE(MustFailWhileConnectingToUnavailablePort)
 {
    BOOST_CHECK_THROW(
          tcp_client("localhost", 1234),
-         network::connection_error);
+         network::connection_refused);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

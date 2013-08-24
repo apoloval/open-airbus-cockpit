@@ -44,12 +44,15 @@ void
 subscription_mapper::register_subscription(
       const variable_id& var_id,
       const subscription_id& subs_id)
-throw (duplicated_variable_error, duplicated_subscription_error)
+throw (variable_already_exists_error, subscription_already_exists_error)
 {
    if (_map.left.find(var_id) != _map.left.end())
-      boost::throw_exception(duplicated_variable_error());
+      OAC_THROW_EXCEPTION(variable_already_exists_error()
+            .with_var_group_tag(get_var_group(var_id))
+            .with_var_name_tag(get_var_name(var_id)));
    if (_map.right.find(subs_id) != _map.right.end())
-      boost::throw_exception(duplicated_subscription_error());
+      OAC_THROW_EXCEPTION(subscription_already_exists_error()
+            .with_subs_id(subs_id));
    _map.insert(map_type::value_type(var_id, subs_id));
 }
 
@@ -66,41 +69,47 @@ subscription_mapper::for_each_subscription(
 variable_id
 subscription_mapper::get_var_id(
       const subscription_id& subs_id)
-throw (unknown_subscription_error)
+throw (no_such_subscription_error)
 {
    auto entry = _map.right.find(subs_id);
    if (entry == _map.right.end())
-      boost::throw_exception(unknown_subscription_error());
+      OAC_THROW_EXCEPTION(no_such_subscription_error()
+            .with_subs_id(subs_id));
    return entry->second;
 }
 
 subscription_id
 subscription_mapper::get_subscription_id(
       const variable_id& var_id)
-throw (unknown_variable_error)
+throw (no_such_variable_error)
 {
    auto entry = _map.left.find(var_id);
    if (entry == _map.left.end())
-      boost::throw_exception(unknown_variable_error());
+      OAC_THROW_EXCEPTION(no_such_variable_error()
+            .with_var_group_tag(get_var_group(var_id))
+            .with_var_name_tag(get_var_name(var_id)));
    return entry->second;
 }
 
 void
 subscription_mapper::unregister(
       const variable_id& var_id)
-throw (unknown_variable_error)
+throw (no_such_variable_error)
 {
    if (_map.left.erase(var_id) == 0)
-      boost::throw_exception(unknown_variable_error());
+      OAC_THROW_EXCEPTION(no_such_variable_error()
+            .with_var_group_tag(get_var_group(var_id))
+            .with_var_name_tag(get_var_name(var_id)));
 }
 
 void
 subscription_mapper::unregister(
       const subscription_id& subs_id)
-throw (unknown_subscription_error)
+throw (no_such_subscription_error)
 {
    if (_map.right.erase(subs_id) == 0)
-      boost::throw_exception(unknown_subscription_error());
+      OAC_THROW_EXCEPTION(no_such_subscription_error()
+            .with_subs_id(subs_id));
 }
 
 }} // namespace oac::fv

@@ -41,6 +41,18 @@
 namespace oac {
 
 /**
+ * An exception caused by an unexpected FSUIPC error.
+ */
+OAC_EXCEPTION_BEGIN(fsuipc_error, io_exception)
+   OAC_EXCEPTION_FIELD(error_code, int)
+   OAC_EXCEPTION_FIELD(error_message, std::string)
+   OAC_EXCEPTION_MSG(
+      "FSUIPC library returned an error code %d(%s)",
+      error_code,
+      error_message)
+OAC_EXCEPTION_END()
+
+/**
  * FSUIPC class. This class encapsulates the access to FSUIPC module. It 
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
@@ -50,10 +62,6 @@ class local_fsuipc :
 {
 public:
 
-   OAC_DECL_ERROR(init_error, connection_error);
-   OAC_DECL_ERROR_INFO(error_code_info, DWORD);
-   OAC_DECL_ERROR_INFO(error_msg_info, std::string);
-
    typedef DWORD Offset;
 
    class factory 
@@ -62,7 +70,7 @@ public:
 
       typedef local_fsuipc value_type;
 
-      local_fsuipc* create_fsuipc() throw (init_error)
+      local_fsuipc* create_fsuipc() throw (fsuipc_error)
       { return new local_fsuipc(); }
    };
 
@@ -72,16 +80,16 @@ public:
    { return 0xffff; }
 
    void read(void* dst, std::uint32_t offset, std::size_t length) const
-         throw (buffer::out_of_bounds_error, buffer::read_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    void write(const void* src, std::uint32_t offset, std::size_t length)
-         throw (buffer::out_of_bounds_error, buffer::write_error);
+         throw (buffer::index_out_of_bounds, io_exception);
 
    template <typename OutputStream>
    void read_to(OutputStream& dst,
                 std::uint32_t offset,
                 std::size_t length) const
-   throw (buffer::out_of_bounds_error, buffer::read_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       linear_buffer tmp(length);
       tmp.copy(*this, offset, 0, length);
@@ -92,7 +100,7 @@ public:
    std::size_t write_from(InputStream& src,
                           std::uint32_t offset,
                           std::size_t length)
-   throw (buffer::out_of_bounds_error, buffer::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       linear_buffer tmp(length);
       auto nbytes = tmp.write(src, 0, length);
@@ -106,7 +114,7 @@ public:
          DWORD src_offset,
          DWORD dst_offset,
          DWORD length)
-   throw (buffer::out_of_bounds_error, buffer::read_error, buffer::write_error)
+   throw (buffer::index_out_of_bounds, io_exception)
    {
       BYTE tmp[1024];
       auto sos = src_offset;
@@ -477,32 +485,19 @@ class local_fsuipc_user_adapter : public logger_component
 {
 public:
 
-   /**
-    * An error ocurred while invoking FSUIPC API functions. Contains:
-    *
-    *  - function_name_info, indicating the function that produced the error
-    *  - error_code_info, indicating the error code that the function returned
-    *  - error_msg_info, indicating the error message corresponding to the
-    *    error code
-    */
-   OAC_DECL_ERROR(operation_error, illegal_state_error);
-
-   OAC_DECL_ERROR_INFO(error_code_info, std::uint32_t);
-   OAC_DECL_ERROR_INFO(error_msg_info, std::string);
-
-   local_fsuipc_user_adapter() throw(operation_error);
+   local_fsuipc_user_adapter() throw (fsuipc_error);
 
    local_fsuipc_user_adapter(const local_fsuipc_user_adapter& adapter);
 
    ~local_fsuipc_user_adapter();
 
    void read(fsuipc_valued_offset& valued_offset)
-   throw (operation_error);
+   throw (fsuipc_error);
 
    void write(const fsuipc_valued_offset& valued_offset)
-   throw (operation_error);
+   throw (fsuipc_error);
 
-   void process() throw (operation_error);
+   void process() throw (fsuipc_error);
 
 private:
 

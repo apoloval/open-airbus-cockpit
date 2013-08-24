@@ -21,74 +21,175 @@
 
 #include <exception>
 #include <string>
-#include <utility>
 
-#include <boost/format.hpp>
-#include <boost/exception/all.hpp>
-#include <boost/system/system_error.hpp>
+#include "format.h"
 
 #pragma warning( disable : 4290 )
 
 namespace oac {
 
-struct error : virtual std::exception, virtual boost::exception
+/**
+ * Exception base class. This class provides a common base for all exceptions
+ * managed in OAC.
+ */
+class exception : public std::exception
 {
-   virtual const char* what() const throw ()
+public:
+
+   exception(const exception& e)
+      : _source(e._source),
+        _msg(e._msg),
+        _cause(e._cause)
+   {}
+
+   virtual ~exception() {}
+
+   /**
+    * Obtain the error message for this exception.
+    */
+   std::string message() const
+   { return _msg; }
+
+   /**
+    * Obtain a report of this exception. The report contains the
+    * error message of this exception and its chain of causes, if any.
+    */
+   std::string report() const
    {
-      return boost::diagnostic_information_what(*this);
+      if (_cause)
+      {
+         auto oac_cause = dynamic_cast<exception*>(_cause.get());
+         return format(
+               "in %s, %s; caused by:\n%s",
+               _source,
+               _msg,
+               oac_cause ? oac_cause->report() : _cause->what());
+      }
+      else
+         return format("in %s, %s", _source, _msg);
    }
 
-   operator boost::exception_ptr() const {
-      return boost::copy_exception(*this);
-   }
+   /**
+    * Obtain the cause cause exception, if any.
+    */
+   std::weak_ptr<std::exception> cause() const
+   { return std::weak_ptr<std::exception>(_cause); }
+
+   virtual const char* what() const throw()
+   { return _msg.c_str(); }
+
+protected:
+
+   exception()
+      : _source("unknown source"),
+        _msg("Unknown error"),
+        _cause(nullptr)
+   {}
+
+   void _set_source(const std::string& source)
+   { _source = source; }
+
+   void _set_message(const std::string& msg)
+   { _msg = msg; }
+
+   template <typename Exception>
+   void _set_cause(const Exception& cause)
+   { _cause = std::make_shared<Exception>(cause); }
+
+private:
+
+   std::string _source;
+   std::string _msg;
+   std::shared_ptr<std::exception> _cause;
 };
 
+#define _OAC_EXCEPTION_SETTERS(class_name)                     \
+         class_name& set_source(const std::string& source)     \
+         {                                                     \
+            _set_source(source);                               \
+            return *this;                                      \
+         }                                                     \
+                                                               \
+         template <typename Exception>                         \
+         class_name& with_cause(const Exception& e)            \
+         {                                                     \
+            _set_cause(e);                                     \
+            return *this;                                      \
+         }
 
-struct logic_error_base : virtual error {};
-struct runtime_error_base : virtual error {};
+#define OAC_EXCEPTION_BEGIN(class_name, parent)                \
+      class class_name : public parent                         \
+      {                                                        \
+      public:                                                  \
+         typedef class_name __this_type;                       \
+                                                               \
+         _OAC_EXCEPTION_SETTERS(class_name)
 
-template <typename ErrorInfo, typename E>
-const typename ErrorInfo::error_info::value_type* GetErrorInfo(const E& e)
-{ return boost::get_error_info<ErrorInfo>(e); }
 
-} // namespace oac
+#define OAC_EXCEPTION_MSG(...)                                 \
+         void regen_message()                                  \
+         {                                                     \
+            _set_message(format(__VA_ARGS__));                 \
+         }                                                     \
 
-#define DECL_STD_ERROR(classname, stdexcept) \
-   class classname : public stdexcept { \
-   public: \
-      inline classname(const std::string& what) : stdexcept(what) \
-      {} \
-      \
-      inline classname(const boost::format& fmt) : stdexcept(str(fmt)) \
-      {} \
-   };
+#define OAC_EXCEPTION_FIELD(name, type)                        \
+      private:                                                 \
+         type name;                                            \
+      public:                                                  \
+         __this_type& with_##name(const type& _v)              \
+         {                                                     \
+            name = _v;                                         \
+            regen_message();                                   \
+            return *this;                                      \
+         }                                                     \
+                                                               \
+         const type& get_##name() const                        \
+         { return name; }
 
-#define OAC_DECL_LOGIC_ERROR(name) struct name : virtual logic_error_base {}
-#define OAC_DECL_RUNTIME_ERROR(name) struct name : virtual runtime_error_base {}
-#define OAC_DECL_ERROR(name, parent) struct name : virtual parent {}
+#define OAC_EXCEPTION_END()                                    \
+      };
 
-#define OAC_DECL_ERROR_INFO(name, type) \
-   typedef boost::error_info<struct name##Tag, type> name
+#define OAC_ABSTRACT_EXCEPTION(class_name)                     \
+      struct class_name : ::oac::exception                     \
+      {                                                        \
+         class_name(const class_name& e)                       \
+            : ::oac::exception(e)                              \
+         {}                                                    \
+                                                               \
+      protected:                                               \
+                                                               \
+         class_name() : ::oac::exception() {}                  \
+                                                               \
+         template <typename Exception>                         \
+         class_name(const Exception& cause)                    \
+            : ::oac::exception(cause)                          \
+         {}                                                    \
+      }
 
-namespace oac {
+#define OAC_EXCEPTION(class_name, parent, error_msg)           \
+      struct class_name : parent                               \
+      {                                                        \
+         class_name() : parent()                               \
+         { _set_message(error_msg); }                          \
+         _OAC_EXCEPTION_SETTERS(class_name)                    \
+      }
 
-OAC_DECL_LOGIC_ERROR(connection_error);
-OAC_DECL_LOGIC_ERROR(invalid_input_error);
-OAC_DECL_LOGIC_ERROR(not_found_error);
-OAC_DECL_LOGIC_ERROR(null_pointer_error);
+#define OAC_THROW_EXCEPTION(...)                               \
+   throw (__VA_ARGS__)                                         \
+         .set_source(format("%s:%d", __FILE__, __LINE__))
 
-OAC_DECL_RUNTIME_ERROR(illegal_state_error);
-OAC_DECL_RUNTIME_ERROR(io_error);
 
-OAC_DECL_ERROR_INFO(boost_system_error_info, boost::system::system_error);
-OAC_DECL_ERROR_INFO(code_info, int);
-OAC_DECL_ERROR_INFO(file_name_info, std::wstring);
-OAC_DECL_ERROR_INFO(function_name_info, std::string);
-OAC_DECL_ERROR_INFO(index_info, int);
-OAC_DECL_ERROR_INFO(lower_bound_info, int);
-OAC_DECL_ERROR_INFO(message_info, std::string);
-OAC_DECL_ERROR_INFO(nested_error_info, boost::exception_ptr);
-OAC_DECL_ERROR_INFO(upper_bound_info, int);
+
+/**
+ * An exception caused by a enum value out of its range.
+ */
+template <typename Enum>
+OAC_EXCEPTION_BEGIN(enum_out_of_range_error, oac::exception)
+   OAC_EXCEPTION_FIELD(value, Enum)
+   OAC_EXCEPTION_MSG(
+         "invalid value %d out of range of enumeration",
+         int(value))
+OAC_EXCEPTION_END()
 
 } // namespace oac
 

@@ -79,7 +79,7 @@ void buffer_copy_test(
       DWORD offset0,
       DWORD offset1,
       DWORD length)
-throw (buffer::out_of_bounds_error)
+throw (buffer::index_out_of_bounds)
 {
    ptr<typename BufferFactory1::value_type> buff0(fact0->create_buffer());
    ptr<typename BufferFactory2::value_type> buff1(fact1->create_buffer());
@@ -147,14 +147,14 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_write_test(make_ptr(new linear_buffer::factory(12)), 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_read_test(make_ptr(new linear_buffer::factory(12)), 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnSameOffsets)
@@ -180,7 +180,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongSourceOffset)
                make_ptr(new linear_buffer::factory(12)),
                make_ptr(new linear_buffer::factory(12)),
                0, 16, 0, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
                make_ptr(new linear_buffer::factory(12)),
                make_ptr(new linear_buffer::factory(12)),
                0, 0, 16, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
                make_ptr(new linear_buffer::factory(12)),
                make_ptr(new linear_buffer::factory(12)),
                0, 0, 0, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadAsStream)
@@ -300,14 +300,14 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_write_test(make_ptr(new ring_buffer::factory(12)), 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_read_test(make_ptr(new ring_buffer::factory(12)), 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnSameOffsets)
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongSourceOffset)
                make_ptr(new ring_buffer::factory(12)),
                make_ptr(new ring_buffer::factory(12)),
                0, 16, 0, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
@@ -343,7 +343,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
                make_ptr(new ring_buffer::factory(12)),
                make_ptr(new ring_buffer::factory(12)),
                0, 0, 16, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
@@ -353,7 +353,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
                make_ptr(new ring_buffer::factory(12)),
                make_ptr(new ring_buffer::factory(12)),
                0, 0, 0, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadAsStream)
@@ -544,7 +544,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadBeforeFirstPosition)
          buffer_read_test(
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                512),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteBeforeFirstPosition)
@@ -553,7 +553,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteBeforeFirstPosition)
          buffer_write_test(
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                512),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
@@ -562,7 +562,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
          buffer_read_test(
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                1036),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
@@ -571,7 +571,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
          buffer_write_test(
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                1036),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyFromshifted_buffer)
@@ -597,7 +597,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongSourceOffset)
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                make_ptr(new linear_buffer::factory(12)),
                1024, 512, 0, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongDestinationOffset)
@@ -607,7 +607,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongDestinationOffse
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                make_ptr(new linear_buffer::factory(12)),
                1024, 1024, 16, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongLength)
@@ -617,7 +617,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongLength)
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                make_ptr(new linear_buffer::factory(12)),
                1024, 1024, 0, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongSourceOffset)
@@ -627,7 +627,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongSourceOffset)
                make_ptr(new linear_buffer::factory(12)),
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                0, 16, 1024, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongDestinationOffset)
@@ -637,7 +637,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongDestinationOffset)
                make_ptr(new linear_buffer::factory(12)),
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                0, 0, 512, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongLength)
@@ -647,7 +647,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongLength)
                make_ptr(new linear_buffer::factory(12)),
                buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
                0, 0, 1024, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_SUITE_END();
@@ -692,7 +692,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
          buffer_read_test(
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
          buffer_write_test(
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyFromdouble_buffer)
@@ -727,7 +727,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongSourceOffset)
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                make_ptr(new linear_buffer::factory(12)),
                0, 12, 0, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongDestinationOffset)
@@ -737,7 +737,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongDestinationOffset
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                make_ptr(new linear_buffer::factory(12)),
                0, 0, 12, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongLength)
@@ -747,7 +747,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongLength)
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                make_ptr(new linear_buffer::factory(12)),
                0, 0, 0, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongSourceOffset)
@@ -757,7 +757,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongSourceOffset)
                make_ptr(new linear_buffer::factory(12)),
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                0, 12, 0, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongDestinationOffset)
@@ -767,7 +767,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongDestinationOffset)
                make_ptr(new linear_buffer::factory(12)),
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                0, 0, 12, 12),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongLength)
@@ -777,7 +777,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongLength)
                make_ptr(new linear_buffer::factory(12)),
                buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
                0, 0, 0, 24),
-         buffer::out_of_bounds_error);
+         buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldDetectModificationOnChange)

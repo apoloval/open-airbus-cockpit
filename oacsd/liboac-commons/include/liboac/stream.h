@@ -25,6 +25,7 @@
 #include <Windows.h>
 
 #include "exception.h"
+#include "io.h"
 #include "lang-utils.h"
 
 namespace oac {
@@ -35,7 +36,7 @@ namespace oac {
  * A class which provides a member to read bytes from with the signature:
  *
  * std::size_t InputStream::read(
- *       void* dest, std::size_t count) throw (io_error);
+ *       void* dest, std::size_t count) throw (io_exception);
  *
  * The read() operation is synchronous, so the caller shall be blocked if
  * there is no available data in the stream. When data is available, the bytes
@@ -53,7 +54,7 @@ namespace oac {
  * A class which provides a member to write bytes to, with the signature:
  *
  * std::size_t OutputStream::write(
- *       const void* src, std::size_t count) throw (io_error);
+ *       const void* src, std::size_t count) throw (io_exception);
  *
  * void OutputStream::flush();
  *
@@ -69,10 +70,6 @@ namespace oac {
 
 namespace stream {
 
-OAC_DECL_ERROR(eof_error, io_error);
-OAC_DECL_ERROR(read_error, io_error);
-OAC_DECL_ERROR(write_error, io_error);
-
 /**
  * Read count bytes from the stream, waiting for new data to arrive if
  * there are no enough bytes. While read() returns even when less bytes
@@ -87,14 +84,14 @@ OAC_DECL_ERROR(write_error, io_error);
  */
 template <typename InputStream>
 inline void read_all(InputStream& s, void* dest, std::size_t count)
-throw (io_error)
+throw (io_exception)
 {
    auto p = (std::uint8_t*) dest;
    while (count)
    {
       auto nread = s.read(p, count);
       if (nread == 0)
-         BOOST_THROW_EXCEPTION(eof_error());
+         OAC_THROW_EXCEPTION(eof_error());
       p += nread;
       count -= nread;
    }
@@ -107,7 +104,7 @@ throw (io_error)
  */
 template <typename T, typename InputStream>
 inline T read_as(InputStream& s)
-throw (io_error)
+throw (io_exception)
 {
    T r;
    read_all(s, &r, sizeof(T));
@@ -121,7 +118,7 @@ throw (io_error)
  */
 template <typename InputStream>
 inline std::string read_as_string(InputStream& s, unsigned int len)
-throw (io_error)
+throw (io_exception)
 {
    char* buff = new char[len];
    read_all(s, buff, len);
@@ -157,14 +154,14 @@ inline std::string read_line(InputStream& s)
  */
 template <typename OutputStream>
 inline void write_all(OutputStream& s, const void* src, std::size_t count)
-throw (io_error)
+throw (io_exception)
 {
    auto p = (const std::uint8_t*) src;
    while (count)
    {
       auto nwrite = s.write(p, count);
       if (nwrite == 0)
-         BOOST_THROW_EXCEPTION(eof_error());
+         OAC_THROW_EXCEPTION(eof_error());
       p += nwrite;
       count -= nwrite;
    }
@@ -178,7 +175,7 @@ throw (io_error)
 template <typename OutputStream>
 inline void write_as_string(
       OutputStream& s, const std::string& str)
-throw (io_error)
+throw (io_exception)
 { write_all(s, str.c_str(), str.length()); }
 
 /**
@@ -187,7 +184,7 @@ throw (io_error)
  */
 template <typename T, typename OutputStream>
 inline void write_as(OutputStream& s, const T& t)
-throw (io_error)
+throw (io_exception)
 { write_all(s, &t, sizeof(T)); }
 
 } // namespace stream
@@ -205,19 +202,17 @@ public:
       : _adapted(adapted)
    {}
 
-   inline size_t read(void* dest, size_t count)
+   inline size_t read(void* dest, size_t count)   
    {
       try
       { return _adapted->read_some(boost::asio::buffer(dest, count)); }
       catch (boost::system::system_error& e)
       {
-         if (e.code() == boost::asio::error::eof)
+         auto& ec = e.code();
+         if (ec == boost::asio::error::eof)
             return 0;
          else
-            BOOST_THROW_EXCEPTION(
-                     stream::read_error() <<
-                     boost_system_error_info(e) <<
-                     message_info(e.what()));
+            OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
       }
    }
 
@@ -244,13 +239,11 @@ public:
       try { return _adapted->write_some(boost::asio::buffer(src, count)); }
       catch (boost::system::system_error& e)
       {
+         auto& ec = e.code();
          if (e.code() == boost::asio::error::eof)
             return 0;
          else
-            BOOST_THROW_EXCEPTION(
-                     stream::write_error() <<
-                     boost_system_error_info(e) <<
-                     message_info(e.what()));
+            OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
       }
    }
 

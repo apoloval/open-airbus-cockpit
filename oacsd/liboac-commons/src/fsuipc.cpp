@@ -66,7 +66,7 @@ class local_fsuipc_handler
 public:
 
    inline static void init()
-   throw (local_fsuipc::init_error)
+   throw (fsuipc_error)
    {
       if (!_singleton)
          _singleton = new local_fsuipc_handler();
@@ -86,13 +86,13 @@ private:
    BYTE _buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
    inline local_fsuipc_handler()
-   throw (local_fsuipc::init_error)
+   throw (fsuipc_error)
    {
       DWORD result;
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
-         BOOST_THROW_EXCEPTION(
-                  local_fsuipc::init_error() <<
-                  message_info(get_result_message(result)));
+         OAC_THROW_EXCEPTION(fsuipc_error()
+               .with_error_code(result)
+               .with_error_message(get_result_message(result)));
    }
 
 };
@@ -109,28 +109,28 @@ local_fsuipc::local_fsuipc()
 
 void
 local_fsuipc::read(void* dst, std::uint32_t offset, std::size_t length) const
-throw (buffer::out_of_bounds_error, buffer::read_error)
+throw (buffer::index_out_of_bounds, io_exception)
 {
    DWORD error;
    if (FSUIPC_Read(offset, length, dst, &error))
       if (FSUIPC_Process(&error))
          return;
-   BOOST_THROW_EXCEPTION(buffer::read_error() <<
-         error_code_info(error) <<
-         error_msg_info(get_result_message(error)));
+   OAC_THROW_EXCEPTION(fsuipc_error()
+         .with_error_code(error)
+         .with_error_message(get_result_message(error)));
 }
 
 void
 local_fsuipc::write(const void* src, std::uint32_t offset, std::size_t length)
-throw (buffer::out_of_bounds_error, buffer::write_error)
+throw (buffer::index_out_of_bounds, io_exception)
 {
    DWORD error;
    if (FSUIPC_Write(offset, length, (void*) src, &error))
       if (FSUIPC_Process(&error))
          return;
-   BOOST_THROW_EXCEPTION(buffer::write_error() <<
-         error_code_info(error) <<
-         error_msg_info(get_result_message(error)));
+   OAC_THROW_EXCEPTION(fsuipc_error()
+         .with_error_code(error)
+         .with_error_message(get_result_message(error)));
 }
 
 
@@ -140,7 +140,7 @@ std::uint32_t local_fsuipc_user_adapter::_instance_count(0);
 std::uint8_t local_fsuipc_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
 local_fsuipc_user_adapter::local_fsuipc_user_adapter()
-throw (operation_error)
+throw (fsuipc_error)
  : logger_component("local_fsuipc_user_adapter")
 {
    if (_instance_count == 0)
@@ -154,11 +154,9 @@ throw (operation_error)
              _buffer,
              LOCAL_FSUIPC_BUFFER_SIZE))
       {
-         BOOST_THROW_EXCEPTION(
-                  operation_error() <<
-                  function_name_info("FSUIPC_Open") <<
-                  error_code_info(result) <<
-                  error_msg_info(get_result_message(result)));
+         OAC_THROW_EXCEPTION(fsuipc_error()
+               .with_error_code(result)
+               .with_error_message(get_result_message(result)));
       }
       log_info("Local channel to FSUIPC successfully open");
    }
@@ -189,7 +187,7 @@ local_fsuipc_user_adapter::~local_fsuipc_user_adapter()
 void
 local_fsuipc_user_adapter::read(
       fsuipc_valued_offset& valued_offset)
-throw (operation_error)
+throw (fsuipc_error)
 {
    DWORD error;
    if (!FSUIPC_Read(
@@ -198,18 +196,16 @@ throw (operation_error)
             &valued_offset.value,
             &error))
    {
-      BOOST_THROW_EXCEPTION(
-               operation_error() <<
-               function_name_info("FSUIPC_Read") <<
-               error_code_info(error) <<
-               error_msg_info(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error()
+               .with_error_code(error)
+               .with_error_message(get_result_message(error)));
    }
 }
 
 void
 local_fsuipc_user_adapter::write(
       const fsuipc_valued_offset& valued_offset)
-throw (operation_error)
+throw (fsuipc_error)
 {
    DWORD error;
    if (!FSUIPC_Write(
@@ -218,26 +214,22 @@ throw (operation_error)
             (void*) valued_offset.value,
             &error))
    {
-      BOOST_THROW_EXCEPTION(
-               operation_error() <<
-               function_name_info("FSUIPC_Write") <<
-               error_code_info(error) <<
-               error_msg_info(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error()
+         .with_error_code(error)
+         .with_error_message(get_result_message(error)));
    }
 }
 
 void
 local_fsuipc_user_adapter::process()
-throw (operation_error)
+throw (fsuipc_error)
 {
    DWORD error;
    if (!FSUIPC_Process(&error))
    {
-      BOOST_THROW_EXCEPTION(
-               operation_error() <<
-               function_name_info("FSUIPC_Process") <<
-               error_code_info(error) <<
-               error_msg_info(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error()
+         .with_error_code(error)
+         .with_error_message(get_result_message(error)));
    }
 }
 

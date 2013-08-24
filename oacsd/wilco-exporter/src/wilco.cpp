@@ -47,10 +47,10 @@ class wilco_cockpit_impl : public wilco_cockpit, public dll_inspector
 public:
 
    wilco_cockpit_impl(const aircraft& ac)
-   throw (invalid_input_error) :
-         dll_inspector(dll_info::for_aircraft(ac),
-                      load_dll_for_aircraft(ac)),
-         _aircraft(ac)
+      : dll_inspector(
+            dll_info::for_aircraft(ac),
+            load_dll_for_aircraft(ac)),
+        _aircraft(ac)
    {
       auto& dll_info = dll_info::for_aircraft(ac);
       auto dll_instance = this->get_dll_instance();
@@ -136,7 +136,8 @@ throw (aircraft::invalid_title)
       if (boost::contains(title, "A320 CFM"))
          return aircraft_type::A320_CFM;
    }
-   BOOST_THROW_EXCEPTION(aircraft::invalid_title() << aircraft::title_info(title));
+   OAC_THROW_EXCEPTION(aircraft::invalid_title()
+         .with_title(title));
 }
 
 } // anonymous namespace

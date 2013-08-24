@@ -111,13 +111,12 @@ flight_vars_server::on_read_begin_session(
 {
    using namespace proto;
 
-   if (bytes_transferred == 0)
-   {
-      log_warn("EOF while expecting begin session message");
-      return;
-   }
    try
    {
+      if (!!ec)
+         OAC_THROW_EXCEPTION(boost_asio_error()
+               .with_error_code(ec));
+
       auto msg = unmarshall(*session->input_buffer);
       if (auto* bs_msg = boost::get<begin_session_message>(&msg))
       {
@@ -143,20 +142,20 @@ flight_vars_server::on_read_begin_session(
                "while expecting begin session");
       }
    }
-   catch (stream::eof_error&)
+   catch (eof_error&)
    {
       // message partially received, try to obtain more bytes
       session->input_buffer->reset();
       read_begin_session(session);
    }
-   catch (error& e)
+   catch (oac::exception& e)
    {
       session->unsubscribe_all();
       log(
-            log_level::FAIL,
+            log_level::WARN,
             "Unexpected exception thrown while "
-            "waiting for a begin session message: %s",
-            boost::diagnostic_information(e));
+            "waiting for a begin session message:\n%s",
+            e.report());
    }
 }
 
@@ -175,13 +174,13 @@ flight_vars_server::read_request(
                   std::placeholders::_1,
                   std::placeholders::_2));
    }
-   catch (error& e)
+   catch (io_exception& e)
    {
       session->unsubscribe_all();
       log(
-            log_level::FAIL,
-            "Unexpected exception thrown while reading from connection: %s",
-            boost::diagnostic_information(e));
+            log_level::WARN,
+            "Unexpected IO exception thrown while reading from connection:\n%s",
+            e.report());
    }
 }
 
@@ -233,19 +232,19 @@ flight_vars_server::on_read_request(
              "an end session, supscription request or variable update message");
       }
    }
-   catch (stream::eof_error&)
+   catch (eof_error&)
    {
       // message partially received, try to obtain more bytes
       session->input_buffer->reset();
       read_request(session);
    }
-   catch (error& e)
+   catch (oac::exception& e)
    {
       session->unsubscribe_all();
       log(
-            log_level::FAIL,
-            "Unexpected exception thrown while processing a request: %s",
-            boost::diagnostic_information(e));
+            log_level::WARN,
+            "Unexpected exception thrown while processing a request:\n%s",
+            e.report());
    }
 }
 
@@ -277,12 +276,13 @@ flight_vars_server::handle_subscription_request(
             subs_id,
             "");
    }
-   catch (flight_vars::unknown_variable_error&)
+   catch (flight_vars::unknown_variable_error& e)
    {
       log(
             log_level::WARN,
-            "cannot register variable subscription: unknown variable %s",
-            var_str);
+            "cannot register variable subscription: unknown variable %s:\n%s",
+            var_str,
+            e.report());
       return proto::subscription_reply_message(
             proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
             req.var_grp,
@@ -327,22 +327,23 @@ flight_vars_server::send_var_update(
       proto::var_update_message msg(subs_id, var_value);
       write_message(session->conn, msg, [](){});
    }
-   catch (subscription_mapper::unknown_variable_error&)
+   catch (subscription_mapper::no_such_variable_error& e)
    {
       log(
             log_level::WARN,
             "Internal state error: a var update was notified for "
-            "variable %s, but no associated subscription ID was found",
-            var_to_string(var_id));
+            "variable %s, but no associated subscription ID was found:\n%s",
+            var_to_string(var_id),
+            e.report());
    }
-   catch (error& e)
+   catch (io_exception& e)
    {
       session->unsubscribe_all();
       log(
             log_level::FAIL,
-            "Unexpected exception thrown while "
-            "sending a var update to the client: %s",
-            boost::diagnostic_information(e));
+            "Unexpected IO exception thrown while "
+            "sending a var update to the client:\n%s",
+            e.report());
    }
 }
 
@@ -376,7 +377,7 @@ flight_vars_server::on_write_message(
    {
       log(
             log_level::FAIL,
-            "An error was returned while writing message: %s", ec.message());
+            "An error was returned while writing message:\n%s", ec.message());
    }
    else if (bytes_transferred == 0)
    {
@@ -394,20 +395,23 @@ flight_vars_server::handle_var_update_request(
    {
       _delegate->update(req.subs_id, req.var_value);
    }
-   catch (flight_vars::unknown_subscription_error&)
+   catch (flight_vars::unknown_subscription_error& e)
    {
       log(
             log_level::WARN,
-            "Received a var update for unknown subscription ID %d",
-            req.subs_id);
-   }
-   catch (flight_vars::illegal_value_error&)
-   {
-      log(
-            log_level::WARN,
-            "Received a var update for subscription ID %d with invalid value %s",
+            "Received a var update for unknown subscription ID %d:\n%s",
             req.subs_id,
-            req.var_value.to_string());
+            e.report());
+   }
+   catch (flight_vars::illegal_value_error& e)
+   {
+      log(
+            log_level::WARN,
+            "Received a var update for subscription ID %d "
+            "with invalid value %s:\n%s",
+            req.subs_id,
+            req.var_value.to_string(),
+            e.report());
    }
 }
 

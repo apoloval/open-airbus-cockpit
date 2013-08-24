@@ -67,12 +67,12 @@ struct flight_vars_component_launcher : logger_component
             tick_obs = std::make_shared<simconnect_tick_observer>();
             log_info("Tick observer successfully initialized");
          }
-         catch (error& e)
+         catch (oac::exception& e)
          {
             log(
                   log_level::FAIL,
-                  "Unexpected error while initializing tick observer: %s",
-                  boost::diagnostic_information(e));
+                  "Unexpected error while initializing tick observer:\n%s",
+                  e.report());
          }
       }
    }
@@ -96,13 +96,13 @@ struct flight_vars_component_launcher : logger_component
          log_info("FSUIPC FlightVars object successfully initialized");
          return true;
       }
-      catch (error& e)
+      catch (oac::exception& e)
       {
          log(
                log_level::FAIL,
                "Unexpected error while initializing FSUIPC "
-               "Flight Vars object: %s",
-               boost::diagnostic_information(e));
+               "Flight Vars object:\n%s",
+               e.report());
          return false;
       }
    }
@@ -130,23 +130,23 @@ struct flight_vars_component_launcher : logger_component
                      io_srv->run();
                      break; // run terminates, exit normally
                   }
-                  catch (error& e)
+                  catch (oac::exception& e)
                   {
                      log(
                            log_level::FAIL,
                            "Unexpected error while running the IO service: %s",
-                           boost::diagnostic_information(e));
+                           e.report());
                   }
                }
             });
 
             log_info("FlightVars TCP server successfully initialized");
-         } catch (error& e)
+         } catch (oac::exception& e)
          {
             log(
                   log_level::FAIL,
                   "Unexpected error: %s",
-                  boost::diagnostic_information(e));
+                  e.report());
          }
       }
    }
@@ -175,12 +175,12 @@ void __stdcall DLLStart(void)
       launcher.start_fsuipc();
       launcher.start_server();
    }
-   catch (std::exception& e)
+   catch (oac::exception& e)
    {
       log(
             "DLLStart",
             log_level::FAIL,
-            str(boost::format("Unexpected error: %s") % e.what()));
+            format("Unexpected error: %s", e.report()));
    }
    catch (...)
    {

@@ -70,8 +70,8 @@ throw (master_already_registered)
 {
    auto entry = _group_masters.find(grp);
    if (entry != _group_masters.end())
-      BOOST_THROW_EXCEPTION(master_already_registered() <<
-                  variable_group_info(grp));
+      OAC_THROW_EXCEPTION(master_already_registered()
+            .with_var_group_tag(grp.get_tag()));
    _group_masters[grp] = master;
 }
 
@@ -83,8 +83,9 @@ throw (unknown_variable_error)
    auto grp = get_var_group(var_id);
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
-      BOOST_THROW_EXCEPTION(unknown_variable_group_error() <<
-            variable_group_info(grp));
+      OAC_THROW_EXCEPTION(unknown_variable_error()
+            .with_var_group_tag(get_var_group(var_id))
+            .with_var_name_tag(get_var_name(var_id)));
    return entry->second;
 }
 

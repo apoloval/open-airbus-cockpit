@@ -39,18 +39,20 @@ class flight_vars_core : public flight_vars
 public:
 
    /**
+    * Thrown in a group master registering attempt when there is already
+    * a master registered for that group.
+    */
+   OAC_EXCEPTION_BEGIN(master_already_registered, oac::exception)
+      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
+      OAC_EXCEPTION_MSG(
+            "FlightVars Master for group %s already registered",
+            var_group_tag)
+   OAC_EXCEPTION_END()
+
+   /**
     * Obtain the singleton instance of Flight Vars core object.
     */
    static std::shared_ptr<flight_vars_core> instance();
-
-   /**
-    * Thrown in a group master registering attempt when there is already
-    * a master registered for that group. It's complemented with:
-    *
-    *  - variable_group_info, indicating the variable group which master
-    *    is already present.
-    */
-   OAC_DECL_ERROR(master_already_registered, invalid_input_error);
 
    virtual subscription_id subscribe(
          const variable_id& var,

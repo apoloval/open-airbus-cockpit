@@ -34,22 +34,44 @@ public:
    /**
     * An unknown variable was referenced by input.
     */
-   OAC_DECL_ERROR(unknown_variable_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(no_such_variable_error, oac::exception)
+      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
+      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
+      OAC_EXCEPTION_MSG(
+            "no such variable %s found in subscription mapper",
+            var_to_string(make_var_id(var_group_tag, var_name_tag)))
+   OAC_EXCEPTION_END()
 
    /**
     * An unknown subscription was referenced by input.
     */
-   OAC_DECL_ERROR(unknown_subscription_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(no_such_subscription_error, oac::exception)
+      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
+      OAC_EXCEPTION_MSG(
+            "no such subscription ID %d found in subscription mapper",
+            subs_id)
+   OAC_EXCEPTION_END()
 
    /**
     * An already existing variable was provided as input.
     */
-   OAC_DECL_ERROR(duplicated_variable_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(variable_already_exists_error, oac::exception)
+      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
+      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
+      OAC_EXCEPTION_MSG(
+            "variable %s already exists in subscription mapper",
+            var_to_string(make_var_id(var_group_tag, var_name_tag)))
+   OAC_EXCEPTION_END()
 
    /**
     * An already existing subscription was provided as input.
     */
-   OAC_DECL_ERROR(duplicated_subscription_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(subscription_already_exists_error, oac::exception)
+      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
+      OAC_EXCEPTION_MSG(
+            "subscription ID %d already exists in subscription mapper",
+            subs_id)
+   OAC_EXCEPTION_END()
 
    /**
     * Clear all registered subscriptions.
@@ -62,7 +84,7 @@ public:
    void register_subscription(
          const variable_id& var_id,
          const subscription_id& subs_id)
-   throw (duplicated_variable_error, duplicated_subscription_error);
+   throw (variable_already_exists_error, subscription_already_exists_error);
 
    /**
     * Execute the given action for each mapped subscription.
@@ -72,35 +94,35 @@ public:
 
    /**
     * Obtain the variable ID for given subscription ID.
-    * @throw unknown_subscription_error when given subscription ID is unknown
+    * @throw no_such_subscription_error when given subscription ID is unknown
     */
    variable_id get_var_id(
          const subscription_id& subs_id)
-   throw (unknown_subscription_error);
+   throw (no_such_subscription_error);
 
    /**
     * Obtain the subscription ID for given variable ID.
-    * @throw unknown_variable_error when given variable ID is unknown
+    * @throw no_such_variable_error when given variable ID is unknown
     */
    subscription_id get_subscription_id(
          const variable_id& var_id)
-   throw (unknown_variable_error);
+   throw (no_such_variable_error);
 
    /**
     * Unregister a mapping from its variable ID.
-    * @throw unknown_variable_error when given variable ID is unknown
+    * @throw no_such_variable_error when given variable ID is unknown
     */
    void unregister(
          const variable_id& var_id)
-   throw (unknown_variable_error);
+   throw (no_such_variable_error);
 
    /**
     * Unregister a mapping from its subscription ID.
-    * @throw unknown_subscription_error when given subscription ID is unknown
+    * @throw no_such_subscription_error when given subscription ID is unknown
     */
    void unregister(
          const subscription_id& subs_id)
-   throw (unknown_subscription_error);
+   throw (no_such_subscription_error);
 
 private:
 

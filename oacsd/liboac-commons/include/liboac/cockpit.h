@@ -211,7 +211,10 @@ public:
 class cockpit_back {
 public:
 
-   OAC_DECL_RUNTIME_ERROR(sync_error);
+   OAC_EXCEPTION(
+         sync_error,
+         oac::exception,
+         "synchronization error occurred in cockpit back");
 
    template <typename T>
    struct event

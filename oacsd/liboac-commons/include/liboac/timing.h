@@ -123,6 +123,14 @@ class simconnect_tick_observer : public concurrent_tick_observer_base
 public:
 
    /**
+    * An exception caused by an initialization error.
+    */
+   OAC_EXCEPTION(
+         simconnect_error,
+         oac::exception,
+         "an unexpected error occurs while observing ticks via SimConnect");
+
+   /**
     * Create a new SimConnect observer for given event.
     *
     * @param sc_event The SimConnect event whose notification will be
@@ -131,18 +139,18 @@ public:
    simconnect_tick_observer(
          const simconnect_client::event_name& sc_event =
                simconnect_client::SYSTEM_EVENT_6HZ)
-   throw (connection_error);
+   throw (simconnect_error);
 
    /**
     * Invoke the dispatch message function of SimConnect client. This
     * is used to dispatch any pending message from SimConnect when running
     * as a stand-alone process. For FS/Prepar3D plugins, it is not necessary.
     */
-   void dispatch();
+   void dispatch() throw (simconnect_error);
 
 private:
 
-   simconnect_client _simconnect;
+   std::unique_ptr<simconnect_client> _simconnect;
 
    void on_event(
          simconnect_client& client,

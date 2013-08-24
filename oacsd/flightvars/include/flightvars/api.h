@@ -76,16 +76,12 @@ public:
    variable_group(const tag_type& tag) : tagged_element(tag) {}
 };
 
-OAC_DECL_ERROR_INFO(variable_group_info, variable_group);
-
 class variable_name : public tagged_element<variable_name>
 {
 public:
 
    variable_name(const tag_type& tag) : tagged_element(tag) {}
 };
-
-OAC_DECL_ERROR_INFO(variable_name_info, variable_name);
 
 /**
  * The variable ID, which comprises the var group and the var name.
@@ -155,19 +151,39 @@ enum variable_type
    VAR_FLOAT
 };
 
+/**
+ * Convert a variable type into string.
+ */
+inline std::string
+var_type_to_string(
+      variable_type var_type)
+{
+   switch (var_type)
+   {
+      case VAR_BOOLEAN : return "bool";
+      case VAR_BYTE : return "byte";
+      case VAR_WORD : return "word";
+      case VAR_DWORD : return "dword";
+      case VAR_FLOAT : return "float";
+      default:
+         // never reached
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
+               .with_value(var_type));
+   }
+}
+
 class variable_value
 {
 public:
 
-   /**
-    * Thrown when the variable value is used as an invalid type. Contains:
-    *   - expected_type_info, indicating the expected type
-    *   - actual_type_info, indicating the actual type
-    */
-   OAC_DECL_ERROR(invalid_type_error, invalid_input_error);
-
-   OAC_DECL_ERROR_INFO(expected_type_info, variable_type);
-   OAC_DECL_ERROR_INFO(actual_type_info, variable_type);
+   OAC_EXCEPTION_BEGIN(invalid_type_error, oac::exception)
+      OAC_EXCEPTION_FIELD(expected_type, variable_type)
+      OAC_EXCEPTION_FIELD(actual_type, variable_type)
+      OAC_EXCEPTION_MSG(
+            "invalid variable type %d (expected %d)",
+            actual_type,
+            expected_type)
+   OAC_EXCEPTION_END()
 
    static variable_value from_bool(bool value);
    static variable_value from_byte(std::uint8_t value);
@@ -195,8 +211,9 @@ private:
          const ptr<linear_buffer>& buffer)
       : _type(type), _buffer(buffer) {}
 
-   void checkType(
-         const variable_type& get_type) const throw (invalid_type_error);
+   void check_type(
+         const variable_type& get_type) const
+   throw (invalid_type_error);
 };
 
 /**
@@ -204,8 +221,6 @@ private:
  * representation of this type is intended to be opaque to the API consumer.
  */
 typedef std::uint32_t subscription_id;
-
-OAC_DECL_ERROR_INFO(subscription_info, subscription_id);
 
 /**
  * Flight vars API interface.
@@ -217,30 +232,40 @@ public:
    /**
     * An illegal value was provided for a variable.
     */
-   OAC_DECL_ERROR(illegal_value_error, invalid_input_error);
+   OAC_ABSTRACT_EXCEPTION(illegal_value_error);
+
+   /**
+    * An illegal type was provided for a variable.
+    */
+   OAC_EXCEPTION_BEGIN(invalid_value_type_error, illegal_value_error)
+      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
+      OAC_EXCEPTION_FIELD(var_type, variable_type)
+      OAC_EXCEPTION_MSG(
+            "invalid value type %s for subscription %d",
+            var_type_to_string(var_type),
+            subs_id)
+   OAC_EXCEPTION_END()
 
    /**
     * An operation was requested on a unknown variable.
     */
-   OAC_DECL_ERROR(unknown_variable_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(unknown_variable_error, oac::exception)
+      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
+      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
+      OAC_EXCEPTION_MSG(
+            "unknown variable with id %s",
+            var_to_string(make_var_id(var_group_tag, var_name_tag)))
+   OAC_EXCEPTION_END()
 
    /**
-    * An operation was requested for a unknown variable group. Contains:
-    *  - variable_group_info, indicating the var group which was unknown
+    * An operation was requested for an unknown subscription.
     */
-   OAC_DECL_ERROR(unknown_variable_group_error, unknown_variable_error);
-
-   /**
-    * An operation was requested for a unknown variable name. Contains:
-    *  - variable_name_info, indicating the var name which was unknown
-    */
-   OAC_DECL_ERROR(unknown_variable_name_error, unknown_variable_error);
-
-   /**
-    * An operation was requested for an unknown subscription. Contains:
-    * - subscription_info, indicating the subscription that was unknown
-    */
-   OAC_DECL_ERROR(unknown_subscription_error, invalid_input_error);
+   OAC_EXCEPTION_BEGIN(unknown_subscription_error, oac::exception)
+      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
+      OAC_EXCEPTION_MSG(
+            "unknown subscription with id %d",
+            subs_id)
+   OAC_EXCEPTION_END()
 
 
    /**

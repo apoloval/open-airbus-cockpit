@@ -272,7 +272,7 @@ private:
    ptr<buffer_type> _buffer;
 };
 
-}; // anonymous namespace
+} // anonymous namespace
 
 void
 fsuipc_cockpit_back::sync_up()
@@ -302,10 +302,10 @@ throw (sync_error)
       _buffer->swap();
       _buffer->copy(*_fsuipc, 0x5600, 0x5600, 512);
    } 
-   catch (error& e)
+   catch (oac::exception& e)
    {
       _fsuipc.reset();
-      BOOST_THROW_EXCEPTION(sync_error() << nested_error_info(e));
+      OAC_THROW_EXCEPTION(sync_error().with_cause(e));
    } 
 }
 
@@ -347,9 +347,9 @@ throw (sync_error)
    {
       _fsuipc = _fsuipc_fact->create_fsuipc();
    }
-   catch (illegal_state_error& e)
+   catch (fsuipc_error& e)
    {
-      BOOST_THROW_EXCEPTION(sync_error() << nested_error_info(e));
+      OAC_THROW_EXCEPTION(sync_error().with_cause(e));
    }
 }
 
@@ -358,7 +358,7 @@ fsuipc_cockpit_back::init_fcu()
 throw (sync_error)
 {
    if (!this->is_sync())
-      BOOST_THROW_EXCEPTION(sync_error());
+      OAC_THROW_EXCEPTION(sync_error());
    _fcu = new flight_control_unit_back(_buffer);
 }
 
@@ -367,7 +367,7 @@ fsuipc_cockpit_back::init_efis_control_panel()
 throw (sync_error)
 {
    if (!this->is_sync())
-      BOOST_THROW_EXCEPTION(sync_error());
+      OAC_THROW_EXCEPTION(sync_error());
    _efis_ctrl_panel = new efis_control_panel_back(_buffer);
 }
 

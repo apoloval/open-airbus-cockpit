@@ -29,7 +29,7 @@ inline void
 bind_port(
       boost::asio::ip::tcp::acceptor& acceptor,
       std::uint16_t port)
-throw (network::bind_error)
+throw (boost_asio_error)
 {
    using namespace boost::asio;
    try
@@ -38,14 +38,35 @@ throw (network::bind_error)
       acceptor.open(ep.protocol());
       acceptor.bind(ep);
       acceptor.listen();
-   } catch (boost::system::system_error& se)
+   } catch (boost::system::system_error& e)
    {
-      BOOST_THROW_EXCEPTION(
-               network::bind_error() <<
-               boost_system_error_info(se) <<
-               message_info(se.what()));
+      OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(e.code()));
    }
 }
+
+inline void
+connect(
+      const std::string& remote_host,
+      std::uint16_t remote_port,
+      boost::asio::io_service& io_srv,
+      boost::asio::ip::tcp::socket& socket)
+throw (boost_asio_error)
+{
+   using namespace boost::asio;
+   try
+   {
+      ip::tcp::resolver resolver(io_srv);
+      ip::tcp::resolver::query query(
+            remote_host,
+            boost::lexical_cast<std::string>(remote_port));
+      boost::asio::connect(socket, resolver.resolve(query));
+   }
+   catch (boost::system::system_error& e)
+   {
+      OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(e.code()));
+   }
+}
+
 
 } // anonymous namespace
 
@@ -80,7 +101,16 @@ throw (network::bind_error)
    : _worker(worker),
      _acceptor(_io_service)
 {
-   bind_port(_acceptor, port);
+   try
+   {
+      bind_port(_acceptor, port);
+   }
+   catch (boost_asio_error& e)
+   {
+      OAC_THROW_EXCEPTION(network::bind_error()
+            .with_port(port)
+            .with_cause(e));
+   }
 }
 
 template <typename Worker>
@@ -138,29 +168,28 @@ inline
 tcp_client::tcp_client(
       const std::string& hostname,
       std::uint16_t port)
-throw (network::connection_error)
+throw (network::connection_refused)
 {
-   using namespace boost::asio;
-
    try
    {
       _connection = new tcp_connection();
-      ip::tcp::resolver resolver(_connection->io_service());
-      ip::tcp::resolver::query query(
-            hostname, boost::lexical_cast<std::string>(port));
-      connect(_connection->socket(), resolver.resolve(query));
+      connect(
+            hostname,
+            port,
+            _connection->io_service(),
+            _connection->socket());
    }
-   catch (boost::system::system_error& e)
+   catch (boost_asio_error& e)
    {
-      BOOST_THROW_EXCEPTION(
-               network::connection_error() <<
-               boost_system_error_info(e) <<
-               message_info(e.what()));
+      OAC_THROW_EXCEPTION(network::connection_refused()
+            .with_remote_host(hostname)
+            .with_remote_port(port)
+            .with_cause(e));
    }
 }
 
 inline tcp_connection&
-tcp_client::connection() throw (network::connection_closed_error)
+tcp_client::connection()
 { return *_connection; }
 
 inline ptr<tcp_connection::input_stream>
@@ -223,7 +252,16 @@ throw (network::bind_error)
      _io_service(io_srv),
      _ehandler(ehandler)
 {
-   bind_port(_acceptor, port);
+   try
+   {
+      bind_port(_acceptor, port);
+   }
+   catch (boost_asio_error& e)
+   {
+      OAC_THROW_EXCEPTION(network::bind_error()
+            .with_port(port)
+            .with_cause(e));
+   }
    start_accept();
 }
 

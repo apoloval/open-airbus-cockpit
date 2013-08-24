@@ -237,8 +237,12 @@ typedef std::string aircraft_title;
 
 struct aircraft {
 
-   OAC_DECL_ERROR(invalid_title, invalid_input_error);
-   OAC_DECL_ERROR_INFO(title_info, aircraft_title);
+   OAC_EXCEPTION_BEGIN(invalid_title, oac::exception)
+      OAC_EXCEPTION_FIELD(title, aircraft_title)
+      OAC_EXCEPTION_MSG(
+            "invalid aircraft title %s",
+            title)
+   OAC_EXCEPTION_END()
 
    const aircraft_type type;
    const aircraft_title title;
@@ -252,12 +256,8 @@ class wilco_cockpit : public cockpit_front
 {
 public:
 
-   OAC_DECL_ERROR(invalid_aircraft_error, invalid_input_error);
-   OAC_DECL_ERROR_INFO(aircraft_info, aircraft);
-   OAC_DECL_ERROR_INFO(aircraft_title_info, std::string);
-
    static wilco_cockpit* new_cockpit(
-         const aircraft& aircraft) throw (invalid_aircraft_error);
+         const aircraft& aircraft);
 
    inline virtual ~wilco_cockpit() {}
 

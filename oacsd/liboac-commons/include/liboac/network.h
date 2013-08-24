@@ -23,6 +23,7 @@
 #include <boost/lexical_cast.hpp>
 
 #include "buffer.h"
+#include "io.h"
 #include "stream.h"
 #include "worker.h"
 
@@ -33,19 +34,24 @@ namespace network {
 /**
  * An error while binding a socket.
  */
-OAC_DECL_ERROR(bind_error, invalid_input_error);
+OAC_EXCEPTION_BEGIN(bind_error, io_exception)
+   OAC_EXCEPTION_FIELD(port, std::uint16_t)
+   OAC_EXCEPTION_MSG("cannot bind on port %d", port)
+OAC_EXCEPTION_END()
 
 /**
  * An error while connecting to a remove peer.
  */
-OAC_DECL_ERROR(connection_error, oac::connection_error);
+OAC_EXCEPTION_BEGIN(connection_refused, io_exception)
+   OAC_EXCEPTION_FIELD(remote_host, std::string)
+   OAC_EXCEPTION_FIELD(remote_port, std::uint16_t)
+   OAC_EXCEPTION_MSG(
+         "connection refused to %s on port %d",
+         remote_host,
+         remote_port)
+OAC_EXCEPTION_END()
 
-/**
- * An attempt to execute an action on a closed connection.
- */
-OAC_DECL_ERROR(connection_closed_error, illegal_state_error);
-
-typedef std::function<void(const io_error&)> error_handler;
+typedef std::function<void(const io_exception&)> error_handler;
 
 } // namespace network
 
@@ -99,8 +105,10 @@ public:
     * Creates a new TCP server on the given port, using the given worker
     * to submit the incoming connections.
     */
-   tcp_server(std::uint16_t port,
-              const Worker& worker) throw (network::bind_error);
+   tcp_server(
+         std::uint16_t port,
+         const Worker& worker)
+   throw (network::bind_error);
 
    /**
     * Run the server. It uses the current thread to execute the accept loop.
@@ -153,12 +161,12 @@ public:
    tcp_client(
          const std::string& hostname,
          std::uint16_t port)
-   throw (network::connection_error);
+   throw (network::connection_refused);
 
    /**
     * Obtain the TCP connection corresponding to this client.
     */
-   tcp_connection& connection() throw (network::connection_closed_error);
+   tcp_connection& connection();
 
    /**
     * A convenience function to obtain the input stream

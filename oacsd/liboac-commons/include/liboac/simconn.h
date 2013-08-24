@@ -42,19 +42,42 @@ public:
    typedef std::string data_name;
    typedef std::string data_units;
 
-   OAC_DECL_ERROR(unknown_event_name_error, invalid_input_error);
-   OAC_DECL_ERROR_INFO(event_name_info, event_name);
+   OAC_ABSTRACT_EXCEPTION(invalid_operation_exception);
 
-   OAC_DECL_ERROR(data_definition_error, invalid_input_error);
-   OAC_DECL_ERROR_INFO(data_name_info, data_name);
-   OAC_DECL_ERROR_INFO(data_units_info, data_units);
+   OAC_EXCEPTION(
+         server_unavailable_error,
+         invalid_operation_exception,
+         "SimConnect server is not available");
 
-   OAC_DECL_ERROR(data_request_error, io_error);
-   OAC_DECL_ERROR_INFO(data_definition_info, SIMCONNECT_DATA_DEFINITION_ID);
+   OAC_EXCEPTION_BEGIN(unknown_event_name_error, invalid_operation_exception)
+      OAC_EXCEPTION_FIELD(event, event_name)
+      OAC_EXCEPTION_MSG(
+         "no such event name %s available in SimConnect",
+         event)
+   OAC_EXCEPTION_END()
 
-   OAC_DECL_ERROR(event_error, io_error);
-   OAC_DECL_ERROR_INFO(simconnect_function_info, std::string);
+   OAC_EXCEPTION_BEGIN(data_definition_error, invalid_operation_exception)
+      OAC_EXCEPTION_FIELD(name, data_name)
+      OAC_EXCEPTION_FIELD(units, data_units)
+      OAC_EXCEPTION_MSG(
+         "cannot define data for variable %s in %s in SimConnect",
+         name,
+         units)
+   OAC_EXCEPTION_END()
 
+   OAC_EXCEPTION_BEGIN(data_request_error, invalid_operation_exception)
+      OAC_EXCEPTION_FIELD(data_def, SIMCONNECT_DATA_DEFINITION_ID)
+      OAC_EXCEPTION_MSG(
+         "data request %d failed in SimConnect",
+         data_def)
+   OAC_EXCEPTION_END()
+
+   OAC_EXCEPTION_BEGIN(event_error, invalid_operation_exception)
+      OAC_EXCEPTION_FIELD(event, SIMCONNECT_CLIENT_EVENT_ID)
+      OAC_EXCEPTION_MSG(
+         "operation for client event %d failed in SimConnect",
+         event)
+   OAC_EXCEPTION_END()
 
    class data_definition
    {
@@ -330,10 +353,10 @@ public:
    static const event_name SYSTEM_EVENT_AIRCRAFT_LOADED;
    static const event_name SYSTEM_EVENT_FLIGHT_LOADED;
 
-   simconnect_client(const std::string& name) throw (connection_error);
+   simconnect_client(const std::string& name) throw (server_unavailable_error);
 
    simconnect_client(const std::string& name,
-         const on_open_callback& open_callback) throw (connection_error);
+         const on_open_callback& open_callback) throw (server_unavailable_error);
 
    virtual ~simconnect_client();
 
@@ -439,7 +462,7 @@ private:
       this->receiver(message_type) = new message_receiver<Message>(callback);
    }
 
-   void open() throw (connection_error);
+   void open() throw (server_unavailable_error);
 
    ptr<abstract_message_receiver>& receiver(SIMCONNECT_RECV_ID message_type);
 

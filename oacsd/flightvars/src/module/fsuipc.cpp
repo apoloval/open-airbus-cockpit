@@ -107,9 +107,9 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
    auto var_name = get_var_name(var_id);
 
    if (var_group.get_tag() != VAR_GROUP_TAG)
-      BOOST_THROW_EXCEPTION(
-               fsuipc::invalid_var_group_error() <<
-               variable_group_info(var_group));
+      OAC_THROW_EXCEPTION(fsuipc::invalid_var_group_error()
+            .with_expected_var_group_tag(VAR_GROUP_TAG)
+            .with_actual_var_group_tag(var_group.get_tag()));
 
    std::vector<std::string> parts;
    boost::split(parts, var_name.get_tag(), boost::is_any_of(":"));
@@ -133,8 +133,8 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
       return fsuipc_offset(addr, fsuipc_offset_length(len));
    }
 syntax_error:
-   BOOST_THROW_EXCEPTION(
-            fsuipc::var_name_syntax_error() << variable_name_info(var_name));
+   OAC_THROW_EXCEPTION(fsuipc::var_name_syntax_error()
+         .with_var_name_tag(var_name));
 }
 
 variable_value
@@ -150,7 +150,9 @@ to_variable_value(
       case OFFSET_LEN_DWORD:
          return variable_value::from_dword(valued_offset.value);
       default:
-         BOOST_THROW_EXCEPTION(illegal_state_error()); // never reached
+         // never reached
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<fsuipc_offset_length>()
+               .with_value(valued_offset.length));
    }
 }
 
@@ -205,18 +207,20 @@ fsuipc_offset_db::remove_subscription(
 const fsuipc_offset_db::subscription_list&
 fsuipc_offset_db::get_subscriptions_for_offset(
       const fsuipc_offset& offset) const
-throw (unknown_offset_error)
+throw (no_such_offset_error)
 {
    auto match = _offset_handlers.find(offset);
    if (match == _offset_handlers.end())
-      BOOST_THROW_EXCEPTION(unknown_offset_error());
+      OAC_THROW_EXCEPTION(no_such_offset_error()
+            .with_offset_addr(offset.address)
+            .with_offset_len(offset.length));
    return match->second;
 }
 
 fsuipc_offset
 fsuipc_offset_db::get_offset_for_subscription(
       const subscription_id& subs_id)
-throw (unknown_subscription_error)
+throw (no_such_subscription_error)
 {
    for (auto& elem : _offset_handlers)
    {
@@ -226,7 +230,8 @@ throw (unknown_subscription_error)
          if (subs.get_subscription_id() == subs_id)
             return offset;
    }
-   BOOST_THROW_EXCEPTION(unknown_subscription_error());
+   OAC_THROW_EXCEPTION(no_such_subscription_error()
+         .with_subscription(subs_id));
 }
 
 void

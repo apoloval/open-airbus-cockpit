@@ -23,9 +23,22 @@
 
 #include <boost/filesystem.hpp>
 
+#include "io.h"
 #include "stream.h"
 
 namespace oac {
+
+namespace filesystem {
+
+/**
+ * Exception caused by a file that cannot be open.
+ */
+OAC_EXCEPTION_BEGIN(open_error, io_exception)
+   OAC_EXCEPTION_FIELD(path, boost::filesystem::path)
+   OAC_EXCEPTION_MSG("cannot open file %s", path.string())
+OAC_EXCEPTION_END()
+
+}
 
 /**
  * A input stream which read bytes from a file. It conforms InputStream
@@ -41,18 +54,20 @@ public:
 
    static ptr<file_input_stream> STDIN;
 
-   OAC_DECL_ERROR(open_error, io_error);
-
    inline file_input_stream(FILE* fd) : _fd(fd) {}
 
-   file_input_stream(const boost::filesystem::path& path, const mode& mode);
+   file_input_stream(
+         const boost::filesystem::path& path,
+         const mode& mode);
 
    file_input_stream(file_input_stream&& s);
 
    ~file_input_stream();
 
-   std::size_t read(void* dest,
-                    std::size_t count) throw (stream::read_error);
+   std::size_t read(
+         void* dest,
+         std::size_t count)
+   throw (io_exception);
 
 private:
 
@@ -69,8 +84,6 @@ public:
 
    typedef std::string mode;
 
-   OAC_DECL_ERROR(open_error, io_error);
-
    static mode OPEN_APPEND;
    static mode OPEN_WRITE;
 
@@ -79,7 +92,9 @@ public:
 
    inline file_output_stream(FILE* fd) : _fd(fd) {}
 
-   file_output_stream(const boost::filesystem::path& path, const mode& mode);
+   file_output_stream(
+         const boost::filesystem::path& path,
+         const mode& mode);
 
    file_output_stream(file_output_stream&& s);
 
@@ -87,7 +102,8 @@ public:
 
    std::size_t write(
          const void* buffer,
-         std::size_t count) throw (stream::write_error);
+         std::size_t count)
+   throw (io_exception);
 
    void flush();
 
@@ -99,9 +115,6 @@ private:
 class file {
 public:
 
-   OAC_DECL_ERROR(open_error, invalid_input_error);
-   OAC_DECL_ERROR(not_found_error, open_error);
-
    static file makeTemp();
 
    inline file(const boost::filesystem::path& path) : _path(path) {}
@@ -112,11 +125,11 @@ public:
 
    bool is_directory() const;
 
-   ptr<file_input_stream> read() const;
+   ptr<file_input_stream> read() const throw (filesystem::open_error);
 
-   ptr<file_output_stream> append() const;
+   ptr<file_output_stream> append() const throw (filesystem::open_error);
 
-   ptr<file_output_stream> write() const;
+   ptr<file_output_stream> write() const throw (filesystem::open_error);
 
 private:
 

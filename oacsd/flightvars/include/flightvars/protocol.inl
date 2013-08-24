@@ -28,6 +28,38 @@ namespace oac { namespace fv { namespace proto {
 
 namespace {
 
+/**
+ * An exception indicating a invalid variable type code while deserializing.
+ */
+OAC_EXCEPTION_BEGIN(invalid_variable_type, protocol_exception)
+   OAC_EXCEPTION_FIELD(var_code, std::uint8_t)
+   OAC_EXCEPTION_MSG(
+      "invalid variable type code 0x%x received",
+      var_code)
+OAC_EXCEPTION_END()
+
+/**
+ * An exception indicating a invalid message type code while deserializing.
+ */
+OAC_EXCEPTION_BEGIN(invalid_message_type, protocol_exception)
+   OAC_EXCEPTION_FIELD(message_code, std::uint16_t)
+   OAC_EXCEPTION_MSG(
+      "invalid message type code 0x%x received",
+      message_code)
+OAC_EXCEPTION_END()
+
+
+/**
+ * An exception indicating a invalid message termination mark
+ * while deserializing.
+ */
+OAC_EXCEPTION_BEGIN(invalid_termination_mark, protocol_exception)
+   OAC_EXCEPTION_FIELD(termination_mark, std::uint16_t)
+   OAC_EXCEPTION_MSG(
+      "invalid termination mark 0x%x received (expected 0x0D0A)",
+      termination_mark)
+OAC_EXCEPTION_END()
+
 std::uint16_t msg_type_to_code(message_type msg_type)
 {
    return std::uint16_t(msg_type) + 0x700;
@@ -53,7 +85,7 @@ void
 serialize_begin_session(
       const begin_session_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
+throw (io_exception)
 {
    Serializer::write_msg_begin(output, MSG_BEGIN_SESSION);
    Serializer::write_string_value(output, msg.pname);
@@ -66,7 +98,7 @@ void
 serialize_end_session(
       const end_session_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
+throw (io_exception)
 {
    Serializer::write_msg_begin(output, MSG_END_SESSION);
    Serializer::write_string_value(output, msg.cause);
@@ -78,7 +110,7 @@ void
 serialize_subscription_request(
       const subscription_request_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
+throw (io_exception)
 {
    Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REQ);
    Serializer::write_string_value(output, msg.var_grp);
@@ -91,7 +123,7 @@ void
 serialize_subscription_reply(
       const subscription_reply_message& msg,
       OutputStream& output)
-throw (stream::write_error, stream::eof_error)
+throw (io_exception)
 {
    Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REP);
    Serializer::write_uint8_value(output, msg.st);
@@ -107,6 +139,7 @@ void
 serialize_var_update(
       const var_update_message& msg,
       OutputStream& output)
+throw (io_exception)
 {
    auto var_type = msg.var_value.get_type();
    Serializer::write_msg_begin(output, MSG_VAR_UPDATE);
@@ -151,7 +184,7 @@ template <typename Deserializer, typename InputStream>
 begin_session_message
 deserialize_begin_session_contents(
       InputStream& input)
-throw (stream::read_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto pname = Deserializer::read_string_value(input);
    auto proto_ver = Deserializer::read_uint16_value(input);
@@ -162,7 +195,7 @@ template <typename Deserializer, typename InputStream>
 end_session_message
 deserialize_end_session_contents(
       InputStream& input)
-throw (stream::read_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto cause = Deserializer::read_string_value(input);
    return end_session_message(cause);
@@ -172,7 +205,7 @@ template <typename Deserializer, typename InputStream>
 subscription_request_message
 deserialize_subscription_request_contents(
       InputStream& input)
-throw (stream::read_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto var_grp = Deserializer::read_string_value(input);
    auto var_name = Deserializer::read_string_value(input);
@@ -183,7 +216,7 @@ template <typename Deserializer, typename InputStream>
 subscription_reply_message
 deserialize_subscription_reply_contents(
       InputStream& input)
-throw (stream::read_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto st = Deserializer::read_uint8_value(input);
    auto grp = Deserializer::read_string_value(input);
@@ -198,7 +231,7 @@ template <typename Deserializer, typename InputStream>
 var_update_message
 deserialize_var_update_contents(
       InputStream& input)
-throw (stream::read_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto subs_id = Deserializer::read_uint32_value(input);
    auto var_type = Deserializer::read_uint8_value(input);
@@ -231,11 +264,7 @@ throw (stream::read_error, stream::eof_error)
                   variable_value::from_float(
                      Deserializer::read_float_value(input)));
       default:
-         BOOST_THROW_EXCEPTION(protocol_error() <<
-               message_info(str(
-                     boost::format(
-                           "received an invalid value 0x%x for variable type") %
-                     var_type)));
+         OAC_THROW_EXCEPTION(invalid_variable_type().with_var_code(var_type));
    }
 }
 
@@ -298,28 +327,33 @@ serialize(
       inline visitor(OutputStream& os) : output(os) {}
 
       void operator()(const begin_session_message& msg) const
+      throw (io_exception)
       {
          return serialize_begin_session<Serializer, OutputStream>(msg, output);
       }
 
       void operator()(const end_session_message& msg) const
+      throw (io_exception)
       {
          return serialize_end_session<Serializer, OutputStream>(msg, output);
       }
 
       void operator()(const subscription_request_message& msg) const
+      throw (io_exception)
       {
          return serialize_subscription_request<Serializer, OutputStream>(
                msg, output);
       }
 
       void operator()(const subscription_reply_message& msg) const
+      throw (io_exception)
       {
          return serialize_subscription_reply<Serializer, OutputStream>(
                msg, output);
       }
 
       void operator()(const var_update_message& msg) const
+      throw (io_exception)
       {
          return serialize_var_update<Serializer, OutputStream>(msg, output);
       }
@@ -332,7 +366,7 @@ template <typename Deserializer, typename InputStream>
 message
 deserialize(
       InputStream& input)
-throw (protocol_error, stream::eof_error)
+throw (protocol_exception, io_exception)
 {
    auto msg_begin = Deserializer::read_msg_begin(input);
    switch (msg_begin)
@@ -370,11 +404,8 @@ throw (protocol_error, stream::eof_error)
          return msg;
       }
       default:
-         BOOST_THROW_EXCEPTION(protocol_error() <<
-               message_info(str(
-                     boost::format("received an invalid value "
-                                   "0x%x for message type") %
-                     int(msg_begin))));
+         OAC_THROW_EXCEPTION(invalid_message_type()
+               .with_message_code(int(msg_begin)));
    }
 }
 
@@ -383,6 +414,7 @@ void
 binary_message_serializer::write_msg_begin(
       OutputStream& output,
       message_type msg_type)
+throw (io_exception)
 {
    stream::write_as(
             output,
@@ -393,6 +425,7 @@ template <typename OutputStream>
 void
 binary_message_serializer::write_msg_end(
       OutputStream& output)
+throw (io_exception)
 {
    stream::write_as(output, native_to_big<std::uint16_t>(0x0d0a));
 }
@@ -402,6 +435,7 @@ void
 binary_message_serializer::write_string_value(
       OutputStream& output,
       const std::string& value)
+throw (io_exception)
 {
    stream::write_as(output, native_to_big<std::uint16_t>(value.length()));
    stream::write_as_string(output, value);
@@ -412,6 +446,7 @@ void
 binary_message_serializer::write_uint8_value(
       OutputStream& output,
       std::uint8_t value)
+throw (io_exception)
 {
    stream::write_as(output, value);
 }
@@ -421,6 +456,7 @@ void
 binary_message_serializer::write_uint16_value(
       OutputStream& output,
       std::uint16_t value)
+throw (io_exception)
 {
    stream::write_as(output, native_to_big<std::uint16_t>(value));
 }
@@ -430,6 +466,7 @@ void
 binary_message_serializer::write_uint32_value(
       OutputStream& output,
       std::uint32_t value)
+throw (io_exception)
 {
    stream::write_as(output, native_to_big<std::uint32_t>(value));
 }
@@ -439,6 +476,7 @@ void
 binary_message_serializer::write_float_value(
       OutputStream& output,
       float value)
+throw (io_exception)
 {
    // Break the number info binary significant and integral exponent for 2.
    // Then, write the normalized significant and exponent as 32-bits values.
@@ -456,7 +494,7 @@ template <typename InputStream>
 message_type
 binary_message_deserializer::read_msg_begin(
       InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    return code_to_msg_type(
             big_to_native(stream::read_as<std::uint16_t>(input)));
@@ -465,19 +503,18 @@ throw (protocol_error)
 template <typename InputStream>
 void
 binary_message_deserializer::read_msg_end(InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    auto eol = native_to_big(stream::read_as<uint16_t>(input));
    if (eol != 0x0d0a)
-      BOOST_THROW_EXCEPTION(protocol_error() <<
-         expected_input_info("a message termination mark 0x0D0A") <<
-         actual_input_info(str(boost::format("bytes 0x%x") % eol)));
+      OAC_THROW_EXCEPTION(invalid_termination_mark()
+            .with_termination_mark(eol));
 }
 
 template <typename InputStream>
 std::string
 binary_message_deserializer::read_string_value(InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    auto str_len = big_to_native(stream::read_as<std::uint16_t>(input));
    return stream::read_as_string(input, str_len);
@@ -486,7 +523,7 @@ throw (protocol_error)
 template <typename InputStream>
 std::uint16_t
 binary_message_deserializer::read_uint16_value(InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    return big_to_native(stream::read_as<std::uint16_t>(input));
 }
@@ -494,7 +531,7 @@ throw (protocol_error)
 template <typename InputStream>
 std::uint8_t
 binary_message_deserializer::read_uint8_value(InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    return stream::read_as<std::uint8_t>(input);
 }
@@ -503,7 +540,7 @@ template <typename InputStream>
 std::uint32_t
 binary_message_deserializer::read_uint32_value(
       InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    return big_to_native(stream::read_as<std::uint32_t>(input));
 }
@@ -512,7 +549,7 @@ template <typename InputStream>
 float
 binary_message_deserializer::read_float_value(
       InputStream& input)
-throw (protocol_error)
+throw (protocol_exception, io_exception)
 {
    // The stream contains the normalized binary significant and the exponent
    // for 2. We extract them and convert again into float.

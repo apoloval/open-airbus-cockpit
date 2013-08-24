@@ -52,8 +52,9 @@ throw (data_definition_error)
    auto result = SimConnect_AddToDataDefinition(
          _handle, _id, name.c_str(), units.c_str(), data_type); 
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(data_definition_error() <<
-            data_name_info(name) << data_units_info(units));
+      OAC_THROW_EXCEPTION(data_definition_error()
+            .with_name(name)
+            .with_units(units));
    return *this;
 }
 
@@ -65,7 +66,8 @@ throw (data_request_error)
          _handle, _id, _data_def, _object, _period, 
          _flags, _origin, _interval, _limit);
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(data_request_error() << data_definition_info(_data_def));
+      OAC_THROW_EXCEPTION(data_request_error()
+            .with_data_def(_data_def));
 }
 
 void
@@ -75,7 +77,8 @@ throw (data_request_error)
    auto result = SimConnect_SetDataOnSimObject(
          _handle, _data_def, _object, _flags, _count, _element_size, data);
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(data_request_error() << data_definition_info(_data_def));
+      OAC_THROW_EXCEPTION(data_request_error()
+            .with_data_def(_data_def));
 }
 
 simconnect_client::client_event::client_event(
@@ -90,9 +93,8 @@ throw (event_error) :
    auto result = SimConnect_MapClientEventToSimEvent(
          _handle, _id, ev_name.c_str());
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(event_error() <<
-            simconnect_function_info("SimConnect_MapClientEventToSimEvent") <<
-            event_name_info(ev_name));
+      OAC_THROW_EXCEPTION(event_error()
+            .with_event(_id));
 }
 
 simconnect_client::client_event::client_event(
@@ -105,8 +107,8 @@ throw (event_error) :
 {
    auto result = SimConnect_MapClientEventToSimEvent(_handle, _id);
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(event_error() <<
-            simconnect_function_info("SimConnect_MapClientEventToSimEvent"));
+      OAC_THROW_EXCEPTION(event_error()
+            .with_event(_id));
 }
 
 void 
@@ -116,8 +118,8 @@ throw (event_error)
    auto result = SimConnect_TransmitClientEvent(
          _handle, _object, _id, value, _group, _flags);
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(event_error() <<
-            simconnect_function_info("SimConnect_TransmitClientEvent"));
+      OAC_THROW_EXCEPTION(event_error()
+            .with_event(_id));
 }
 
 simconnect_client::event_transmitter::event_transmitter(
@@ -147,7 +149,7 @@ simconnect_client::SYSTEM_EVENT_FLIGHT_LOADED("FlightLoaded");
 
 simconnect_client::simconnect_client(
       const std::string& name)
-throw (connection_error)
+throw (server_unavailable_error)
    : logger_component("simconnect_client"),
      _name(name)
 { 
@@ -158,7 +160,7 @@ throw (connection_error)
 simconnect_client::simconnect_client(
       const std::string& name,
       const on_open_callback& open_callback)
-throw (connection_error)
+throw (server_unavailable_error)
    : logger_component("simconnect_client"),
      _name(name)
 {
@@ -340,7 +342,8 @@ throw (unknown_event_name_error)
    auto result = SimConnect_SubscribeToSystemEvent(
          _handle, event_id, event_name.c_str());
    if (result != S_OK)
-      BOOST_THROW_EXCEPTION(unknown_event_name_error() << event_name_info(event_name));
+      OAC_THROW_EXCEPTION(unknown_event_name_error()
+            .with_event(event_name));
 }
 
 simconnect_client::data_definition
@@ -370,12 +373,12 @@ simconnect_client::new_client_event(const event_name& event_name)
 
 void
 simconnect_client::open()
-throw (connection_error)
+throw (server_unavailable_error)
 {
    if (SimConnect_Open(&_handle, _name.c_str(), NULL, 0, 0, 0) != S_OK)
-      BOOST_THROW_EXCEPTION(connection_error());
+      OAC_THROW_EXCEPTION(server_unavailable_error());
    if (SimConnect_CallDispatch(_handle, DispatchMessage, this) != S_OK)
-      BOOST_THROW_EXCEPTION(connection_error());
+      OAC_THROW_EXCEPTION(server_unavailable_error());
 }
 
 ptr<simconnect_client::abstract_message_receiver>&

@@ -56,7 +56,7 @@ bool
 variable_value::as_bool() const
 throw (invalid_type_error)
 {
-   checkType(VAR_BOOLEAN);
+   check_type(VAR_BOOLEAN);
    return buffer::read_as<bool>(*_buffer, 0);
 }
 
@@ -64,7 +64,7 @@ std::uint8_t
 variable_value::as_byte() const
 throw (invalid_type_error)
 {
-   checkType(VAR_BYTE);
+   check_type(VAR_BYTE);
    return buffer::read_as<std::uint8_t>(*_buffer, 0);
 }
 
@@ -72,7 +72,7 @@ std::uint16_t
 variable_value::as_word() const
 throw (invalid_type_error)
 {
-   checkType(VAR_WORD);
+   check_type(VAR_WORD);
    return buffer::read_as<std::uint16_t>(*_buffer, 0);
 }
 
@@ -80,7 +80,7 @@ std::uint32_t
 variable_value::as_dword() const
 throw (invalid_type_error)
 {
-   checkType(VAR_DWORD);
+   check_type(VAR_DWORD);
    return buffer::read_as<std::uint32_t>(*_buffer, 0);
 }
 
@@ -88,7 +88,7 @@ float
 variable_value::as_float() const
 throw (invalid_type_error)
 {
-   checkType(VAR_FLOAT);
+   check_type(VAR_FLOAT);
    return buffer::read_as<float>(*_buffer, 0);
 }
 
@@ -102,17 +102,21 @@ variable_value::to_string() const
       case VAR_WORD: return str(boost::format("%d(word)") % as_word());
       case VAR_DWORD: return str(boost::format("%d(dword)") % as_dword());
       case VAR_FLOAT: return str(boost::format("%f(float)") % as_float());
-      default: BOOST_THROW_EXCEPTION(illegal_state_error()); // never reached
+      default:
+         // never reached
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
+               .with_value(_type));
    }
 }
 
 void
-variable_value::checkType(const variable_type& type) const
+variable_value::check_type(const variable_type& type) const
 throw (invalid_type_error)
 {
    if (_type != type)
-      BOOST_THROW_EXCEPTION(invalid_type_error() <<
-            expected_type_info(type) << actual_type_info(_type));
+      OAC_THROW_EXCEPTION(invalid_type_error()
+            .with_expected_type(_type)
+            .with_actual_type(type));
 }
 
 

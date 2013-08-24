@@ -296,10 +296,10 @@ BOOST_AUTO_TEST_CASE(MustRemoveSubscriptionWhenOffsetOnlyHaveOne)
    BOOST_CHECK(db.get_all_offsets().empty());
    BOOST_CHECK_THROW(
             db.get_subscriptions_for_offset(example_offset_1),
-            fsuipc_offset_db::unknown_offset_error);
+            fsuipc_offset_db::no_such_offset_error);
    BOOST_CHECK_THROW(
             db.get_offset_for_subscription(subs.get_subscription_id()),
-            fsuipc_offset_db::unknown_subscription_error);
+            fsuipc_offset_db::no_such_subscription_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustRemoveSubscriptionWhenOffsetHaveSeveral)
@@ -320,7 +320,7 @@ BOOST_AUTO_TEST_CASE(MustRemoveSubscriptionWhenOffsetHaveSeveral)
             subs2 == db.get_subscriptions_for_offset(example_offset_1).front());
    BOOST_CHECK_THROW(
             db.get_offset_for_subscription(subs1.get_subscription_id()),
-            fsuipc_offset_db::unknown_subscription_error);
+            fsuipc_offset_db::no_such_subscription_error);
    BOOST_CHECK(
             db.get_offset_for_subscription(subs2.get_subscription_id()) ==
             example_offset_1);
