@@ -52,7 +52,7 @@ OAC_EXCEPTION_BEGIN(bind_error, io_exception)
 OAC_EXCEPTION_END()
 
 /**
- * An error while connecting to a remove peer.
+ * An error while connecting to a remote peer.
  */
 OAC_EXCEPTION_BEGIN(connection_refused, io_exception)
    OAC_EXCEPTION_FIELD(remote_host, std::string)

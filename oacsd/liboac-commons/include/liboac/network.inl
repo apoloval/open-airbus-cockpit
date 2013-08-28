@@ -280,14 +280,27 @@ async_tcp_connection::on_io_completed_with_promise(
 {
    try
    {
-      if (!!ec)
-         OAC_THROW_EXCEPTION(boost_asio_error()
-               .with_error_code(ec));
-      promise->set_value(bytes_read);
-   }
+      if (!ec)
+         promise->set_value(bytes_read);
+      else
+         OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
+   }   
    catch (boost_asio_error& e)
    {
-      promise->set_exception(std::make_exception_ptr(e));
+      try
+      {
+         switch (e.get_error_code().value())
+         {
+            case boost::asio::error::eof:
+               OAC_THROW_EXCEPTION(eof_error().with_cause(e));
+            default:
+               throw;
+         }
+      }
+      catch (...)
+      {
+         promise->set_exception(std::current_exception());
+      }
    }
 }
 
