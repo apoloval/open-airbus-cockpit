@@ -6,10 +6,13 @@ set(libflightvars_HEADERS
    include/flightvars/api.h
    include/flightvars/protocol.h
    include/flightvars/protocol.inl
+   include/flightvars/subscription.h
 )
 
 set(libflightvars_SOURCES
    src/lib/api.cpp
+   src/lib/client.cpp
+   src/lib/subscription.cpp
 )
 
 set(flightvars_HEADERS
@@ -24,7 +27,6 @@ set(flightvars_SOURCES
    src/module/main.cpp
    src/module/protocol.cpp
    src/module/server.cpp
-   src/module/subscription.cpp
 )
 
 set(flightvars_INCLUDE_DIR
@@ -66,5 +68,6 @@ add_unit_test(fsuipc-test flightvars)
 add_unit_test(protocol-test flightvars)
 add_unit_test(subscription-test flightvars)
 
+add_integration_test(client-itest flightvars)
 add_integration_test(server-itest flightvars)
 
