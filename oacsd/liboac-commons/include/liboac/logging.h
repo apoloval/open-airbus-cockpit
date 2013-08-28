@@ -134,6 +134,8 @@ public:
         _parent(parent)
    {}
 
+   virtual ~logger_component() {}
+
    virtual void log(
             const log_author& author,
             log_level level,
