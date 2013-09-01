@@ -39,6 +39,7 @@ include_directories(
 )
 
 add_definitions(
+   /FS
    -DUNICODE
    -D_SCL_SECURE_NO_WARNINGS
    -D_VARIADIC_MAX=6

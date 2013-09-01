@@ -27,13 +27,17 @@ set(flightvars_SOURCES
    src/module/subscription.cpp
 )
 
+set(flightvars_INCLUDE_DIR
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   PARENT_SCOPE)
+
 include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}/include/flightvars
    ${CMAKE_CURRENT_SOURCE_DIR}/src/module
    ${Boost_INCLUDE_DIR}
    ${SIM_CONNECT_INCLUDE_DIR}
-   ${fsuipc_user_HEADERS}
-   ${liboac-commons_HEADERS}
+   ${fsuipc_user_INCLUDE_DIR}
+   ${liboac-commons_INCLUDE_DIR}
    )
 
 add_library(libflightvars STATIC ${libflightvars_SOURCES} ${libflightvars_HEADERS})

@@ -28,7 +28,7 @@
 #include <Windows.h>
 
 #include <Boost/format.hpp>
-#include <FSUIPC_User.h>
+#include <fsuipc/fsuipc_user.h>
 
 #include "buffer.h"
 #include "exception.h"

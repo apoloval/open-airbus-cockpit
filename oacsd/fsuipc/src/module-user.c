@@ -35,7 +35,7 @@ With acknowledgements to Adam Szofran (author of original FS6IPC).
 #define UIPC_MAIN "UIPCMAIN"
 #endif
 
-#include "IPCuser.h"
+#include "ipc-user.h"
 
 /******************************************************************************
 			IPC client stuff

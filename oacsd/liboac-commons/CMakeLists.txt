@@ -35,13 +35,24 @@ set(liboac-commons_SOURCES
    src/timing.cpp
 )
 
+set(liboac-commons_INCLUDE_DIR
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   PARENT_SCOPE)
+
 include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}/include/liboac
+   ${fsuipc_user_INCLUDE_DIR}
 )
 
 add_library(liboac-commons STATIC 
    ${liboac-commons_SOURCES} 
    ${liboac-commons_HEADERS})
+
+target_link_libraries(liboac-commons
+   ${Boost_LIBRARIES}
+   ${SIM_CONNECT_LIBRARY}
+   fsuipc_user_internal
+)
 
 test_link_libraries(
       liboac-commons

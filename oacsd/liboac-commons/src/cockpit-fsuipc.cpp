@@ -373,6 +373,6 @@ throw (sync_error)
 
 bool
 fsuipc_cockpit_back::is_sync() const
-{ return _buffer; }
+{ return _buffer != nullptr; }
 
-}; // namespace oac
+} // namespace oac
