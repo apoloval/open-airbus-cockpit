@@ -107,6 +107,10 @@ private:
          const session::ptr_type& session,
          const proto::subscription_request_message& req);
 
+   proto::unsubscription_reply_message handle_unsubscription_request(
+         const session::ptr_type& session,
+         const proto::unsubscription_request_message& req);
+
    void handle_var_update(
          const session::ptr_type& session,
          const variable_id& var_id,

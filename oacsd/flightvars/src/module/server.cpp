@@ -219,6 +219,20 @@ flight_vars_server::on_read_request(
                      shared_from_this(),
                      session));
       }
+      else if (auto us_req = boost::get<unsubscription_request_message>(&msg))
+      {
+         log_info(
+               "Processing unsubscription request for ID %d",
+               us_req->subs_id);
+         auto rep = handle_unsubscription_request(session, *us_req);
+         write_message(
+                  session->conn,
+                  rep,
+                  std::bind(
+                     &flight_vars_server::read_request,
+                     shared_from_this(),
+                     session));
+      }
       else if (auto vu_req = boost::get<var_update_message>(&msg))
       {
          handle_var_update_request(*vu_req);
@@ -289,6 +303,49 @@ flight_vars_server::handle_subscription_request(
             req.var_name,
             0,
             "No such variable defined in FlightVars module; missing plugin?");
+   }
+}
+
+proto::unsubscription_reply_message
+flight_vars_server::handle_unsubscription_request(
+      const session::ptr_type& session,
+      const proto::unsubscription_request_message& req)
+{
+   auto subs_id = req.subs_id;
+   try
+   {
+      _delegate->unsubscribe(subs_id);
+      log_info("Unsubscription for %d registered by delegate", subs_id);
+      session->subscriptions.unregister(subs_id);
+
+      return proto::unsubscription_reply_message(
+            proto::subscription_status::UNSUBSCRIBED,
+            subs_id,
+            "");
+   }
+   catch (const flight_vars::unknown_subscription_error& e)
+   {
+      log_warn(
+            "cannot unsubscribe from %d: unknown subscription:\n%s",
+            subs_id,
+            e.report());
+      return proto::unsubscription_reply_message(
+            proto::subscription_status::NO_SUCH_SUBSCRIPTION,
+            subs_id,
+            format("No such subscription with ID %d", subs_id));
+   }
+   catch (const subscription_mapper::no_such_subscription_error& e)
+   {
+      log_warn(
+            "internal inconsistency detected; delegate succeed to "
+            "unsubscribe from %d, but subscription mapper indicates that "
+            "the subscription doesn't exists:\n%s",
+            subs_id,
+            e.report());
+      return proto::unsubscription_reply_message(
+            proto::subscription_status::UNKNOWN,
+            subs_id,
+            format("Server error while unsubscribing from %d", subs_id));
    }
 }
 

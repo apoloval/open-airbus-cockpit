@@ -260,11 +260,20 @@ public:
 
    virtual void unsubscribe(const subscription_id& id)
    {
-      auto offset = _db.get_offset_for_subscription(id);
-      _db.remove_subscription(id);
-      auto offsets = _db.get_all_offsets();
-      if (std::find(offsets.begin(), offsets.end(), offset) == offsets.end())
-         _update_observer.stop_observing(offset);
+      try
+      {
+         auto offset = _db.get_offset_for_subscription(id);
+         _db.remove_subscription(id);
+         auto offsets = _db.get_all_offsets();
+         if (std::find(offsets.begin(), offsets.end(), offset) == offsets.end())
+            _update_observer.stop_observing(offset);
+      }
+      catch (const fsuipc_offset_db::no_such_subscription_error& e)
+      {
+         OAC_THROW_EXCEPTION(unknown_subscription_error()
+               .with_subs_id(id)
+               .with_cause(e));
+      }
    }
 
    virtual void update(

@@ -355,6 +355,8 @@ to_string(subscription_status status)
          return "no such var";
       case subscription_status::NO_SUCH_SUBSCRIPTION:
          return "no such subscription";
+      case subscription_status::UNKNOWN:
+         return "unknown";
       default:
          OAC_THROW_EXCEPTION(enum_out_of_range_error<subscription_status>()
                .with_value(status));

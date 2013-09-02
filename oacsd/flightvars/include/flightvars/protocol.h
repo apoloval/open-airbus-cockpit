@@ -115,7 +115,8 @@ enum class subscription_status
    SUBSCRIBED,
    UNSUBSCRIBED,
    NO_SUCH_VAR,
-   NO_SUCH_SUBSCRIPTION
+   NO_SUCH_SUBSCRIPTION,
+   UNKNOWN
 };
 
 /**

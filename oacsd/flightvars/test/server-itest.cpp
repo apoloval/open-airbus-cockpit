@@ -144,6 +144,41 @@ struct let_test
       return *this;
    }
 
+   let_test& unsubscribe(
+         subscription_id subs_id,
+         bool expect_success = true)
+   {
+      auto req = proto::unsubscription_request_message(subs_id);
+      send_message_as(req);
+
+      auto rep = receive_message_as<proto::unsubscription_reply_message>();
+
+      if (expect_success)
+      {
+         BOOST_CHECK_EQUAL(
+                  proto::subscription_status::UNSUBSCRIBED,
+                  rep.st);
+      }
+      else
+         BOOST_CHECK_EQUAL(
+               proto::subscription_status::NO_SUCH_SUBSCRIPTION,
+               rep.st);
+      BOOST_CHECK_EQUAL(subs_id, rep.subs_id);
+      return *this;
+   }
+
+   let_test& unsubscribe(
+         const variable_group::tag_type& var_group_tag,
+         const variable_name::tag_type& var_name_tag,
+         bool expect_success = true)
+   {
+      auto var_group = variable_group(var_group_tag);
+      auto var_name = variable_name(var_name_tag);
+      auto var_id = make_var_id(var_group, var_name);
+      auto subs_id = _subscriptions[var_id];
+      return unsubscribe(subs_id, expect_success);
+   }
+
    let_test& receive_var_update(
          const variable_group::tag_type& var_group_tag,
          const variable_name::tag_type& var_name_tag,
@@ -355,6 +390,27 @@ BOOST_AUTO_TEST_CASE(MustRespondSuccessToManySubscriptionRequests)
          .subscribe("fsuipc/offset", "0x70c:4")
          .disconnect();
 }
+
+BOOST_AUTO_TEST_CASE(MustRespondSuccessToUnsubscriptionRequest)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .unsubscribe("fsuipc/offset", "0x700:4", true)
+         .disconnect();
+}
+
+BOOST_AUTO_TEST_CASE(MustRespondErrorToUnsubscriptionRequestOfUnknownId)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .unsubscribe(1234, false)
+         .disconnect();
+}
+
 
 BOOST_AUTO_TEST_CASE(MustNotifyVarUpdates)
 {
