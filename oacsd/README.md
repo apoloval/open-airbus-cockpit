@@ -12,16 +12,14 @@ Before building OACSD, you need to satisfy the following dependencies.
 
 * Microsoft Windows XP or later. So far, OACSD doesn't work under any
 other OS as Linux or Mac OS X. 
-* Microsoft Visual C++ 2011 (MSVC), which is distributed with Microsoft
-Visual Studio 2012 (MSVS). Any version of MSVS 2012 is fine. If you have
-problems to choose, likely MSVS 2012 Express for Windows Desktop is your 
+* MSVC (Microsoft Visual C++) 12.0 , which is distributed with MSVS (Microsoft
+Visual Studio) 2013. Any version of MSVS 2013 is fine. If you have
+problems to choose, likely MSVS 2013 Express for Windows Desktop is your
 option. You may find download instructions 
 [here](http://www.microsoft.com/visualstudio/eng/downloads).
 * CMake 2.8 or later. You can download it from 
 [here](http://www.cmake.org/cmake/resources/software.html).
 * Flight Simulator X SDK. You may find it in your FSX installation DVD. 
-* FSUIPC SDK, you can download it from 
-[here](http://fsuipc.simflight.com/beta/FSUIPC_SDK.zip).
 * Boost libraries, you can download them from 
 [here](http://www.boost.org/users/download/). You need to build it since
 OACSD uses some of the compiled libraries. It is recommented to follow the
@@ -31,36 +29,13 @@ build instructions provided as part of Boost documentation.
 * NSIS XML Plugin. you can download it from
 [here](http://nsis.sourceforge.net/XML_plug-in).
 
-## Building FSUIPC Internal
+**Important note for Boost 1.54 and earlier versions**. There are some break
+changes in MSVC 12.0 respect its previous versions on how it interprets C++11.
+These break changes cause a build break in Boost 1.54 and earlier versions. If
+you have this version (at the time this was written, 2013-09-02, that's the
+latest version) you may have to [patch the code](
+https://svn.boost.org/trac/boost/attachment/ticket/8750/for_vs2013.patch).
 
-OACSD uses a special FSUIPC library that makes possible to communicate
-FSUIPC and OAC plugins using direct memory access instead of the more heavy
-IPC system calls. You may find that library in both source and binary forms
-in FSUIPC SDK. 
-
-Unfortunatelly, the binary form in SDK versioned as February 10th 2012 is 
-linked against Windows libraries that are not compatible with MSVC 2011. 
-So you need to build them again. And that's not all. The project file that
-comes with the source code has a building option that makes the resulting
-library to fail when connecting to the simulator. So please **read carefully
-the following steps**. 
-
-* Go to the `Library for FS Internal Users\FSUIPC_Internal` under your 
-FSUIPC SDK folder. There you will find `FSUIPC_Internal.sln`, the solution 
-file for MSVS. Open it.
-* Perhaps MSVS will ask if you want to convert the solution to MSVS 2012 format.
-In that case, answer *yes*. 
-* With the solution open in MSVS, your will find a panel on the top right
-corner of the Window listing the tree of artifacts of the solution. The 
-fist element of that tree under root node is `FSUIPC_Internal` project.
-Double-click on it and choose *Properties*. 
-* In the properties Window, go to *Configuration Properties* -> *General* ->
-*Project Default Values* and set the option *Character Set* to *Not Set*.
-Accept the changes.
-* Now you can build by pressing F7 key. 
-
-After successful building, there should be a `Debug` subfolder, which contains
-`ModuleUser.lib` and `FSUIPC_Internal.h` files. 
 
 ## Before building
 
@@ -68,11 +43,6 @@ OACSD is built with CMake. In order to work, it needs to know the location
 of the dependencies shown above in your filesystem. In this context, we well
 refer to these locations as:
 
-* `<fsuipc_internal_include>`, the folder containing the file 
-`FSUIPC_Internal.h`.  If you followed the steps described above, that's 
-the `Debug` subfolder. 
-* `<fsuipc_internal_library>`, the file `ModuleUser.lib` we obtained while
-building FSUIPC Internal. 
 * `<boost_root>`, the folder containing Boost Libraries distribution. Where
 you unpacked the corresponding Boost ZIP file. 
 * `<simconnect_root>`, the folder where SimConnect is installed. Its default
@@ -107,8 +77,8 @@ mkdir <build_root>
 cd <build_root>
 cmake 
    -DBOOST_ROOT=<boost_root>
-   -DFSUIPC_INTERNAL_INCLUDE_DIR=<fsuipc_internal_include>
-   -DFSUIPC_INTERNAL_LIBRARY=<fsuipc_internal_library>
+   -DBoost_USE_STATIC_LIBS=ON
+   -DBoost_COMPILER=-vc120
    -G "NMake Makefiles"
    <oacsd_root>
 ```
