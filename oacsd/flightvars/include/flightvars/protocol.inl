@@ -136,6 +136,32 @@ throw (io_exception)
 
 template <typename Serializer, typename OutputStream>
 void
+serialize_unsubscription_request(
+      const unsubscription_request_message& msg,
+      OutputStream& output)
+throw (io_exception)
+{
+   Serializer::write_msg_begin(output, message_type::UNSUBSCRIPTION_REQ);
+   Serializer::write_uint32_value(output, msg.subs_id);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
+serialize_unsubscription_reply(
+      const unsubscription_reply_message& msg,
+      OutputStream& output)
+throw (io_exception)
+{
+   Serializer::write_msg_begin(output, message_type::UNSUBSCRIPTION_REP);
+   Serializer::write_uint8_value(output, static_cast<int>(msg.st));
+   Serializer::write_uint32_value(output, msg.subs_id);
+   Serializer::write_string_value(output, msg.cause);
+   Serializer::write_msg_end(output);
+}
+
+template <typename Serializer, typename OutputStream>
+void
 serialize_var_update(
       const var_update_message& msg,
       OutputStream& output)
@@ -228,6 +254,29 @@ throw (protocol_exception, io_exception)
 }
 
 template <typename Deserializer, typename InputStream>
+unsubscription_request_message
+deserialize_unsubscription_request_contents(
+      InputStream& input)
+throw (protocol_exception, io_exception)
+{
+   auto subs_id = Deserializer::read_uint32_value(input);
+   return unsubscription_request_message(subs_id);
+}
+
+template <typename Deserializer, typename InputStream>
+unsubscription_reply_message
+deserialize_unsubscription_reply_contents(
+      InputStream& input)
+throw (protocol_exception, io_exception)
+{
+   auto st = Deserializer::read_uint8_value(input);
+   auto subs_id = Deserializer::read_uint32_value(input);
+   auto cause = Deserializer::read_string_value(input);
+   return unsubscription_reply_message(
+            static_cast<subscription_status>(st), subs_id, cause);
+}
+
+template <typename Deserializer, typename InputStream>
 var_update_message
 deserialize_var_update_contents(
       InputStream& input)
@@ -298,8 +347,14 @@ to_string(subscription_status status)
 {
    switch (status)
    {
-      case subscription_status::SUCCESS: return "success";
-      case subscription_status::NO_SUCH_VAR: return "no such var";
+      case subscription_status::SUBSCRIBED:
+         return "subscribed";
+      case subscription_status::UNSUBSCRIBED:
+         return "unsubscribed";
+      case subscription_status::NO_SUCH_VAR:
+         return "no such var";
+      case subscription_status::NO_SUCH_SUBSCRIPTION:
+         return "no such subscription";
       default:
          OAC_THROW_EXCEPTION(enum_out_of_range_error<subscription_status>()
                .with_value(status));
@@ -326,6 +381,22 @@ subscription_reply_message::subscription_reply_message(
      var_grp(grp),
      var_name(name),
      subs_id(subs),
+     cause(cause)
+{}
+
+inline
+unsubscription_request_message::unsubscription_request_message(
+      subscription_id subs)
+   : subs_id(subs)
+{}
+
+inline
+unsubscription_reply_message::unsubscription_reply_message(
+      subscription_status st,
+      subscription_id subs_id,
+      std::string cause)
+   : st(st),
+     subs_id(subs_id),
      cause(cause)
 {}
 
@@ -375,6 +446,20 @@ serialize(
                msg, output);
       }
 
+      void operator()(const unsubscription_request_message& msg) const
+      throw (io_exception)
+      {
+         return serialize_unsubscription_request<Serializer, OutputStream>(
+               msg, output);
+      }
+
+      void operator()(const unsubscription_reply_message& msg) const
+      throw (io_exception)
+      {
+         return serialize_unsubscription_reply<Serializer, OutputStream>(
+               msg, output);
+      }
+
       void operator()(const var_update_message& msg) const
       throw (io_exception)
       {
@@ -416,6 +501,20 @@ throw (protocol_exception, io_exception)
       case message_type::SUBSCRIPTION_REP:
       {
          auto msg = deserialize_subscription_reply_contents<Deserializer>(
+                  input);
+         Deserializer::read_msg_end(input);
+         return msg;
+      }
+      case message_type::UNSUBSCRIPTION_REQ:
+      {
+         auto msg = deserialize_unsubscription_request_contents<Deserializer>(
+                  input);
+         Deserializer::read_msg_end(input);
+         return msg;
+      }
+      case message_type::UNSUBSCRIPTION_REP:
+      {
+         auto msg = deserialize_unsubscription_reply_contents<Deserializer>(
                   input);
          Deserializer::read_msg_end(input);
          return msg;

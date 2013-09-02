@@ -132,7 +132,7 @@ struct let_test
       {
          _subscriptions[var_id] = rep.subs_id;
          BOOST_CHECK_EQUAL(
-                  proto::subscription_status::SUCCESS,
+                  proto::subscription_status::SUBSCRIBED,
                   rep.st);
       }
       else

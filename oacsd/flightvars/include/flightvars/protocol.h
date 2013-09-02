@@ -61,6 +61,8 @@ enum class message_type
    END_SESSION,
    SUBSCRIPTION_REQ,
    SUBSCRIPTION_REP,
+   UNSUBSCRIPTION_REQ,
+   UNSUBSCRIPTION_REP,
    VAR_UPDATE
 };
 
@@ -103,13 +105,17 @@ struct subscription_request_message
          const variable_name& name);
 };
 
+/**
+ * The status of a variable subscription. This value is sent as part of
+ * subscription and unsubscription replies indicating what's the status
+ * of the subscription after the corresponding request was processed.
+ */
 enum class subscription_status
 {
-   /** The request was accepted and processed successfully */
-   SUCCESS,
-
-   /** The requested variable is unknown to the server */
-   NO_SUCH_VAR
+   SUBSCRIBED,
+   UNSUBSCRIBED,
+   NO_SUCH_VAR,
+   NO_SUCH_SUBSCRIPTION
 };
 
 /**
@@ -144,6 +150,31 @@ struct subscription_reply_message
 };
 
 /**
+ * This message is sent by the client to request a variable unsubscription.
+ */
+struct unsubscription_request_message
+{
+   subscription_id subs_id;
+
+   unsubscription_request_message(subscription_id subs);
+};
+
+/**
+ * This messag eis sent by the server as response to unsubscription request.
+ */
+struct unsubscription_reply_message
+{
+   subscription_status st;
+   subscription_id subs_id;
+   std::string cause;
+
+   unsubscription_reply_message(
+         subscription_status st,
+         subscription_id subs_id,
+         std::string cause);
+};
+
+/**
  * This message is sent by either server or client to report a variable update.
  * The server sends this message when the the client had subscribed to that
  * variable before and the value of that variable has been changed. The client
@@ -170,6 +201,8 @@ typedef boost::variant<
       end_session_message,
       subscription_request_message,
       subscription_reply_message,
+      unsubscription_request_message,
+      unsubscription_reply_message,
       var_update_message
 > message;
 

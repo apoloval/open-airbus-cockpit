@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSubscriptionReply)
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
    subscription_reply_message msg(
-            subscription_status::SUCCESS,
+            subscription_status::SUBSCRIBED,
             variable_group("fsuipc/offset"),
             variable_name("0x4ca1"),
             0x1234,
@@ -200,7 +200,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionReply)
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
    stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x703));
-   stream::write_as(test.buffer, std::uint8_t(1));
+   stream::write_as(test.buffer, std::uint8_t(2));
    stream::write_as(test.buffer, native_to_big<std::uint16_t>(13));
    stream::write_as_string(test.buffer,"fsuipc/offset");
    stream::write_as(test.buffer, native_to_big<std::uint16_t>(6));
@@ -221,6 +221,81 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionReply)
    BOOST_CHECK_EQUAL("No such variable!", rep_msg.cause);
 }
 
+BOOST_AUTO_TEST_CASE(ShouldSerializeUnsubscriptionRequest)
+{
+   protocol_test<binary_message_serializer, binary_message_deserializer> test;
+
+   unsubscription_request_message msg(0x1234);
+   test.serialize(msg);
+
+   BOOST_CHECK_EQUAL(
+            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+   BOOST_CHECK_EQUAL(
+            0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
+   BOOST_CHECK_EQUAL(
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+   BOOST_CHECK(test.input_eof());
+}
+
+BOOST_AUTO_TEST_CASE(ShouldDeserializeUnsubscriptionRequest)
+{
+   protocol_test<binary_message_serializer, binary_message_deserializer> test;
+
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
+   message msg = test.deserialize();
+   unsubscription_request_message& usr_msg =
+         boost::get<unsubscription_request_message>(msg);
+
+   BOOST_CHECK_EQUAL(0x1234, usr_msg.subs_id);
+}
+
+BOOST_AUTO_TEST_CASE(ShouldSerializeUnsubscriptionReply)
+{
+   protocol_test<binary_message_serializer, binary_message_deserializer> test;
+
+   unsubscription_reply_message msg(
+            subscription_status::UNSUBSCRIBED,
+            0x1234,
+            "Successfully unsubscribed!");
+   test.serialize(msg);
+
+   BOOST_CHECK_EQUAL(
+            0x705, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+   BOOST_CHECK_EQUAL(
+            1, stream::read_as<std::uint8_t>(test.buffer));
+   BOOST_CHECK_EQUAL(
+            0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
+   BOOST_CHECK_EQUAL(
+            26, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+   BOOST_CHECK_EQUAL(
+            "Successfully unsubscribed!", stream::read_as_string(test.buffer, 26));
+   BOOST_CHECK_EQUAL(
+            0x0d0a, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+   BOOST_CHECK(test.input_eof());
+}
+
+BOOST_AUTO_TEST_CASE(ShouldDeserializeUnsubscriptionReply)
+{
+   protocol_test<binary_message_serializer, binary_message_deserializer> test;
+
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x705));
+   stream::write_as(test.buffer, std::uint8_t(3));
+   stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(21));
+   stream::write_as_string(test.buffer,"No such subscription!");
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x0d0a));
+   message msg = test.deserialize();
+   unsubscription_reply_message& rep_msg =
+         boost::get<unsubscription_reply_message>(msg);
+
+   BOOST_CHECK_EQUAL(
+            subscription_status::NO_SUCH_SUBSCRIPTION, rep_msg.st);
+   BOOST_CHECK_EQUAL(0x1234, rep_msg.subs_id);
+   BOOST_CHECK_EQUAL("No such subscription!", rep_msg.cause);
+}
+
 BOOST_AUTO_TEST_CASE(ShouldSerializeBoolVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
@@ -231,7 +306,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeBoolVarUpdate)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+            0x706, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
             0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
@@ -247,7 +322,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeBoolVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x706));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
    stream::write_as(test.buffer, std::uint8_t(0));
    stream::write_as(test.buffer, std::uint8_t(1));
@@ -270,7 +345,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeByteVarUpdate)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+            0x706, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
             0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
@@ -286,7 +361,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeByteVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x706));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
    stream::write_as(test.buffer, std::uint8_t(1));
    stream::write_as(test.buffer, std::uint8_t(69));
@@ -309,7 +384,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeWordVarUpdate)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+            0x706, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
             0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
@@ -325,7 +400,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeWordVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x706));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
    stream::write_as(test.buffer, std::uint8_t(2));
    stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x4567));
@@ -348,7 +423,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeDoubleWordVarUpdate)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+            0x706, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
             0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
@@ -365,7 +440,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeDoubleWordVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x706));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
    stream::write_as(test.buffer, std::uint8_t(3));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x23456789));
@@ -388,7 +463,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeFloatVarUpdate)
    test.serialize(msg);
 
    BOOST_CHECK_EQUAL(
-            0x704, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
+            0x706, big_to_native(stream::read_as<std::uint16_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
             0x1234, big_to_native(stream::read_as<std::uint32_t>(test.buffer)));
    BOOST_CHECK_EQUAL(
@@ -408,7 +483,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeFloatVarUpdate)
 {
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
-   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x704));
+   stream::write_as(test.buffer, native_to_big<std::uint16_t>(0x706));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x1234));
    stream::write_as(test.buffer, std::uint8_t(4));
    stream::write_as(test.buffer, native_to_big<std::uint32_t>(0x921ff200));
@@ -421,6 +496,5 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeFloatVarUpdate)
    BOOST_CHECK_EQUAL(variable_type::FLOAT, vu_msg.var_value.get_type());
    BOOST_CHECK_CLOSE(3.1416f, vu_msg.var_value.as_float(), 0.001f);
 }
-
 
 BOOST_AUTO_TEST_SUITE_END()

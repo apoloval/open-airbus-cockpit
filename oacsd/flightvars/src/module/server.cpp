@@ -270,7 +270,7 @@ flight_vars_server::handle_subscription_request(
             "Subscription for %s registered by delegate", var_str);
       session->subscriptions.register_subscription(var_id, subs_id);
       return proto::subscription_reply_message(
-            proto::subscription_status::SUCCESS,
+            proto::subscription_status::SUBSCRIBED,
             req.var_grp,
             req.var_name,
             subs_id,
