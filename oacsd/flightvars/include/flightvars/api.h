@@ -195,6 +195,8 @@ public:
             var_type_to_string(expected_type))
    OAC_EXCEPTION_END()
 
+   bool operator == (const variable_value& val) const;
+
    static variable_value from_bool(bool value);
    static variable_value from_byte(std::uint8_t value);
    static variable_value from_word(std::uint16_t value);

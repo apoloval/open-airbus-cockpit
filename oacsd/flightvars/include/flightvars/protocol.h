@@ -67,6 +67,23 @@ enum class message_type
 };
 
 /**
+
+ * Convert a message type enum value into a string object.
+ */
+std::string message_type_to_string(
+      message_type msg_type);
+
+/**
+ * An exception indicating the reception of a unexpected message.
+ */
+OAC_EXCEPTION_BEGIN(unexpected_message_error, protocol_exception)
+   OAC_EXCEPTION_FIELD(msg_type, message_type)
+   OAC_EXCEPTION_MSG(
+         "unexpected %s received",
+         message_type_to_string(msg_type))
+OAC_EXCEPTION_END()
+
+/**
  * This message is sent by the client when initiates the session and the
  * server as response to that. It indicates the endpoint name and the
  * protocol version it implements.
@@ -206,6 +223,24 @@ typedef boost::variant<
       unsubscription_reply_message,
       var_update_message
 > message;
+
+/**
+ * Obtain the message type for given message.
+ */
+message_type get_message_type(
+      const message& msg);
+
+/**
+ * Execute the given action if message type matches.
+ *
+ * @param msg     The message to be matched with given type
+ * @param action  The action to be executed on the message if matched
+ * @return        True if message type matches, false otherwise
+ */
+template <typename Message>
+bool if_message_type(
+      const message& msg,
+      const std::function<void(const Message& msg)>& action);
 
 /**
  * Serialize given message into given output stream.

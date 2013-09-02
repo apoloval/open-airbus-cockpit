@@ -265,7 +265,7 @@ struct let_test
 private:
 
    std::shared_ptr<boost::asio::io_service> _io_service;
-   std::uint16_t _port;
+   network::tcp_port _port;
    std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
    flight_vars_server::ptr_type _server;
    boost::thread _server_thread;

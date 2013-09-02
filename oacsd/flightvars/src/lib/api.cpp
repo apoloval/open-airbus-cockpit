@@ -32,6 +32,25 @@ ptr<linear_buffer> make_buffer_of(const T& value)
 
 } // anonymous namespace
 
+bool
+variable_value::operator == (
+      const variable_value& val) const
+{
+   if (val._type != _type)
+      return false;
+   switch (_type)
+   {
+      case variable_type::BOOLEAN: return val.as_bool() == as_bool();
+      case variable_type::BYTE: return val.as_byte() == as_byte();
+      case variable_type::WORD: return val.as_word() == as_word();
+      case variable_type::DWORD: return val.as_dword() == as_dword();
+      case variable_type::FLOAT: return val.as_float() == as_float();
+      default:
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
+               .with_value(_type));
+   }
+}
+
 variable_value
 variable_value::from_bool(bool value)
 { return variable_value(variable_type::BOOLEAN, make_buffer_of<bool>(value)); }

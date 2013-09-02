@@ -320,6 +320,33 @@ throw (protocol_exception, io_exception)
 } // anonymous namespace
 
 inline
+std::string
+message_type_to_string(
+      message_type msg_type)
+{
+   switch (msg_type)
+   {
+      case message_type::BEGIN_SESSION:
+         return "begin session message";
+      case message_type::END_SESSION:
+         return "end session message";
+      case message_type::SUBSCRIPTION_REQ:
+         return "subscription request message";
+      case message_type::SUBSCRIPTION_REP:
+         return "subscription reply message";
+      case message_type::UNSUBSCRIPTION_REQ:
+         return "unsubscription request message";
+      case message_type::UNSUBSCRIPTION_REP:
+         return "unsubscription reply message";
+      case message_type::VAR_UPDATE:
+         return "variable update message";
+      default:
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<message_type>()
+               .with_value(msg_type));
+   }
+}
+
+inline
 begin_session_message::begin_session_message(
       const peer_name& pname,
       protocol_version proto_ver)
@@ -409,6 +436,71 @@ var_update_message::var_update_message(
    : subs_id(subs),
      var_value(value)
 {}
+
+inline
+message_type
+get_message_type(
+      const message& msg)
+{
+   struct visitor : public boost::static_visitor<message_type>
+   {
+      message_type operator()(const begin_session_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::BEGIN_SESSION;
+      }
+
+      message_type operator()(const end_session_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::END_SESSION;
+      }
+
+      message_type operator()(const subscription_request_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::SUBSCRIPTION_REQ;
+      }
+
+      message_type operator()(const subscription_reply_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::SUBSCRIPTION_REP;
+      }
+
+      message_type operator()(const unsubscription_request_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::UNSUBSCRIPTION_REQ;
+      }
+
+      message_type operator()(const unsubscription_reply_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::UNSUBSCRIPTION_REP;
+      }
+
+      message_type operator()(const var_update_message& msg) const
+      throw (io_exception)
+      {
+         return message_type::VAR_UPDATE;
+      }
+
+   } visit;
+   return boost::apply_visitor(visit, msg);
+}
+
+template <typename Message>
+bool
+if_message_type(
+      const message& msg,
+      const std::function<void(const Message& msg)>& action)
+{
+   auto match = boost::get<Message>(&msg);
+   if (match)
+      action(*match);
+   return match != nullptr;
+}
 
 template <typename Serializer, typename OutputStream>
 void

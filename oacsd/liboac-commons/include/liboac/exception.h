@@ -174,9 +174,12 @@ private:
          _OAC_EXCEPTION_SETTERS(class_name)                    \
       }
 
-#define OAC_THROW_EXCEPTION(...)                               \
-   throw (__VA_ARGS__)                                         \
+#define OAC_MAKE_EXCEPTION(...)                                \
+   (__VA_ARGS__)                                               \
          .set_source(format("%s:%d", __FILE__, __LINE__))
+
+#define OAC_THROW_EXCEPTION(...)                               \
+   throw OAC_MAKE_EXCEPTION(__VA_ARGS__)
 
 
 

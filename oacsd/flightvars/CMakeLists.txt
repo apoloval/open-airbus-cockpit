@@ -4,6 +4,9 @@ project(FlightVars)
 
 set(libflightvars_HEADERS
    include/flightvars/api.h
+   include/flightvars/client.h
+   include/flightvars/client/flight_vars_client.h
+   include/flightvars/client/subscription_db.h
    include/flightvars/protocol.h
    include/flightvars/protocol.inl
    include/flightvars/subscription.h
@@ -11,7 +14,8 @@ set(libflightvars_HEADERS
 
 set(libflightvars_SOURCES
    src/lib/api.cpp
-   src/lib/client.cpp
+   src/lib/client/flight_vars_client.cpp
+   src/lib/client/subscription_db.cpp
    src/lib/subscription.cpp
 )
 
@@ -64,6 +68,7 @@ test_link_libraries(
 )
 
 add_unit_test(api-test flightvars)
+add_unit_test(client-test flightvars)
 add_unit_test(fsuipc-test flightvars)
 add_unit_test(protocol-test flightvars)
 add_unit_test(subscription-test flightvars)
