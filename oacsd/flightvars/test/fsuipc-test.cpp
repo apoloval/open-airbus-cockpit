@@ -154,7 +154,7 @@ BOOST_AUTO_TEST_CASE(MustConvertByteOffset)
             fsuipc_valued_offset(
                fsuipc_offset(0x700, OFFSET_LEN_BYTE),
                0x0a));
-   BOOST_CHECK_EQUAL(VAR_BYTE, var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::BYTE, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a, var_value.as_byte());
 }
 
@@ -164,7 +164,7 @@ BOOST_AUTO_TEST_CASE(MustConvertWordOffset)
             fsuipc_valued_offset(
                fsuipc_offset(0x700, OFFSET_LEN_WORD),
                0x0a0b));
-   BOOST_CHECK_EQUAL(VAR_WORD, var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::WORD, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a0b, var_value.as_word());
 }
 
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(MustConvertDoubleWordOffset)
             fsuipc_valued_offset(
                fsuipc_offset(0x700, OFFSET_LEN_DWORD),
                0x0a0b0c0d));
-   BOOST_CHECK_EQUAL(VAR_DWORD, var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::DWORD, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a0b0c0d, var_value.as_dword());
 }
 

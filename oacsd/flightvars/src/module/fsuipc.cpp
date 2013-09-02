@@ -164,11 +164,11 @@ to_fsuipc_offset_value(
    // Rounding to integer? Binary conversion? Exception?
    switch (var_value.get_type())
    {
-      case VAR_BOOLEAN: return var_value.as_bool();
-      case VAR_BYTE: return var_value.as_byte();
-      case VAR_WORD: return var_value.as_word();
-      case VAR_DWORD: return var_value.as_dword();
-      case VAR_FLOAT: return fsuipc_offset_value(var_value.as_float());
+      case variable_type::BOOLEAN: return var_value.as_bool();
+      case variable_type::BYTE: return var_value.as_byte();
+      case variable_type::WORD: return var_value.as_word();
+      case variable_type::DWORD: return var_value.as_dword();
+      case variable_type::FLOAT: return fsuipc_offset_value(var_value.as_float());
       default: return 0; // never reached
    }
 }

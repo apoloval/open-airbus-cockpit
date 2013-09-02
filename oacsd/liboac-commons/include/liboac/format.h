@@ -27,58 +27,23 @@
 namespace oac {
 
 inline
-std::string format(
-      const char* fmt)
-{ return fmt; }
-
-template <typename T1>
-std::string format(
-      const char* fmt,
-      const T1& v1)
+std::string format(boost::format& fmt)
 {
-   return str(boost::format(fmt) % v1);
+   return str(fmt);
 }
 
-template <typename T1, typename T2>
+template <typename T, typename... Args>
 std::string format(
-      const char* fmt,
-      const T1& v1,
-      const T2& v2)
+      boost::format& fmt, const T& t, const Args&... args)
 {
-   return str(boost::format(fmt) % v1 % v2);
+   return format(fmt % t, args...);
 }
 
-template <typename T1, typename T2, typename T3>
+template <typename... Args>
 std::string format(
-      const char* fmt,
-      const T1& v1,
-      const T2& v2,
-      const T3& v3)
+      const char* fmt, const Args&... args)
 {
-   return str(boost::format(fmt) % v1 % v2 % v3);
-}
-
-template <typename T1, typename T2, typename T3, typename T4>
-std::string format(
-      const char* fmt,
-      const T1& v1,
-      const T2& v2,
-      const T3& v3,
-      const T4& v4)
-{
-   return str(boost::format(fmt) % v1 % v2 % v3 % v4);
-}
-
-template <typename T1, typename T2, typename T3, typename T4, typename T5>
-std::string format(
-      const char* fmt,
-      const T1& v1,
-      const T2& v2,
-      const T3& v3,
-      const T4& v4,
-      const T5& v5)
-{
-   return str(boost::format(fmt) % v1 % v2 % v3 % v4 %v5);
+   return format(boost::format(fmt), args...);
 }
 
 } // namespace oac

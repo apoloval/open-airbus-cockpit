@@ -242,7 +242,7 @@ public:
          _update_observer.start_observing(offset);
 
          log(
-            INFO,
+            log_level::INFO,
             "Subscribing on %s with ID %d...",
             var_to_string(var),
             subs_id);

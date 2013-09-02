@@ -87,7 +87,7 @@ serialize_begin_session(
       OutputStream& output)
 throw (io_exception)
 {
-   Serializer::write_msg_begin(output, MSG_BEGIN_SESSION);
+   Serializer::write_msg_begin(output, message_type::BEGIN_SESSION);
    Serializer::write_string_value(output, msg.pname);
    Serializer::write_uint16_value(output, msg.proto_ver);
    Serializer::write_msg_end(output);
@@ -100,7 +100,7 @@ serialize_end_session(
       OutputStream& output)
 throw (io_exception)
 {
-   Serializer::write_msg_begin(output, MSG_END_SESSION);
+   Serializer::write_msg_begin(output, message_type::END_SESSION);
    Serializer::write_string_value(output, msg.cause);
    Serializer::write_msg_end(output);
 }
@@ -112,7 +112,7 @@ serialize_subscription_request(
       OutputStream& output)
 throw (io_exception)
 {
-   Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REQ);
+   Serializer::write_msg_begin(output, message_type::SUBSCRIPTION_REQ);
    Serializer::write_string_value(output, msg.var_grp);
    Serializer::write_string_value(output, msg.var_name);
    Serializer::write_msg_end(output);
@@ -125,8 +125,8 @@ serialize_subscription_reply(
       OutputStream& output)
 throw (io_exception)
 {
-   Serializer::write_msg_begin(output, MSG_SUBSCRIPTION_REP);
-   Serializer::write_uint8_value(output, msg.st);
+   Serializer::write_msg_begin(output, message_type::SUBSCRIPTION_REP);
+   Serializer::write_uint8_value(output, static_cast<int>(msg.st));
    Serializer::write_string_value(output, msg.var_grp);
    Serializer::write_string_value(output, msg.var_name);
    Serializer::write_uint32_value(output, msg.subs_id);
@@ -142,37 +142,37 @@ serialize_var_update(
 throw (io_exception)
 {
    auto var_type = msg.var_value.get_type();
-   Serializer::write_msg_begin(output, MSG_VAR_UPDATE);
+   Serializer::write_msg_begin(output, message_type::VAR_UPDATE);
    Serializer::write_uint32_value(output, msg.subs_id);
    switch (var_type)
    {
-      case VAR_BOOLEAN:
+      case variable_type::BOOLEAN:
          Serializer::write_uint8_value(
-                  output, var_type_to_code(VAR_BOOLEAN));
+                  output, var_type_to_code(variable_type::BOOLEAN));
          Serializer::write_uint8_value(
                   output, msg.var_value.as_bool() ? 1 : 0);
          break;
-      case VAR_BYTE:
+      case variable_type::BYTE:
          Serializer::write_uint8_value(
-                  output, var_type_to_code(VAR_BYTE));
+                  output, var_type_to_code(variable_type::BYTE));
          Serializer::write_uint8_value(
                   output, msg.var_value.as_byte());
          break;
-      case VAR_WORD:
+      case variable_type::WORD:
          Serializer::write_uint8_value(
-                  output, var_type_to_code(VAR_WORD));
+                  output, var_type_to_code(variable_type::WORD));
          Serializer::write_uint16_value(
                   output, msg.var_value.as_word());
          break;
-      case VAR_DWORD:
+      case variable_type::DWORD:
          Serializer::write_uint8_value(
-                  output, var_type_to_code(VAR_DWORD));
+                  output, var_type_to_code(variable_type::DWORD));
          Serializer::write_uint32_value(
                   output, msg.var_value.as_dword());
          break;
-      case VAR_FLOAT:
+      case variable_type::FLOAT:
          Serializer::write_uint8_value(
-                  output, var_type_to_code(VAR_FLOAT));
+                  output, var_type_to_code(variable_type::FLOAT));
          Serializer::write_float_value(
                   output, msg.var_value.as_float());
          break;
@@ -224,7 +224,7 @@ throw (protocol_exception, io_exception)
    auto subs_id = Deserializer::read_uint32_value(input);
    auto cause = Deserializer::read_string_value(input);
    return subscription_reply_message(
-            subscription_reply_message::status(st), grp, name, subs_id, cause);
+            static_cast<subscription_status>(st), grp, name, subs_id, cause);
 }
 
 template <typename Deserializer, typename InputStream>
@@ -237,28 +237,28 @@ throw (protocol_exception, io_exception)
    auto var_type = Deserializer::read_uint8_value(input);
    switch (var_type)
    {
-      case VAR_BOOLEAN:
+      case variable_type::BOOLEAN:
          return var_update_message(
                   subs_id,
                   variable_value::from_bool(
                      (Deserializer::read_uint8_value(input) > 0) ?
                                          true : false));
-      case VAR_BYTE:
+      case variable_type::BYTE:
          return var_update_message(
                   subs_id,
                   variable_value::from_byte(
                      Deserializer::read_uint8_value(input)));
-      case VAR_WORD:
+      case variable_type::WORD:
          return var_update_message(
                   subs_id,
                   variable_value::from_word(
                      Deserializer::read_uint16_value(input)));
-      case VAR_DWORD:
+      case variable_type::DWORD:
          return var_update_message(
                   subs_id,
                   variable_value::from_dword(
                      Deserializer::read_uint32_value(input)));
-      case VAR_FLOAT:
+      case variable_type::FLOAT:
          return var_update_message(
                   subs_id,
                   variable_value::from_float(
@@ -293,8 +293,31 @@ subscription_request_message::subscription_request_message(
 {}
 
 inline
+std::string
+to_string(subscription_status status)
+{
+   switch (status)
+   {
+      case subscription_status::SUCCESS: return "success";
+      case subscription_status::NO_SUCH_VAR: return "no such var";
+      default:
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<subscription_status>()
+               .with_value(status));
+   }
+}
+
+inline
+std::ostream&
+operator <<(
+      std::ostream& s,
+      subscription_status status)
+{
+   return s << to_string(status);
+}
+
+inline
 subscription_reply_message::subscription_reply_message(
-      status st,
+      subscription_status st,
       const variable_group& grp,
       const variable_name& name,
       const subscription_id& subs,
@@ -371,33 +394,33 @@ throw (protocol_exception, io_exception)
    auto msg_begin = Deserializer::read_msg_begin(input);
    switch (msg_begin)
    {
-      case MSG_BEGIN_SESSION:
+      case message_type::BEGIN_SESSION:
       {
          auto msg = deserialize_begin_session_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case MSG_END_SESSION:
+      case message_type::END_SESSION:
       {
          auto msg = deserialize_end_session_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case MSG_SUBSCRIPTION_REQ:
+      case message_type::SUBSCRIPTION_REQ:
       {
          auto msg = deserialize_subscription_request_contents<Deserializer>(
                   input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case MSG_SUBSCRIPTION_REP:
+      case message_type::SUBSCRIPTION_REP:
       {
          auto msg = deserialize_subscription_reply_contents<Deserializer>(
                   input);
          Deserializer::read_msg_end(input);
          return msg;
       }
-      case MSG_VAR_UPDATE:
+      case message_type::VAR_UPDATE:
       {
          auto msg = deserialize_var_update_contents<Deserializer>(input);
          Deserializer::read_msg_end(input);

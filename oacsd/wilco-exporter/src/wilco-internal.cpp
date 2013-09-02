@@ -93,7 +93,7 @@ void
 free_dll(HINSTANCE lib)
 {
    if (!FreeLibrary(lib))
-      log("WilcoInternal-free_dll", WARN, "cannot free DLL instance");
+      log("WilcoInternal-free_dll", log_level::WARN, "cannot free DLL instance");
 }
 
 void
@@ -108,7 +108,7 @@ track_changes_on_memory(void* mem, size_t len) {
          if (src[i] != dst[i]) {
             log(
                   "WilcoInternal-track_changes_on_memory",
-                  INFO,
+                  log_level::INFO,
                   str(boost::format(
                         "word %d (+0x%X) changes from %d to %d")
                         % i % i % dst[i] % src[i]));
@@ -119,7 +119,7 @@ track_changes_on_memory(void* mem, size_t len) {
    {
       log(
             "WilcoInternal-track_changes_on_memory",
-            INFO,
+            log_level::INFO,
             str(boost::format("Tracking %d bytes on 0x%X") % len % mem));
       buf = new uint8_t[len];
    }

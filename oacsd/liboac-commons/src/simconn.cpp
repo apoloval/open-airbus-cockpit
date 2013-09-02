@@ -33,7 +33,7 @@ void CALLBACK DispatchMessage(
       auto receiver = static_cast<simconnect_client*>(pContext);
       receiver->on_message(pData, cbData);
    } catch (std::exception& ex) {
-      log("SimConnect-DispatchMessage", WARN, ex.what());
+      log("SimConnect-DispatchMessage", log_level::WARN, ex.what());
    }
 }
 
@@ -171,9 +171,9 @@ throw (server_unavailable_error)
 simconnect_client::~simconnect_client()
 {
    if (SimConnect_Close(_handle) != S_OK)
-      log(WARN, str(boost::format(
-            "something failed while disconnecting %s from SimConnect")
-            % _name));
+      log_warn(
+            "something failed while disconnecting %s from SimConnect",
+            _name);
 }
 
 void
@@ -191,14 +191,15 @@ simconnect_client::on_message(SIMCONNECT_RECV* msg, DWORD msg_len)
       if (callback)
          callback->send_message(*this, msg);
       else
-         log(WARN, str(boost::format(
-               "cannot deliver message with ID %d: no callback registered") %
-               msg_id));
+         log_warn(
+               "cannot deliver message with ID %d: no callback registered",
+               msg_id);
    }
    catch (const std::exception& ex)
    {
-      log(WARN, str(boost::format("cannot deliver SimConnect message: %s") %
-            ex.what()));
+      log_warn(
+            "cannot deliver SimConnect message: %s",
+            ex.what());
    }
 }
 

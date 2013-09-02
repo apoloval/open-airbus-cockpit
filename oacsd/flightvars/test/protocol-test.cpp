@@ -165,7 +165,7 @@ BOOST_AUTO_TEST_CASE(ShouldSerializeSubscriptionReply)
    protocol_test<binary_message_serializer, binary_message_deserializer> test;
 
    subscription_reply_message msg(
-            subscription_reply_message::STATUS_SUCCESS,
+            subscription_status::SUCCESS,
             variable_group("fsuipc/offset"),
             variable_name("0x4ca1"),
             0x1234,
@@ -214,7 +214,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionReply)
          boost::get<subscription_reply_message>(msg);
 
    BOOST_CHECK_EQUAL(
-            subscription_reply_message::STATUS_NO_SUCH_VAR, rep_msg.st);
+            subscription_status::NO_SUCH_VAR, rep_msg.st);
    BOOST_CHECK_EQUAL("fsuipc/offset", rep_msg.var_grp.get_tag());
    BOOST_CHECK_EQUAL("0x4ca1", rep_msg.var_name.get_tag());
    BOOST_CHECK_EQUAL(0, rep_msg.subs_id);
@@ -256,7 +256,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeBoolVarUpdate)
    var_update_message& vu_msg = boost::get<var_update_message>(msg);
 
    BOOST_CHECK_EQUAL(0x1234, vu_msg.subs_id);
-   BOOST_CHECK_EQUAL(VAR_BOOLEAN, vu_msg.var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::BOOLEAN, vu_msg.var_value.get_type());
    BOOST_CHECK_EQUAL(true, vu_msg.var_value.as_bool());
 }
 
@@ -295,7 +295,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeByteVarUpdate)
    var_update_message& vu_msg = boost::get<var_update_message>(msg);
 
    BOOST_CHECK_EQUAL(0x1234, vu_msg.subs_id);
-   BOOST_CHECK_EQUAL(VAR_BYTE, vu_msg.var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::BYTE, vu_msg.var_value.get_type());
    BOOST_CHECK_EQUAL(69, vu_msg.var_value.as_byte());
 }
 
@@ -334,7 +334,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeWordVarUpdate)
    var_update_message& vu_msg = boost::get<var_update_message>(msg);
 
    BOOST_CHECK_EQUAL(0x1234, vu_msg.subs_id);
-   BOOST_CHECK_EQUAL(VAR_WORD, vu_msg.var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::WORD, vu_msg.var_value.get_type());
    BOOST_CHECK_EQUAL(0x4567, vu_msg.var_value.as_word());
 }
 
@@ -374,7 +374,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeDoubleWordVarUpdate)
    var_update_message& vu_msg = boost::get<var_update_message>(msg);
 
    BOOST_CHECK_EQUAL(0x1234, vu_msg.subs_id);
-   BOOST_CHECK_EQUAL(VAR_DWORD, vu_msg.var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::DWORD, vu_msg.var_value.get_type());
    BOOST_CHECK_EQUAL(0x23456789, vu_msg.var_value.as_dword());
 }
 
@@ -418,7 +418,7 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeFloatVarUpdate)
    var_update_message& vu_msg = boost::get<var_update_message>(msg);
 
    BOOST_CHECK_EQUAL(0x1234, vu_msg.subs_id);
-   BOOST_CHECK_EQUAL(VAR_FLOAT, vu_msg.var_value.get_type());
+   BOOST_CHECK_EQUAL(variable_type::FLOAT, vu_msg.var_value.get_type());
    BOOST_CHECK_CLOSE(3.1416f, vu_msg.var_value.as_float(), 0.001f);
 }
 

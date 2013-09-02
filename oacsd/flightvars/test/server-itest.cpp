@@ -132,12 +132,12 @@ struct let_test
       {
          _subscriptions[var_id] = rep.subs_id;
          BOOST_CHECK_EQUAL(
-                  proto::subscription_reply_message::STATUS_SUCCESS,
+                  proto::subscription_status::SUCCESS,
                   rep.st);
       }
       else
          BOOST_CHECK_EQUAL(
-               proto::subscription_reply_message::STATUS_NO_SUCH_VAR,
+               proto::subscription_status::NO_SUCH_VAR,
                rep.st);
       BOOST_CHECK_EQUAL(var_group.get_tag(), rep.var_grp.get_tag());
       BOOST_CHECK_EQUAL(var_name.get_tag(), rep.var_name.get_tag());
@@ -157,19 +157,19 @@ struct let_test
       BOOST_CHECK_EQUAL(value.get_type(), rep.var_value.get_type());
       switch (value.get_type())
       {
-         case VAR_BOOLEAN:
+         case variable_type::BOOLEAN:
             BOOST_CHECK_EQUAL(value.as_bool(), rep.var_value.as_bool());
             break;
-         case VAR_BYTE:
+         case variable_type::BYTE:
             BOOST_CHECK_EQUAL(value.as_byte(), rep.var_value.as_byte());
             break;
-         case VAR_WORD:
+         case variable_type::WORD:
             BOOST_CHECK_EQUAL(value.as_word(), rep.var_value.as_word());
             break;
-         case VAR_DWORD:
+         case variable_type::DWORD:
             BOOST_CHECK_EQUAL(value.as_dword(), rep.var_value.as_dword());
             break;
-         case VAR_FLOAT:
+         case variable_type::FLOAT:
             BOOST_CHECK_EQUAL(value.as_float(), rep.var_value.as_float());
             break;
       }

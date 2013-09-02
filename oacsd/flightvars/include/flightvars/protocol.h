@@ -55,13 +55,13 @@ extern const protocol_version CURRENT_PROTOCOL_VERSION;
  * An enumeration for the different types or messages that comprise the
  * protocol.
  */
-enum message_type
+enum class message_type
 {
-   MSG_BEGIN_SESSION,
-   MSG_END_SESSION,
-   MSG_SUBSCRIPTION_REQ,
-   MSG_SUBSCRIPTION_REP,
-   MSG_VAR_UPDATE,
+   BEGIN_SESSION,
+   END_SESSION,
+   SUBSCRIPTION_REQ,
+   SUBSCRIPTION_REP,
+   VAR_UPDATE
 };
 
 /**
@@ -103,31 +103,40 @@ struct subscription_request_message
          const variable_name& name);
 };
 
+enum class subscription_status
+{
+   /** The request was accepted and processed successfully */
+   SUCCESS,
+
+   /** The requested variable is unknown to the server */
+   NO_SUCH_VAR
+};
+
+/**
+ * Convert a subscription status value into string.
+ */
+std::string to_string(subscription_status status);
+
+/**
+ * Stream operator for subscription status.
+ */
+std::ostream& operator <<(
+      std::ostream& s,
+      subscription_status status);
+
 /**
  * This message is sent by the server as response to a subscription request.
  */
 struct subscription_reply_message
-{
-   enum status
-   {
-      /** The request was accepted and processed successfully */
-      STATUS_SUCCESS,
-
-      /** The requested variable is unknown to the server */
-      STATUS_NO_SUCH_VAR,
-
-      /** A server error ocurred which prevented the request to be success */
-      STATUS_SERVER_ERROR
-   };
-
-   status st;
+{   
+   subscription_status st;
    variable_group var_grp;
    variable_name var_name;
    subscription_id subs_id;
    std::string cause;
 
    subscription_reply_message(
-         status st,
+         subscription_status st,
          const variable_group& grp,
          const variable_name& name,
          const subscription_id& subs,

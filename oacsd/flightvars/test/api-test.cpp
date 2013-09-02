@@ -97,35 +97,35 @@ BOOST_AUTO_TEST_SUITE(VariableValue)
 BOOST_AUTO_TEST_CASE(MustMatchCreationAndExtractionTypeForBool)
 {
    auto val = variable_value::from_bool(true);
-   BOOST_CHECK_EQUAL(VAR_BOOLEAN, val.get_type());
+   BOOST_CHECK_EQUAL(variable_type::BOOLEAN, val.get_type());
    BOOST_CHECK_EQUAL(true, val.as_bool());
 }
 
 BOOST_AUTO_TEST_CASE(MustMatchCreationAndExtractionTypeForByte)
 {
    auto val = variable_value::from_byte(65);
-   BOOST_CHECK_EQUAL(VAR_BYTE, val.get_type());
+   BOOST_CHECK_EQUAL(variable_type::BYTE, val.get_type());
    BOOST_CHECK_EQUAL(65, val.as_byte());
 }
 
 BOOST_AUTO_TEST_CASE(MustMatchCreationAndExtractionTypeForWord)
 {
    auto val = variable_value::from_word(1200);
-   BOOST_CHECK_EQUAL(VAR_WORD, val.get_type());
+   BOOST_CHECK_EQUAL(variable_type::WORD, val.get_type());
    BOOST_CHECK_EQUAL(1200, val.as_word());
 }
 
 BOOST_AUTO_TEST_CASE(MustMatchCreationAndExtractionTypeForDoubleWord)
 {
    auto val = variable_value::from_dword(1200);
-   BOOST_CHECK_EQUAL(VAR_DWORD, val.get_type());
+   BOOST_CHECK_EQUAL(variable_type::DWORD, val.get_type());
    BOOST_CHECK_EQUAL(1200, val.as_dword());
 }
 
 BOOST_AUTO_TEST_CASE(MustMatchCreationAndExtractionTypeForFloat)
 {
    auto val = variable_value::from_float(3.1416f);
-   BOOST_CHECK_EQUAL(VAR_FLOAT, val.get_type());
+   BOOST_CHECK_EQUAL(variable_type::FLOAT, val.get_type());
    BOOST_CHECK_CLOSE(3.1416f, val.as_float(), 0.0001f);
 }
 

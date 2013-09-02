@@ -31,11 +31,11 @@ namespace oac {
 /**
  * The level of severity of the logged entries.
  */
-enum log_level
+enum class log_level
 {
 	INFO,
    WARN,
-	FAIL,
+   FAIL,
 };
 
 /**
@@ -145,92 +145,39 @@ protected:
     * A convenience function to log a message using the author passed to
     * the logger component upon construction.
     */
+   template <typename... Args>
    void log(
       log_level level,
-      const log_message& msg)
-   { log(_author, level, msg); }
-
-   /**
-    * Convenient function for logging Boost format objects using the author
-    * passed to the logger component upon construction.
-    *
-    * @param level      The severity level of the log entry
-    * @param msg_format The message format of the log entry
-    * @param msg_arg1   The first argument of the message format
-    */
-   template <typename T1>
-   void log(
-         log_level level,
-         const std::string& msg_format,
-         const T1& msg_arg1)
-   { log(_author, level, str(boost::format(msg_format) % msg_arg1)); }
-
-   /**
-    * Convenient function for logging Boost format objects in main logger.
-    * If no main logger was registered, nothing is done.
-    *
-    * @param level      The severity level of the log entry
-    * @param msg_format The message format of the log entry
-    * @param msg_arg1   The first argument of the message format
-    * @param msg_arg2   The second argument of the message format
-    */
-   template <typename T1, typename T2>
-   void log(
-         log_level level,
-         const std::string& msg_format,
-         const T1& msg_arg1,
-         const T2& msg_arg2)
-   {
-      log(
-            _author,
-            level,
-            str(boost::format(msg_format) % msg_arg1 % msg_arg2));
-   }
-
-   /**
-    * Convenient function for logging Boost format objects in main logger.
-    * If no main logger was registered, nothing is done.
-    *
-    * @param level      The severity level of the log entry
-    * @param msg_format The message format of the log entry
-    * @param msg_arg1   The first argument of the message format
-    * @param msg_arg2   The second argument of the message format
-    * @param msg_arg3   The third argument of the message format
-    */
-   template <typename T1, typename T2, typename T3>
-   void log(
-         log_level level,
-         const std::string& msg_format,
-         const T1& msg_arg1,
-         const T2& msg_arg2,
-         const T3& msg_arg3)
-   {
-      log(
-            _author,
-            level,
-            str(boost::format(msg_format) % msg_arg1 % msg_arg2 % msg_arg3));
-   }
+      const char* fmt,
+      const Args&... args)
+   { log(_author, level, format(fmt, args...)); }
 
    /**
     * Convenience function for logging INFO entries.
     */
-   template <typename LogLine>
-   void log_info(const LogLine& line)
-   { log(_author, log_level::INFO, line); }
+   template <typename... Args>
+   void log_info(
+         const char* fmt,
+         const Args&... args)
+   { log(log_level::INFO, fmt, args...); }
 
    /**
-    * Convenience function for logging INFO entries.
+    * Convenience function for logging WARN entries.
     */
-   template <typename LogLine>
-   void log_warn(const LogLine& line)
-   { log(_author, log_level::WARN, line); }
+   template <typename... Args>
+   void log_warn(
+         const char* fmt,
+         const Args&... args)
+   { log(log_level::WARN, fmt, args...); }
 
    /**
-    * Convenience function for logging INFO entries.
+    * Convenience function for logging FAIL entries.
     */
-   template <typename LogLine>
-   void log_fail(const LogLine& line)
-   { log(_author, log_level::FAIL, line); }
+   template <typename... Args>
+   void log_fail(
+         const char* fmt,
+         const Args&... args)
+   { log(log_level::FAIL, fmt, args...); }
 
 private:
 

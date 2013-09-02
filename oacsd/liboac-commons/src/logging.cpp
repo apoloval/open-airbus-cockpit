@@ -36,7 +36,7 @@ std::shared_ptr<logger> main_logger;
 
 const char*
 logger::level_str(log_level level)
-{ return LEVEL_STR[level]; }
+{ return LEVEL_STR[static_cast<int>(level)]; }
 
 std::string
 logger::get_time()

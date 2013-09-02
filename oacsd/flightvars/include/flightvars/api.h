@@ -142,13 +142,13 @@ struct variable_id_hash
    }
 };
 
-enum variable_type
+enum class variable_type
 {
-   VAR_BOOLEAN,
-   VAR_BYTE,
-   VAR_WORD,
-   VAR_DWORD,
-   VAR_FLOAT
+   BOOLEAN,
+   BYTE,
+   WORD,
+   DWORD,
+   FLOAT
 };
 
 /**
@@ -160,17 +160,27 @@ var_type_to_string(
 {
    switch (var_type)
    {
-      case VAR_BOOLEAN : return "bool";
-      case VAR_BYTE : return "byte";
-      case VAR_WORD : return "word";
-      case VAR_DWORD : return "dword";
-      case VAR_FLOAT : return "float";
+      case variable_type::BOOLEAN : return "bool";
+      case variable_type::BYTE : return "byte";
+      case variable_type::WORD : return "word";
+      case variable_type::DWORD : return "dword";
+      case variable_type::FLOAT : return "float";
       default:
          // never reached
          OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
                .with_value(var_type));
    }
 }
+
+/**
+ * Output stream operator for variable_type.
+ */
+inline std::ostream& operator <<(
+      std::ostream& s,
+      const variable_type& var_type)
+{ return s << var_type_to_string(var_type); }
+
+
 
 class variable_value
 {
@@ -180,9 +190,9 @@ public:
       OAC_EXCEPTION_FIELD(expected_type, variable_type)
       OAC_EXCEPTION_FIELD(actual_type, variable_type)
       OAC_EXCEPTION_MSG(
-            "invalid variable type %d (expected %d)",
-            actual_type,
-            expected_type)
+            "invalid variable type %s (expected %s)",
+            var_type_to_string(actual_type),
+            var_type_to_string(expected_type))
    OAC_EXCEPTION_END()
 
    static variable_value from_bool(bool value);
