@@ -231,7 +231,7 @@ public:
    virtual subscription_id subscribe(
          const variable_id& var,
          const var_update_handler& handler)
-   throw (unknown_variable_error)
+   throw (no_such_variable_error)
    {
       try
       {
@@ -251,14 +251,16 @@ public:
       }
       catch (fsuipc::invalid_var_exception& e)
       {
-         OAC_THROW_EXCEPTION(unknown_variable_error()
+         OAC_THROW_EXCEPTION(no_such_variable_error()
                .with_var_group_tag(get_var_group(var).get_tag())
                .with_var_name_tag(get_var_name(var).get_tag())
                .with_cause(e));
       }
    }
 
-   virtual void unsubscribe(const subscription_id& id)
+   virtual void unsubscribe(
+         const subscription_id& id)
+   throw (no_such_subscription_error)
    {
       try
       {
@@ -270,7 +272,7 @@ public:
       }
       catch (const fsuipc_offset_db::no_such_subscription_error& e)
       {
-         OAC_THROW_EXCEPTION(unknown_subscription_error()
+         OAC_THROW_EXCEPTION(no_such_subscription_error()
                .with_subs_id(id)
                .with_cause(e));
       }
@@ -279,7 +281,7 @@ public:
    virtual void update(
          const subscription_id& subs_id,
          const variable_value& var_value)
-   throw (unknown_variable_error, illegal_value_error)
+   throw (no_such_subscription_error, illegal_value_error)
    {
       try
       {
@@ -288,7 +290,7 @@ public:
       }
       catch (fsuipc_offset_db::no_such_subscription_error&)
       {
-         OAC_THROW_EXCEPTION(unknown_subscription_error()
+         OAC_THROW_EXCEPTION(no_such_subscription_error()
                .with_subs_id(subs_id));
       }
       catch (variable_value::invalid_type_error&)

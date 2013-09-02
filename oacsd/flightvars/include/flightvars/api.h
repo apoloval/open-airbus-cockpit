@@ -259,21 +259,21 @@ public:
    /**
     * An operation was requested on a unknown variable.
     */
-   OAC_EXCEPTION_BEGIN(unknown_variable_error, oac::exception)
+   OAC_EXCEPTION_BEGIN(no_such_variable_error, oac::exception)
       OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
       OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
       OAC_EXCEPTION_MSG(
-            "unknown variable with id %s",
+            "no such variable with id %s",
             var_to_string(make_var_id(var_group_tag, var_name_tag)))
    OAC_EXCEPTION_END()
 
    /**
     * An operation was requested for an unknown subscription.
     */
-   OAC_EXCEPTION_BEGIN(unknown_subscription_error, oac::exception)
+   OAC_EXCEPTION_BEGIN(no_such_subscription_error, oac::exception)
       OAC_EXCEPTION_FIELD(subs_id, subscription_id)
       OAC_EXCEPTION_MSG(
-            "unknown subscription with id %d",
+            "no such subscription with id %d",
             subs_id)
    OAC_EXCEPTION_END()
 
@@ -291,30 +291,33 @@ public:
     *
     * @param grp the variable group
     * @param name the variable name
-    * @param suhandlerbs the handler to be invoked when var changes.
+    * @param suhandlerbs the handler to be invoked when var changes
     * @return the subscription ID, which may be used for unsubscription
     */
    virtual subscription_id subscribe(
          const variable_id& var,
-         const var_update_handler& handler) throw (unknown_variable_error) = 0;
+         const var_update_handler& handler)
+   throw (no_such_variable_error) = 0;
 
    /**
-    * Remove the subscription with the given ID. If the given ID is unknown,
-    * nothing is done.
+    * Remove the subscription with the given ID.
+    *
+    * @param id   The ID of the subscription to be removed
     */
-   virtual void unsubscribe(const subscription_id& id) = 0;
+   virtual void unsubscribe(const subscription_id& id)
+   throw (no_such_subscription_error) = 0;
 
    /**
     * Update a variable by replacing its value with the given one.
     *
     * @param subs_id the ID of the subscription to the variable (previously
-    *                obtained from subscribe() function.
+    *                obtained from subscribe() function)
     * @param var_value the new value of the variable
     */
    virtual void update(
          const subscription_id& subs_id,
          const variable_value& var_value)
-   throw (unknown_subscription_error, illegal_value_error) = 0;
+   throw (no_such_subscription_error, illegal_value_error) = 0;
 };
 
 }} // namespace oac::fv

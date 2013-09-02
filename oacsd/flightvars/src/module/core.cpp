@@ -33,7 +33,7 @@ subscription_id
 flight_vars_core::subscribe(
       const variable_id& var,
       const var_update_handler& handler)
-throw (unknown_variable_error)
+throw (no_such_variable_error)
 {
    auto& master = get_master_by_var_id(var);
    auto id = master->subscribe(var, handler);
@@ -42,21 +42,22 @@ throw (unknown_variable_error)
 }
 
 void
-flight_vars_core::unsubscribe(const subscription_id& id)
+flight_vars_core::unsubscribe(
+      const subscription_id& id)
+throw (no_such_subscription_error)
 {
    auto entry = _subscriptions.find(id);
-   if (entry != _subscriptions.end())
-   {
-      entry->second->unsubscribe(id);
-      _subscriptions.erase(entry);
-   }
+   if (entry == _subscriptions.end())
+      OAC_THROW_EXCEPTION(no_such_subscription_error().with_subs_id(id));
+   entry->second->unsubscribe(id);
+   _subscriptions.erase(entry);
 }
 
 void
 flight_vars_core::update(
       const subscription_id& subs_id,
       const variable_value& var_value)
-throw (unknown_variable_error, illegal_value_error)
+throw (no_such_variable_error, illegal_value_error)
 {
    if (auto master = get_master_by_subs_id(subs_id))
       master->update(subs_id, var_value);
@@ -78,12 +79,12 @@ throw (master_already_registered)
 std::shared_ptr<flight_vars>&
 flight_vars_core::get_master_by_var_id(
       const variable_id& var_id)
-throw (unknown_variable_error)
+throw (no_such_variable_error)
 {
    auto grp = get_var_group(var_id);
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
-      OAC_THROW_EXCEPTION(unknown_variable_error()
+      OAC_THROW_EXCEPTION(no_such_variable_error()
             .with_var_group_tag(get_var_group(var_id))
             .with_var_name_tag(get_var_name(var_id)));
    return entry->second;

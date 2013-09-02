@@ -290,7 +290,7 @@ flight_vars_server::handle_subscription_request(
             subs_id,
             "");
    }
-   catch (flight_vars::unknown_variable_error& e)
+   catch (flight_vars::no_such_variable_error& e)
    {
       log(
             log_level::WARN,
@@ -323,7 +323,7 @@ flight_vars_server::handle_unsubscription_request(
             subs_id,
             "");
    }
-   catch (const flight_vars::unknown_subscription_error& e)
+   catch (const flight_vars::no_such_subscription_error& e)
    {
       log_warn(
             "cannot unsubscribe from %d: unknown subscription:\n%s",
@@ -452,7 +452,7 @@ flight_vars_server::handle_var_update_request(
    {
       _delegate->update(req.subs_id, req.var_value);
    }
-   catch (flight_vars::unknown_subscription_error& e)
+   catch (flight_vars::no_such_subscription_error& e)
    {
       log(
             log_level::WARN,

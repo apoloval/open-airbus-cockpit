@@ -56,14 +56,17 @@ public:
 
    virtual subscription_id subscribe(
          const variable_id& var,
-         const var_update_handler& handler) throw (unknown_variable_error);
+         const var_update_handler& handler)
+   throw (no_such_variable_error);
 
-   virtual void unsubscribe(const subscription_id& id);
+   virtual void unsubscribe(
+         const subscription_id& id)
+   throw (no_such_subscription_error);
 
    virtual void update(
          const subscription_id& subs_id,
          const variable_value& var_value)
-   throw (unknown_variable_error, illegal_value_error);
+   throw (no_such_subscription_error, illegal_value_error);
 
    /**
     * Register a master for given variable group. If there is already a
@@ -90,7 +93,7 @@ private:
 
    std::shared_ptr<flight_vars>& get_master_by_var_id(
          const variable_id& var_id)
-   throw (unknown_variable_error);
+   throw (no_such_variable_error);
 
    std::shared_ptr<flight_vars> get_master_by_subs_id(
          const subscription_id& subs_id);
