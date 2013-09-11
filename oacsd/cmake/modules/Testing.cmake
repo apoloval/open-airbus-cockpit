@@ -31,13 +31,15 @@ endmacro(test_link_libraries)
 # Internal function. Do not use.
 function(add_simple_test testname)
    set(target_name_prefix ${ARGV1})
+   set(test_source "test/${testname}.cpp")
+   get_filename_component(testname ${testname} NAME)
    if (target_name_prefix)
       set(target_name "${target_name_prefix}_${testname}")
    else()
       set(target_name ${testname})
    endif()
 
-   add_executable(${target_name} test/${testname}.cpp)
+   add_executable(${target_name} ${test_source})
    target_link_libraries(${target_name} ${test_libraries})
 endfunction(add_simple_test)
 
