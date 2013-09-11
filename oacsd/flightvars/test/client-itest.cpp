@@ -162,7 +162,7 @@ struct let_test
             "localhost",
             port,
             flight_vars_client::error_handler(),
-            boost::chrono::seconds(1)));
+            std::chrono::seconds(1)));
 
       return *this;
    }
@@ -460,7 +460,7 @@ BOOST_AUTO_TEST_CASE(MustThrowWhenServerClosesBeforeHandshake)
             .prepare_server_to_close_on_next_request()
             .connect()
             .close(),
-         flight_vars_client::communication_error);
+         communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenServerRespondsWithGarbageToHandshake)
@@ -470,7 +470,7 @@ BOOST_AUTO_TEST_CASE(MustThrowWhenServerRespondsWithGarbageToHandshake)
             .prepare_server_to_send_garbage_on_next_request()
             .connect()
             .close(),
-         flight_vars_client::communication_error);
+         communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenServerRespondsWithWrongMessageToHandshake)
@@ -486,7 +486,7 @@ BOOST_AUTO_TEST_CASE(MustThrowWhenServerRespondsWithWrongMessageToHandshake)
                         "Bad luck!"))
             .connect()
             .close(),
-         flight_vars_client::communication_error);
+         communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustSubscribeToVariable)
@@ -551,7 +551,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnSubscriptionReplyWithRepeatedSubscriptionId)
          .subscribe("foobar", "datum1")
          .prepare_server_for_subscription("foobar", "datum2", 1)
          .subscribe("foobar", "datum2"),
-      flight_vars_client::communication_error);
+      communication_error);
    test
       .prepare_server_for_close()
       .close();
@@ -568,7 +568,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnSubscriptionReplyWithRepeatedVariable)
          .subscribe("foobar", "datum1")
          .prepare_server_for_subscription("foobar", "datum1", 2)
          .subscribe("foobar", "datum2"),
-      flight_vars_client::communication_error);
+      communication_error);
    test
       .prepare_server_for_close()
       .close();
@@ -582,7 +582,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnSubscriptionAndServerCloses)
          .connect()
          .prepare_server_to_close_on_next_request()
          .subscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrownOnSubscriptionAndReceivesGarbage)
@@ -593,7 +593,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnSubscriptionAndReceivesGarbage)
          .connect()
          .prepare_server_to_send_garbage_on_next_request()
          .subscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrownOnSubscriptionAndReceivesUnexpectedMessage)
@@ -605,7 +605,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnSubscriptionAndReceivesUnexpectedMessage)
          .prepare_server_to_respond_with(
                proto::begin_session_message("Bad luck!"))
          .subscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustUnsubscribeFromVariable)
@@ -662,7 +662,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnUnsubscriptionReplyWithUnknownSubscription)
          .subscribe("foobar", "datum")
          .prepare_server_for_unsubscription(1001, 700)
          .unsubscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
    test
       .prepare_server_for_close()
       .close();
@@ -678,7 +678,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnUnsubscriptionAndServerCloses)
          .subscribe("foobar", "datum")
          .prepare_server_to_close_on_next_request()
          .unsubscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrownOnUnsubscriptionAndReceivesGarbage)
@@ -691,7 +691,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnUnsubscriptionAndReceivesGarbage)
          .subscribe("foobar", "datum")
          .prepare_server_to_send_garbage_on_next_request()
          .unsubscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrownOnUnsubscriptionAndReceivesUnexpectedMessage)
@@ -705,7 +705,7 @@ BOOST_AUTO_TEST_CASE(MustThrownOnUnsubscriptionAndReceivesUnexpectedMessage)
          .prepare_server_to_respond_with(
                proto::begin_session_message("Bad luck!"))
          .unsubscribe("foobar", "datum"),
-      flight_vars_client::communication_error);
+      communication_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustReceiveVarUpdatesFromServer)

@@ -31,7 +31,7 @@ using namespace oac;
 using namespace oac::fv;
 using namespace oac::fv::client;
 
-BOOST_AUTO_TEST_SUITE(FlightVarsClientDbTest)
+BOOST_AUTO_TEST_SUITE(ClientSubscriptionDbTest)
 
 auto null_handler = [](const variable_id&, const variable_value&){};
 
@@ -74,9 +74,9 @@ BOOST_AUTO_TEST_CASE(MustCreateEntry)
 
    BOOST_CHECK(!db.entry_defined(var_id));
 
-   auto slave_subs = db.create_entry(var_id, master_subs, std::ref(receptor));
+   auto virtual_subs = db.create_entry(var_id, master_subs, std::ref(receptor));
 
-   BOOST_CHECK(master_subs != slave_subs);
+   BOOST_CHECK(master_subs != virtual_subs);
    BOOST_CHECK(db.entry_defined(var_id));
    BOOST_CHECK_NO_THROW(db.get_master_subscription_id(var_id));
    BOOST_CHECK_NO_THROW(db.invoke_handlers(
@@ -92,7 +92,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupVariable)
    subscription_db db;
    auto var_id = make_var_id("foobar", "datum");
 
-   auto slave_subs = db.create_entry(
+   auto virtual_subs = db.create_entry(
          var_id,
          make_subscription_id(),
          null_handler);
@@ -109,7 +109,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupMasterSubscription)
    subscription_db db;
    auto master_subs = make_subscription_id();
 
-   auto slave_subs = db.create_entry(
+   auto virtual_subs = db.create_entry(
          make_var_id("foobar", "datum1"),
          master_subs,
          null_handler);
@@ -121,19 +121,19 @@ BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupMasterSubscription)
          subscription_db::master_subscription_already_exists_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustAddSlaveSubscriptions)
+BOOST_AUTO_TEST_CASE(MustAddvirtualSubscriptions)
 {
    subscription_db db;
    auto var_id = make_var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
-   auto slave_subs = db.create_entry(
+   auto virtual_subs = db.create_entry(
          var_id,
          master_subs,
          std::ref(receptor[0]));
    for (int i = 1; i < 10; i++)
-      db.add_slave_subscription(var_id, std::ref(receptor[i]));
+      db.add_virtual_subscription(var_id, std::ref(receptor[i]));
 
    BOOST_CHECK_NO_THROW(db.invoke_handlers(
          master_subs,
@@ -146,31 +146,31 @@ BOOST_AUTO_TEST_CASE(MustAddSlaveSubscriptions)
    }
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowOnAddSlaveSubscriptionsForUnexistingVar)
+BOOST_AUTO_TEST_CASE(MustThrowOnAddvirtualSubscriptionsForUnexistingVar)
 {
    subscription_db db;
 
    BOOST_CHECK_THROW(
-         db.add_slave_subscription(
+         db.add_virtual_subscription(
                make_var_id("foobar", "datum"),
                null_handler),
          subscription_db::no_such_variable_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustRemoveSlaveSubscription)
+BOOST_AUTO_TEST_CASE(MustRemovevirtualSubscription)
 {
    subscription_db db;
    auto var_id = make_var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
-   auto slave_subs = db.create_entry(
+   auto virtual_subs = db.create_entry(
          var_id,
          master_subs,
          std::ref(receptor[0]));
    for (int i = 1; i < 10; i++)
-      db.add_slave_subscription(var_id, std::ref(receptor[i]));
-   BOOST_CHECK(!db.remove_slave_subscription(slave_subs));
+      db.add_virtual_subscription(var_id, std::ref(receptor[i]));
+   BOOST_CHECK(!db.remove_virtual_subscription(virtual_subs));
 
    BOOST_CHECK_NO_THROW(db.invoke_handlers(
          master_subs,
@@ -186,13 +186,13 @@ BOOST_AUTO_TEST_CASE(MustRemoveSlaveSubscription)
    BOOST_CHECK_EQUAL(0, receptor[0].received_value);
 }
 
-BOOST_AUTO_TEST_CASE(MustThrowOnRemoveUnexistingSlaveSubscription)
+BOOST_AUTO_TEST_CASE(MustThrowOnRemoveUnexistingvirtualSubscription)
 {
    subscription_db db;
 
    BOOST_CHECK_THROW(
-         db.remove_slave_subscription(make_subscription_id()),
-         subscription_db::no_such_slave_subscription_error);
+         db.remove_virtual_subscription(make_subscription_id()),
+         subscription_db::no_such_virtual_subscription_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustRemoveEntry)
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE(MustRemoveEntry)
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
-   auto slave_subs = db.create_entry(var_id, master_subs, null_handler);
+   auto virtual_subs = db.create_entry(var_id, master_subs, null_handler);
 
    db.remove_entry(var_id);
 
@@ -215,18 +215,18 @@ BOOST_AUTO_TEST_CASE(MustRemoveEntry)
          subscription_db::no_such_master_subscription_error);
 }
 
-BOOST_AUTO_TEST_CASE(MustRemoveEntryOnLastSlaveSubscriptionRemoval)
+BOOST_AUTO_TEST_CASE(MustRemoveEntryOnLastvirtualSubscriptionRemoval)
 {
    subscription_db db;
    auto var_id = make_var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
-   auto slave_subs = db.create_entry(
+   auto virtual_subs = db.create_entry(
          var_id,
          master_subs,
          std::ref(receptor[0]));
-   BOOST_CHECK(db.remove_slave_subscription(slave_subs));
+   BOOST_CHECK(db.remove_virtual_subscription(virtual_subs));
 
    BOOST_CHECK(!db.entry_defined(var_id));
    BOOST_CHECK_THROW(

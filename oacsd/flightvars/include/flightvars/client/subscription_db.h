@@ -46,24 +46,24 @@ namespace oac { namespace fv { namespace client {
  *   in this DB with the var ID, the subscription ID assigned by the server
  *   (known as master subscription ID) and a newly generated subscription ID
  *   used to identify the subscription from the client perspective (known as
- *   slave subscription ID). As result of entry creation, the slave
+ *   virtual subscription ID). As result of entry creation, the virtual
  *   subscription ID is returned. That's the ID returned as result
  *   of the subscription() function.
  *
  * - When subscription() is called for an already subscribed variable, the
- *   client cheks that querying this DB. It creates a new slave subscription ID
+ *   client cheks that querying this DB. It creates a new virtual subscription ID
  *   for that variable and returns it. No interaction is made with the server.
  *
  * - When unsubscription() is called, this DB is requested to remove the
- *   given slave subscription ID. If (and only if) it's the last slave
+ *   given virtual subscription ID. If (and only if) it's the last virtual
  *   subscription, a unsubscription request is sent to the server.
  *
  * - When update() is called, this DB is queried to obtain the master
- *   subscription ID for the given slave ID. Then it is used to send a
+ *   subscription ID for the given virtual ID. Then it is used to send a
  *   variable update message to the server.
  *
  * - When a variable update message is received from the server, this DB
- *   is queried by variable ID to obtain the list of handlers of its slave
+ *   is queried by variable ID to obtain the list of handlers of its virtual
  *   subscriptions. Then the handlers are invoked.
  *
  * Once this procedure is understood, it's easy to understand the purpose of
@@ -124,11 +124,11 @@ public:
    OAC_EXCEPTION_END()
 
    OAC_EXCEPTION_BEGIN(
-         no_such_slave_subscription_error,
+         no_such_virtual_subscription_error,
          no_such_element_exception)
       OAC_EXCEPTION_FIELD(subs_id, subscription_id)
       OAC_EXCEPTION_MSG(
-            "Slave subscription ID %d was not found in FV client DB",
+            "Virtual subscription ID %d was not found in FV client DB",
             subs_id)
    OAC_EXCEPTION_END()
 
@@ -137,8 +137,8 @@ public:
     *
     * @param var_id           The variable ID
     * @param master_subs_id   The master subscription ID
-    * @param handler          The handler of the slave subscription
-    * @return                 The slave subscription ID
+    * @param handler          The handler of the virtual subscription
+    * @return                 The virtual subscription ID
     */
    subscription_id create_entry(
          const variable_id& var_id,
@@ -164,26 +164,26 @@ public:
    bool entry_defined(const variable_id& var_id) const;
 
    /**
-    * Add a new slave subscription for the entry identified by given variable.
+    * Add a new virtual subscription for the entry identified by given variable.
     *
     * @param var_id  The variable that identifies the entry
-    * @param handler The handler of the newly created slave subscription
-    * @return        The ID of the newly created slave subscription
+    * @param handler The handler of the newly created virtual subscription
+    * @return        The ID of the newly created virtual subscription
     */
-   subscription_id add_slave_subscription(
+   subscription_id add_virtual_subscription(
          const variable_id& var_id,
          const flight_vars::var_update_handler& handler)
    throw (no_such_element_exception);
 
    /**
-    * Remove the slave subscription identified by given ID and indicate whether
-    * the entry was removed due to it had no more slave subscriptions.
+    * Remove the virtual subscription identified by given ID and indicate whether
+    * the entry was removed due to it had no more virtual subscriptions.
     *
-    * @param slave_subs_id    The ID of the slave subscription to be removed
+    * @param virtual_subs_id    The ID of the virtual subscription to be removed
     * @return                 True if the entry was removed
     */
-   bool remove_slave_subscription(
-         const subscription_id& slave_subs_id)
+   bool remove_virtual_subscription(
+         const subscription_id& virtual_subs_id)
    throw (no_such_element_exception);
 
    /**
@@ -197,21 +197,21 @@ public:
    throw (no_such_element_exception);
 
    /**
-    * Obtain the master subscription ID for given slave subscription.
+    * Obtain the master subscription ID for given virtual subscription.
     *
-    * @param slave_subs_id The ID of the slave subscription whose master
+    * @param virtual_subs_id The ID of the virtual subscription whose master
     *                      subscription is seek
     * @return              The ID of the master subscription
     */
    subscription_id get_master_subscription_id(
-         subscription_id slave_subs_id)
+         subscription_id virtual_subs_id)
    throw (no_such_element_exception);
 
    /**
-    * Invoke the handlers of the slave subscriptions for given master
+    * Invoke the handlers of the virtual subscriptions for given master
     * subscription.
     *
-    * @param master_subs_id   The ID of the master subscription whose slaves
+    * @param master_subs_id   The ID of the master subscription whose virtuals
     *                         handlers are to be invoked
     * @param var_value        The value passed to the handlers
     */
@@ -239,7 +239,7 @@ private:
    {
       variable_id var_id;
       subscription_id master_subs_id;
-      std::list<subscription> slave_subs;
+      std::list<subscription> virtual_subs;
 
       entry(
             const variable_id& var,
@@ -253,7 +253,7 @@ private:
 
    std::unordered_map<variable_id, entry_ptr, variable_id_hash> _var_id_map;
    std::unordered_map<subscription_id, entry_ptr> _master_subs_id_map;
-   std::unordered_map<subscription_id, entry_ptr> _slave_subs_id_map;
+   std::unordered_map<subscription_id, entry_ptr> _virtual_subs_id_map;
 
    bool variable_defined(
          const variable_id& var_id) const;
@@ -261,7 +261,7 @@ private:
    bool master_subscription_defined(
          subscription_id subs_id) const;
 
-   bool slave_subscription_defined(
+   bool virtual_subscription_defined(
          subscription_id subs_id) const;
 
    entry_ptr init_entry(
@@ -273,19 +273,19 @@ private:
    throw (no_such_element_exception);
 
    entry_ptr get_entry_by_master(
-         const subscription_id& slave)
+         const subscription_id& virt_subs_id)
    throw (no_such_element_exception);
 
-   entry_ptr get_entry_by_slave(
-         const subscription_id& slave)
+   entry_ptr get_entry_by_virtual(
+         const subscription_id& virt_subs_id)
    throw (no_such_element_exception);
 
-   std::list<subscription> get_slave_subscriptions(
+   std::list<subscription> get_virtual_subscriptions(
          const variable_id& var_id)
    throw (no_such_element_exception);
 
-   unsigned int remove_slave(
-         const subscription_id& slave_subs_id)
+   unsigned int remove_virtual(
+         const subscription_id& virtual_subs_id)
    throw (no_such_element_exception);
 };
 

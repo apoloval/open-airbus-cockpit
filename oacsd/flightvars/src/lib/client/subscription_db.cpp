@@ -39,7 +39,7 @@ throw (already_exists_exception)
 
    init_entry(var_id, master_subs_id);
 
-   return add_slave_subscription(var_id, handler);
+   return add_virtual_subscription(var_id, handler);
 }
 
 void
@@ -48,9 +48,9 @@ subscription_db::remove_entry(
 throw (no_such_element_exception)
 {
    auto e = get_entry_by_var(var_id);
-   auto slaves = get_slave_subscriptions(var_id);
-   for (auto& subs : slaves)
-      remove_slave(subs.id);
+   auto virtuals = get_virtual_subscriptions(var_id);
+   for (auto& subs : virtuals)
+      remove_virtual(subs.id);
    _master_subs_id_map.erase(e->master_subs_id);
    _var_id_map.erase(var_id);
 }
@@ -63,7 +63,7 @@ subscription_db::entry_defined(
 }
 
 subscription_id
-subscription_db::add_slave_subscription(
+subscription_db::add_virtual_subscription(
       const variable_id& var_id,
       const flight_vars::var_update_handler& handler)
 throw (no_such_element_exception)
@@ -72,22 +72,22 @@ throw (no_such_element_exception)
       OAC_THROW_EXCEPTION(no_such_variable_error()
             .with_var_group_tag(get_var_group(var_id))
             .with_var_name_tag(get_var_name(var_id)));
-   auto slave_subs = subscription(
+   auto virtual_subs = subscription(
          make_subscription_id(),
          handler);
    auto e = _var_id_map[var_id];
-   e->slave_subs.push_back(slave_subs);
-   _slave_subs_id_map[slave_subs.id] = e;
-   return slave_subs.id;
+   e->virtual_subs.push_back(virtual_subs);
+   _virtual_subs_id_map[virtual_subs.id] = e;
+   return virtual_subs.id;
 }
 
 bool
-subscription_db::remove_slave_subscription(
-      const subscription_id& slave_subs_id)
+subscription_db::remove_virtual_subscription(
+      const subscription_id& virtual_subs_id)
 throw (no_such_element_exception)
 {
-   auto e = get_entry_by_slave(slave_subs_id);
-   if (remove_slave(slave_subs_id) == 0)
+   auto e = get_entry_by_virtual(virtual_subs_id);
+   if (remove_virtual(virtual_subs_id) == 0)
    {
       remove_entry(e->var_id);
       return true;
@@ -105,10 +105,10 @@ throw (no_such_element_exception)
 
 subscription_id
 subscription_db::get_master_subscription_id(
-      subscription_id slave_subs_id)
+      subscription_id virtual_subs_id)
 throw (no_such_element_exception)
 {
-   return get_entry_by_slave(slave_subs_id)->master_subs_id;
+   return get_entry_by_virtual(virtual_subs_id)->master_subs_id;
 }
 
 void
@@ -118,8 +118,8 @@ subscription_db::invoke_handlers(
 throw (no_such_element_exception)
 {
    auto e = get_entry_by_master(master_subs_id);
-   auto slaves = get_slave_subscriptions(e->var_id);
-   for (auto& s : slaves)
+   auto virtuals = get_virtual_subscriptions(e->var_id);
+   for (auto& s : virtuals)
    {
       s.handler(e->var_id, var_value);
    }
@@ -140,10 +140,10 @@ subscription_db::master_subscription_defined(
 }
 
 bool
-subscription_db::slave_subscription_defined(
+subscription_db::virtual_subscription_defined(
       subscription_id subs_id) const
 {
-   return _slave_subs_id_map.find(subs_id) != _slave_subs_id_map.end();
+   return _virtual_subs_id_map.find(subs_id) != _virtual_subs_id_map.end();
 }
 
 subscription_db::entry_ptr
@@ -181,36 +181,36 @@ throw (no_such_element_exception)
 }
 
 subscription_db::entry_ptr
-subscription_db::get_entry_by_slave(
-      const subscription_id& slave)
+subscription_db::get_entry_by_virtual(
+      const subscription_id& virt_subs_id)
 throw (no_such_element_exception)
 {
-   if (!slave_subscription_defined(slave))
-      OAC_THROW_EXCEPTION(no_such_slave_subscription_error()
-            .with_subs_id(slave));
-   return _slave_subs_id_map[slave];
+   if (!virtual_subscription_defined(virt_subs_id))
+      OAC_THROW_EXCEPTION(no_such_virtual_subscription_error()
+            .with_subs_id(virt_subs_id));
+   return _virtual_subs_id_map[virt_subs_id];
 }
 
 std::list<subscription_db::subscription>
-subscription_db::get_slave_subscriptions(
+subscription_db::get_virtual_subscriptions(
          const variable_id& var_id)
    throw (no_such_element_exception)
 {
-   return get_entry_by_var(var_id)->slave_subs;
+   return get_entry_by_var(var_id)->virtual_subs;
 }
 
 unsigned int
-subscription_db::remove_slave(
-      const subscription_id& slave_subs_id)
+subscription_db::remove_virtual(
+      const subscription_id& virtual_subs_id)
 throw (no_such_element_exception)
 {
-   auto e = get_entry_by_slave(slave_subs_id);
-   e->slave_subs.remove_if([slave_subs_id](const subscription& s)
+   auto e = get_entry_by_virtual(virtual_subs_id);
+   e->virtual_subs.remove_if([virtual_subs_id](const subscription& s)
    {
-      return s.id == slave_subs_id;
+      return s.id == virtual_subs_id;
    });
-   _slave_subs_id_map.erase(slave_subs_id);
-   return e->slave_subs.size();
+   _virtual_subs_id_map.erase(virtual_subs_id);
+   return e->virtual_subs.size();
 }
 
 }}} // namespace oac::fv::client

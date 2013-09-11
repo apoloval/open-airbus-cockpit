@@ -128,6 +128,16 @@ inline std::string var_to_string(const variable_id& id)
 }
 
 /**
+ * Stream output operator for variable ID.
+ */
+inline std::ostream& operator << (
+      std::ostream& s,
+      const variable_id& var_id)
+{
+   return s << var_to_string(var_id);
+}
+
+/**
  * A hash function for a variable ID.
  */
 struct variable_id_hash
