@@ -85,6 +85,22 @@ flight_vars_client::update(
       const variable_value& var_value)
 throw (no_such_subscription_error, illegal_value_error)
 {
+   try
+   {
+      auto req = std::make_shared<client::variable_update_request>(
+            subs_id,
+            var_value);
+      _conn_mngr.submit(req);
+      return req->get_result(_request_timeout);
+   }
+   catch (const client::request_timeout_error& e)
+   {
+      log_fail(
+         "Variable update request for subscription %d timed out",
+         subs_id);
+      OAC_THROW_EXCEPTION(client::communication_error()
+            .with_cause(e));
+   }
 }
 
 }} // namespace oac::fv

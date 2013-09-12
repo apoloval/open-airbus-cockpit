@@ -101,6 +101,19 @@ struct let_test
       return *this;
    }
 
+   let_test& prepare_server_for_var_update(
+         subscription_id expected_subs_id,
+         const variable_value& expected_var_value)
+   {
+      _current_srv_action = std::bind(
+            &let_test::server_receive_var_update,
+            this,
+            expected_subs_id,
+            expected_var_value,
+            std::placeholders::_1);
+      return *this;
+   }
+
    let_test& prepare_server_to_close_on_next_request()
    {
       _current_srv_action = server_action();
@@ -198,6 +211,25 @@ struct let_test
          subscription_id subs_id)
    {
       _client->unsubscribe(subs_id);
+      return *this;
+   }
+
+   let_test& update(
+         const variable_group::tag_type& grp,
+         const variable_name::tag_type& name,
+         const variable_value& value)
+   {
+      auto var_id = make_var_id(grp, name);
+      auto subs_id = _subscriptions[var_id];
+      return update(subs_id, value);
+   }
+
+   let_test& update(
+         subscription_id subs_id,
+         const variable_value& value)
+   {
+      _client->update(subs_id, value);
+      sleep(100);
       return *this;
    }
 
@@ -375,6 +407,17 @@ private:
                      proto::subscription_status::NO_SUCH_SUBSCRIPTION,
                      0,
                      "No such subscription found in server"));
+   }
+
+   void server_receive_var_update(
+         subscription_id expected_subs_id,
+         const variable_value& expected_var_value,
+         const async_tcp_connection::ptr_type& conn)
+   {
+      auto req = server_receive_message_as<
+            proto::var_update_message>();
+      BOOST_REQUIRE_EQUAL(expected_subs_id, req.subs_id);
+      BOOST_REQUIRE_EQUAL(expected_var_value, req.var_value);
    }
 
    void server_send_garbage(
@@ -767,5 +810,33 @@ BOOST_AUTO_TEST_CASE(MustIgnoreUnknownVarUpdatesFromServer)
       .close();
 }
 
+BOOST_AUTO_TEST_CASE(MustSendVarUpdateFromClient)
+{
+   let_test()
+      .prepare_server_for_handshake()
+      .connect()
+      .prepare_server_for_subscription("foobar", "datum", 8000)
+      .subscribe("foobar", "datum")
+      .prepare_server_for_var_update(8000, variable_value::from_byte(127))
+      .update("foobar", "datum", variable_value::from_byte(127))
+      .prepare_server_for_close()
+      .close();
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnVarUpdateSentForUnknownSubscription)
+{
+   let_test test;
+   BOOST_CHECK_THROW(
+      test
+         .prepare_server_for_handshake()
+         .connect()
+         .prepare_server_for_subscription("foobar", "datum", 8000)
+         .subscribe("foobar", "datum")
+         .update(1234, variable_value::from_byte(127)),
+      flight_vars::no_such_subscription_error);
+   test
+      .prepare_server_for_close()
+      .close();
+}
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -57,6 +57,11 @@ public:
     */
    void submit(const unsubscription_request_ptr& req);
 
+   /**
+    * Submit a variable update request to this manager.
+    */
+   void submit(const variable_update_request_ptr& req);
+
 private:
 
    error_handler _error_handler;
@@ -84,6 +89,9 @@ private:
 
    void on_unsubscription_requested(
          const unsubscription_request_ptr& req);
+
+   void on_variable_update_requested(
+         const variable_update_request_ptr& req);
 
    void on_message_received(
          const boost::system::error_code& ec,

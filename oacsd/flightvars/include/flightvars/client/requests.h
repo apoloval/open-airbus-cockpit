@@ -170,6 +170,34 @@ private:
 typedef std::shared_ptr<unsubscription_request> unsubscription_request_ptr;
 
 /**
+ * A request of variable update.
+ */
+class variable_update_request : public request<void>
+{
+public:
+
+   variable_update_request(
+         subscription_id subs_id,
+         const variable_value& var_value)
+      : _virtual_subs_id(subs_id),
+        _var_value(var_value)
+   {}
+
+   subscription_id virtual_subs_id() const
+   { return _virtual_subs_id; }
+
+   const variable_value& var_value() const
+   { return _var_value; }
+
+private:
+
+   subscription_id _virtual_subs_id;
+   variable_value _var_value;
+};
+
+typedef std::shared_ptr<variable_update_request> variable_update_request_ptr;
+
+/**
  * A pool of requests maintained by the connection manager to track the
  * pending actions over the connection.
  */

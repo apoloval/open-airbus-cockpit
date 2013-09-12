@@ -72,6 +72,19 @@ connection_manager::submit(
 }
 
 void
+connection_manager::submit(
+      const variable_update_request_ptr& req)
+{
+   log_info(
+         "Sending a variable update for virtual subscription %d",
+         req->virtual_subs_id());
+   _io_service->post(std::bind(
+         &connection_manager::on_variable_update_requested,
+         this,
+         req));
+}
+
+void
 connection_manager::handshake(
       const std::string& client_name)
 throw (communication_error)
@@ -283,6 +296,30 @@ connection_manager::on_unsubscription_requested(
             virt_subs_id);
       req->set_error(
             OAC_MAKE_EXCEPTION(flight_vars::no_such_subscription_error()
+                  .with_cause(e)));
+   }
+}
+
+void
+connection_manager::on_variable_update_requested(
+      const variable_update_request_ptr& req)
+{
+   auto virt_subs_id = req->virtual_subs_id();
+   try
+   {
+      auto master_subs_id = _db.get_master_subscription_id(virt_subs_id);
+      proto::var_update_message msg(master_subs_id, req->var_value());
+      send_message(msg);
+      req->set_result();
+   }
+   catch (const subscription_db::no_such_virtual_subscription_error& e)
+   {
+      log_warn(
+            "Cannot send variable update for unknown virtual subscription %d",
+            virt_subs_id);
+      req->set_error(
+            OAC_MAKE_EXCEPTION(flight_vars::no_such_subscription_error()
+                  .with_subs_id(virt_subs_id)
                   .with_cause(e)));
    }
 }

@@ -239,6 +239,14 @@ private:
 };
 
 /**
+ * Output stream operator for variable_value.
+ */
+inline std::ostream& operator <<(
+      std::ostream& s,
+      const variable_value& var_value)
+{ return s << var_value.to_string(); }
+
+/**
  * An opaque object which identifies a variable subscription. The internal
  * representation of this type is intended to be opaque to the API consumer.
  */
