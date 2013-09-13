@@ -70,7 +70,7 @@ throw (no_such_variable_error)
 
    if (result.wait_for(_request_timeout) == boost::future_status::timeout)
    {
-      log_fail(
+      log_error(
             "Subscription request for %s timed out",
             var_to_string(var));
       OAC_THROW_EXCEPTION(communication_error());
@@ -86,7 +86,7 @@ throw (no_such_variable_error)
    }
    catch (const oac::exception& e)
    {
-      log_fail(
+      log_error(
             "An error occurred while expecting subscription reply:\n%s",
             e.report());
       OAC_THROW_EXCEPTION(communication_error().with_cause(e));
@@ -107,7 +107,7 @@ flight_vars_client::unsubscribe(const subscription_id& id)
 
    if (result.wait_for(_request_timeout) == boost::future_status::timeout)
    {
-      log_fail("Unsubscription request for %d timed out", id);
+      log_error("Unsubscription request for %d timed out", id);
       OAC_THROW_EXCEPTION(communication_error());
    }
 
@@ -122,7 +122,7 @@ flight_vars_client::unsubscribe(const subscription_id& id)
    }
    catch (const oac::exception& e)
    {
-      log_fail(
+      log_error(
             "An error occurred while expecting unsubscription reply:\n%s",
             e.report());
       OAC_THROW_EXCEPTION(communication_error().with_cause(e));
@@ -177,7 +177,7 @@ throw (communication_error)
          }
          else
          {
-            log_fail(
+            log_error(
                   "Server responded with an unexpected message while "
                   "waiting for a begin session message");
             OAC_THROW_EXCEPTION(communication_error());
@@ -198,7 +198,7 @@ throw (communication_error)
       }
       catch (const io_exception& e)
       {
-         log_fail(
+         log_error(
                "IO error while reading response from the server:\n%s",
                e.report());
          OAC_THROW_EXCEPTION(communication_error()
@@ -206,7 +206,7 @@ throw (communication_error)
       }
       catch (const proto::protocol_exception& e)
       {
-         log_fail(
+         log_error(
                "protocol error while reading response from the server:\n%s",
                e.report());
          OAC_THROW_EXCEPTION(communication_error()
@@ -426,7 +426,7 @@ flight_vars_client::on_message_received(
       {
          // If there is no promise, we have to report the error using the
          // error handler provided at client construction.
-         log_fail(
+         log_error(
                "Unexpected error occurred while receiving a message:\n%s",
                e.report());
 
@@ -540,7 +540,7 @@ flight_vars_client::on_variable_update_received(
    {
       auto ce = OAC_MAKE_EXCEPTION(communication_error()
             .with_cause(e));
-      log_fail(
+      log_error(
             "Variable update message received for unknown subscription %d\n%s",
             msg.subs_id,
             e.report());

@@ -397,7 +397,7 @@ flight_vars_server::send_var_update(
    {
       session->unsubscribe_all();
       log(
-            log_level::FAIL,
+            log_level::ERROR,
             "Unexpected IO exception thrown while "
             "sending a var update to the client:\n%s",
             e.report());
@@ -433,7 +433,7 @@ flight_vars_server::on_write_message(
    if (ec)
    {
       log(
-            log_level::FAIL,
+            log_level::ERROR,
             "An error was returned while writing message:\n%s", ec.message());
    }
    else if (bytes_transferred == 0)

@@ -28,14 +28,22 @@
 
 namespace oac { 
 
+// Windows headers define a ERROR header that prevents the log_level enum to
+// use such identifier. If so, the macro is undefined to avoid substitutions.
+#ifdef ERROR
+#undef ERROR
+#endif
+
 /**
  * The level of severity of the logged entries.
  */
 enum class log_level
 {
+   TRACE,
 	INFO,
    WARN,
-   FAIL,
+   ERROR,
+   FATAL
 };
 
 /**
@@ -159,6 +167,15 @@ protected:
    { log(_author, level, format(fmt, args...)); }
 
    /**
+    * Convenience function for logging TRACE entries.
+    */
+   template <typename... Args>
+   void log_trace(
+         const char* fmt,
+         const Args&... args)
+   { log(log_level::TRACE, fmt, args...); }
+
+   /**
     * Convenience function for logging INFO entries.
     */
    template <typename... Args>
@@ -177,13 +194,22 @@ protected:
    { log(log_level::WARN, fmt, args...); }
 
    /**
-    * Convenience function for logging FAIL entries.
+    * Convenience function for logging ERROR entries.
     */
    template <typename... Args>
-   void log_fail(
+   void log_error(
          const char* fmt,
          const Args&... args)
-   { log(log_level::FAIL, fmt, args...); }
+   { log(log_level::ERROR, fmt, args...); }
+
+   /**
+    * Convenience function for logging FATAL entries.
+    */
+   template <typename... Args>
+   void log_fatal(
+         const char* fmt,
+         const Args&... args)
+   { log(log_level::FATAL, fmt, args...); }
 
 private:
 

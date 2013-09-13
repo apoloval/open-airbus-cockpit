@@ -123,7 +123,7 @@ throw (communication_error)
          }
          else
          {
-            log_fail(
+            log_error(
                   "Server responded with an unexpected message while "
                   "waiting for a begin session message");
             OAC_THROW_EXCEPTION(communication_error());
@@ -144,7 +144,7 @@ throw (communication_error)
       }
       catch (const io_exception& e)
       {
-         log_fail(
+         log_error(
                "IO error while reading response from the server:\n%s",
                e.report());
          OAC_THROW_EXCEPTION(communication_error()
@@ -152,7 +152,7 @@ throw (communication_error)
       }
       catch (const proto::protocol_exception& e)
       {
-         log_fail(
+         log_error(
                "protocol error while reading response from the server:\n%s",
                e.report());
          OAC_THROW_EXCEPTION(communication_error()
@@ -379,7 +379,7 @@ connection_manager::on_message_received(
    }
    catch (const oac::exception& e)
    {
-      log_fail(
+      log_error(
             "Unexpected error occurred while receiving a message:\n%s",
             e.report());
 
@@ -494,7 +494,7 @@ connection_manager::on_variable_update_received(
    {
       auto ce = OAC_MAKE_EXCEPTION(communication_error()
             .with_cause(e));
-      log_fail(
+      log_error(
             "Variable update message received for unknown subscription %d\n%s",
             msg.subs_id,
             e.report());

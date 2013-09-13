@@ -69,15 +69,15 @@ struct flight_vars_component_launcher : logger_component
          }
          catch (oac::exception& e)
          {
-            log(
-                  log_level::FAIL,
+            log_error(
                   "Unexpected error while initializing tick observer:\n%s",
                   e.report());
+            throw e;
          }
       }
    }
 
-   bool
+   void
    start_fsuipc()
    {
       try
@@ -94,16 +94,14 @@ struct flight_vars_component_launcher : logger_component
                fsuipc);
 
          log_info("FSUIPC FlightVars object successfully initialized");
-         return true;
       }
       catch (oac::exception& e)
       {
-         log(
-               log_level::FAIL,
+         log_error(
                "Unexpected error while initializing FSUIPC "
                "Flight Vars object:\n%s",
                e.report());
-         return false;
+         throw e;
       }
    }
 
@@ -132,8 +130,7 @@ struct flight_vars_component_launcher : logger_component
                   }
                   catch (oac::exception& e)
                   {
-                     log(
-                           log_level::FAIL,
+                     log_error(
                            "Unexpected error while running the IO service: %s",
                            e.report());
                   }
@@ -143,10 +140,8 @@ struct flight_vars_component_launcher : logger_component
             log_info("FlightVars TCP server successfully initialized");
          } catch (oac::exception& e)
          {
-            log(
-                  log_level::FAIL,
-                  "Unexpected error: %s",
-                  e.report());
+            log_error("Unexpected error: %s", e.report());
+            throw e;
          }
       }
    }
@@ -179,14 +174,14 @@ void __stdcall DLLStart(void)
    {
       log(
             "DLLStart",
-            log_level::FAIL,
+            log_level::FATAL,
             format("Unexpected error: %s", e.report()));
    }
    catch (...)
    {
       log(
             "DLLStart",
-            log_level::FAIL,
+            log_level::FATAL,
             "Unexpected error: unknown exception thrown");
    }
 }
