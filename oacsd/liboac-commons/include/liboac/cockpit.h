@@ -167,6 +167,8 @@ public:
       virtual void pull_knob(fcu_knob knob) = 0;
    };
 
+   typedef std::shared_ptr<flight_control_unit> flight_control_unit_ptr;
+
    class efis_control_panel {
    public:
       inline virtual ~efis_control_panel() {}
@@ -189,6 +191,8 @@ public:
       virtual nd_nav_mode_switch get_nd_nav2_mode_switch() const = 0;
       virtual void set_nd_nav2_mode_switch(nd_nav_mode_switch value) = 0;
    };
+
+   typedef std::shared_ptr<efis_control_panel> efis_control_panel_ptr;
 
    inline virtual ~cockpit_front() {}
 
@@ -265,6 +269,8 @@ public:
       virtual void set_fpa_value(degrees100 value) = 0;
    };
 
+   typedef std::shared_ptr<flight_control_unit> flight_control_unit_ptr;
+
    class efis_control_panel {
    public:
 
@@ -295,6 +301,8 @@ public:
       virtual void set_nd_nav2_mode_switch(nd_nav_mode_switch value) = 0;
    };
 
+   typedef std::shared_ptr<efis_control_panel> efis_control_panel_ptr;
+
    void map(cockpit_front& front) throw (sync_error);
 
    /**
@@ -311,6 +319,8 @@ public:
 
    virtual efis_control_panel& get_efis_control_panel() throw (sync_error) = 0;
 };
+
+typedef std::shared_ptr<cockpit_back> cockpit_back_ptr;
 
 }; // namespace oac
 

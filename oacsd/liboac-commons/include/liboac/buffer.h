@@ -31,7 +31,6 @@
 
 #include "exception.h"
 #include "io.h"
-#include "lang-utils.h"
 #include "stream.h"
 
 namespace oac {
@@ -43,7 +42,11 @@ namespace oac {
  * writing to bytes. Buffer concept extends the InputStream and OutputStream
  * concepts, so it implements their members plus:
  *
+ * typedef std::shared_ptr<Buffer> ptr_type;
+ *
  * typedef BufferFactory factory_type;
+ *
+ * typedef std::shared_ptr<factory_type> factory_ptr;
  *
  * std::size_t Buffer::capacity() const;
  *
@@ -310,7 +313,7 @@ private:
  * not Stream. For streamed buffer please check linear_buffer or ring_buffer
  * classes.
  */
-class fixed_buffer : public shared_by_ptr<fixed_buffer>
+class fixed_buffer
 {
 public:
 
@@ -332,7 +335,9 @@ public:
       size_t _capacity;
    };
 
+   typedef std::shared_ptr<fixed_buffer> ptr_type;
    typedef factory factory_type;
+   typedef std::shared_ptr<factory_type> factory_ptr;
 
    fixed_buffer(size_t capacity);
 
@@ -391,8 +396,11 @@ private:
          throw (buffer::index_out_of_bounds);
 };
 
+typedef std::shared_ptr<fixed_buffer> fixed_buffer_ptr;
+
+
+
 class linear_buffer :
-      public shared_by_ptr<linear_buffer>,
       public linear_stream_buffer_base<fixed_buffer>
 {
 public:
@@ -415,7 +423,9 @@ public:
       std::size_t _capacity;
    };
 
+   typedef std::shared_ptr<linear_buffer> ptr_type;
    typedef factory factory_type;
+   typedef std::shared_ptr<factory_type> factory_ptr;
 
    /**
     * Create a new linear buffer with given capacity.
@@ -456,8 +466,11 @@ private:
    fixed_buffer _fixed_buffer;
 };
 
+typedef std::shared_ptr<linear_buffer> linear_buffer_ptr;
+
+
+
 class ring_buffer :
-      public shared_by_ptr<ring_buffer>,
       public ring_stream_buffer_base<fixed_buffer>
 {
 public:
@@ -480,7 +493,9 @@ public:
       std::size_t _capacity;
    };
 
+   typedef std::shared_ptr<ring_buffer> ptr_type;
    typedef factory factory_type;
+   typedef std::shared_ptr<factory_type> factory_ptr;
 
    ring_buffer(std::size_t capacity);
 
@@ -520,6 +535,10 @@ private:
    fixed_buffer _fixed_buffer;
 };
 
+typedef std::shared_ptr<ring_buffer> ring_buffer_ptr;
+
+
+
 /**
  * Shifted buffer class. This class provides a decorator that shifts
  * the offset on read and write operations. The decorated buffer and
@@ -529,7 +548,6 @@ private:
  */
 template <typename Buffer>
 class shifted_buffer :
-      public shared_by_ptr<shifted_buffer<Buffer>>,
       public linear_stream_buffer_base<shifted_buffer<Buffer>>
 {
 public:
@@ -540,25 +558,30 @@ public:
 
       typedef shifted_buffer value_type;
 
-      inline factory(const ptr<typename Buffer::factory_type>& backed_buffer_fact,
-                     std::uint32_t shift)
+      factory(
+            const typename Buffer::factory_ptr& backed_buffer_fact,
+            std::uint32_t shift)
          : _backed_buffer_fact(backed_buffer_fact), _shift(shift)
       {}
       
       inline virtual shifted_buffer* create_buffer() const
       { 
-         return new shifted_buffer(_backed_buffer_fact->create_buffer(), _shift);
+         return new shifted_buffer(
+               Buffer::ptr_type(_backed_buffer_fact->create_buffer()),
+               _shift);
       }
       
    private:
 
-      ptr<typename Buffer::factory_type> _backed_buffer_fact;
+      typename Buffer::factory_ptr _backed_buffer_fact;
       std::uint32_t _shift;
    };
 
+   typedef std::shared_ptr<shifted_buffer> ptr_type;
    typedef factory factory_type;
+   typedef std::shared_ptr<factory> factory_ptr;
 
-   inline shifted_buffer(const ptr<Buffer>& backed_buffer,
+   inline shifted_buffer(const typename Buffer::ptr_type& backed_buffer,
                          std::uint32_t offset_shift)
       : linear_stream_buffer_base<shifted_buffer<Buffer>>(this),
         _backed_buffer(backed_buffer),
@@ -621,7 +644,7 @@ public:
 
 private:
 
-   ptr<Buffer> _backed_buffer;
+   typename Buffer::ptr_type _backed_buffer;
    std::size_t _backed_capacity;
    std::uint32_t _offset_shift;
 
@@ -645,7 +668,6 @@ private:
  */
 template <typename Buffer = linear_buffer>
 class double_buffer :
-      public shared_by_ptr<double_buffer<Buffer>>,
       public linear_stream_buffer_base<double_buffer<Buffer>>
 {
 public:
@@ -656,33 +678,35 @@ public:
 
       typedef double_buffer value_type;
 
-      inline factory(const ptr<typename Buffer::factory_type>& backed_buffer_fact) :
+      inline factory(const typename Buffer::factory_ptr& backed_buffer_fact) :
          _backed_buffer_fact(backed_buffer_fact)
       {}
       
       inline virtual double_buffer* create_buffer() const
       { 
          return new double_buffer(
-               _backed_buffer_fact->create_buffer(),
-               _backed_buffer_fact->create_buffer());
+               Buffer::ptr_type(_backed_buffer_fact->create_buffer()),
+               Buffer::ptr_type(_backed_buffer_fact->create_buffer()));
       }
       
    private:
 
-      ptr<typename Buffer::factory_type> _backed_buffer_fact;
+      typename Buffer::factory_ptr _backed_buffer_fact;
       DWORD _shift;
    };
 
+   typedef std::shared_ptr<double_buffer> ptr_type;
    typedef factory factory_type;
+   typedef std::shared_ptr<factory> factory_ptr;
 
-   inline double_buffer(
-         const ptr<Buffer>& backed_buffer_0,
-         const ptr<Buffer>& backed_buffer_1) :
+   double_buffer(
+         const typename Buffer::ptr_type& backed_buffer_0,
+         const typename Buffer::ptr_type& backed_buffer_1) :
       linear_stream_buffer_base<double_buffer<Buffer>>(this),
       _current_buffer(0)
    {
-      _backed_buffer[0] = ptr<Buffer>(backed_buffer_0);
-      _backed_buffer[1] = ptr<Buffer>(backed_buffer_1);
+      _backed_buffer[0] = backed_buffer_0;
+      _backed_buffer[1] = backed_buffer_1;
    }
 
    inline std::size_t capacity() const
@@ -740,36 +764,40 @@ public:
 
 private:
 
-   ptr<Buffer> _backed_buffer[2];
+   typename Buffer::ptr_type _backed_buffer[2];
    std::uint8_t _current_buffer;
 };
 
 namespace buffer {
 
    template <typename Buffer>
-   inline ptr<shifted_buffer<Buffer>> shift_buffer(
-         const ptr<Buffer>& b, std::uint32_t shift)
-   { return new shifted_buffer<Buffer>(b, shift); }
+   typename shifted_buffer<Buffer>::ptr_type shift_buffer(
+         const typename Buffer::ptr_type& b,
+         std::uint32_t shift)
+   { return std::make_shared<shifted_buffer<Buffer>>(b, shift); }
 
    template <typename BufferFactory>
-   inline ptr<typename shifted_buffer<typename BufferFactory::value_type>::factory> shift_factory(
-         const ptr<BufferFactory>& fact,
+   typename shifted_buffer<typename BufferFactory::value_type>::factory_ptr
+   shift_factory(
+         const std::shared_ptr<BufferFactory>& fact,
          std::uint32_t shift)
    {
-      return new shifted_buffer<typename BufferFactory::value_type>::factory(
+      return std::make_shared<shifted_buffer<typename BufferFactory::value_type>::factory>(
             fact, shift);
    }
 
    template <typename Buffer>
-   inline ptr<double_buffer<Buffer>> dup_buffers(
-         const ptr<Buffer>& b1, const ptr<Buffer>& b2)
-   { return new double_buffer<Buffer>(b1, b2); }
+   typename double_buffer<Buffer>::ptr_type dup_buffers(
+         const typename Buffer::ptr_type& b1,
+         const typename Buffer::ptr_type& b2)
+   { return std::make_shared<double_buffer<Buffer>>(b1, b2); }
 
    template <typename BufferFactory>
-   inline ptr<typename double_buffer<typename BufferFactory::value_type>::factory> dup_factory(
-         const ptr<BufferFactory>& fact)
+   typename double_buffer<typename BufferFactory::value_type>::factory_ptr
+   dup_factory(
+         const std::shared_ptr<BufferFactory>& fact)
    {
-      return new double_buffer<typename BufferFactory::value_type>::factory(fact);
+      return std::make_shared<double_buffer<typename BufferFactory::value_type>::factory>(fact);
    }   
 }
 

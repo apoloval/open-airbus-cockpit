@@ -61,7 +61,7 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(TcpServerTest)
 
-void test(const std::function<void(const ptr<tcp_connection>&)>& server_handler,
+void test(const std::function<void(const tcp_connection_ptr&)>& server_handler,
           const std::function<void(tcp_connection&)>& client_handler)
 {
    auto port = rand() % 7000 + 1025;
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(ServerCreationMustFailWhenPortIsUnavailable)
 BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             stream::write_as_string(*conn->output(), "Hello World!");
          },
          [](tcp_connection& conn){
@@ -102,7 +102,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)
 BOOST_AUTO_TEST_CASE(ServerShouldConsumeMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             BOOST_CHECK_EQUAL("Hello World!",
                               stream::read_as_string(*conn->input(), 12));
          },
@@ -115,7 +115,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldConsumeMessage)
 BOOST_AUTO_TEST_CASE(ServerShouldEchoMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             auto msg = stream::read_as_string(*conn->input(), 12);
             BOOST_CHECK_EQUAL("Hello World!", msg);
             stream::write_as_string(*conn->output(), msg);
@@ -131,7 +131,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldEchoMessage)
 BOOST_AUTO_TEST_CASE(ServerShouldDetectEmptyMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             std::uint8_t buff[12];
             auto nread = conn->input()->read(buff, 12);
             BOOST_CHECK_EQUAL(0, nread);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldDetectEmptyMessage)
 BOOST_AUTO_TEST_CASE(ServerShouldDetectIncompleteMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             std::uint8_t buff[12];
             auto nread = conn->input()->read(buff, 12);
             BOOST_CHECK_EQUAL(5, nread);
@@ -158,7 +158,7 @@ BOOST_AUTO_TEST_CASE(ServerShouldDetectIncompleteMessage)
 BOOST_AUTO_TEST_CASE(ClientShouldDetectEmptyMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
          },
          [](tcp_connection& conn){
             std::uint8_t buff[12];
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE(ClientShouldDetectEmptyMessage)
 BOOST_AUTO_TEST_CASE(ClientShouldDetectIncompleteMessage)
 {
    test(
-         [](const ptr<tcp_connection>& conn){
+         [](const tcp_connection_ptr& conn){
             stream::write_as_string(*conn->output(), "Hello");
          },
          [](tcp_connection& conn){
@@ -361,10 +361,10 @@ void test(
 }
 
 void write_msg(
-      const async_tcp_connection::ptr_type& conn,
+      const async_tcp_connection_ptr& conn,
       const std::string& msg)
 {
-   auto buff = ring_buffer::create(512);
+   auto buff = std::make_shared<ring_buffer>(512);
    stream::write_as_string(*buff, "Hello World!");
    conn->write(*buff, [buff](
       const boost::system::error_code& ec,
@@ -377,7 +377,7 @@ void write_msg(
 template <typename OnReceivedHandler,
           typename StreamBufferPtr>
 void receive_msg(
-      const async_tcp_connection::ptr_type& conn,
+      const async_tcp_connection_ptr& conn,
       const StreamBufferPtr& buff,
       const std::string& expected_msg,
       OnReceivedHandler handler)
@@ -402,7 +402,7 @@ void receive_msg(
 template <typename OnReceivedHandler,
           typename StreamBufferPtr>
 void receive_dwords(
-      const async_tcp_connection::ptr_type& conn,
+      const async_tcp_connection_ptr& conn,
       const StreamBufferPtr& buff,
       std::size_t expected_dwords_count,
       OnReceivedHandler handler)
@@ -425,7 +425,7 @@ void receive_dwords(
 
 BOOST_AUTO_TEST_CASE(ServerCreationMustFailWhenPortIsUnavailable)
 {
-   auto handler = [](const async_tcp_connection::ptr_type&){};
+   auto handler = [](const async_tcp_connection_ptr&){};
    async_tcp_server server(9000, handler);
    BOOST_CHECK_THROW(
             async_tcp_server(9000, handler),
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(ServerCreationMustFailWhenPortIsUnavailable)
 BOOST_AUTO_TEST_CASE(ServerShouldServeMessage)
 {
    test(
-         [](const async_tcp_connection::ptr_type& conn)
+         [](const async_tcp_connection_ptr& conn)
          {
             write_msg(conn, "Hello World!");
          },
@@ -452,10 +452,10 @@ BOOST_AUTO_TEST_CASE(ServerShouldConsumeMessage)
 {
    bool consumed = false;
    test(
-         [&consumed](const async_tcp_connection::ptr_type& conn){
+         [&consumed](const async_tcp_connection_ptr& conn){
             receive_msg(
                   conn,
-                  ring_buffer::create(64),
+                  std::make_shared<ring_buffer>(64),
                   "Hello World!",
                   [&consumed]() { consumed = true; });
          },
@@ -471,10 +471,10 @@ BOOST_AUTO_TEST_CASE(ServerShouldConsumePartedMessage)
 {
    bool consumed = false;
    test(
-         [&consumed](const async_tcp_connection::ptr_type& conn){
+         [&consumed](const async_tcp_connection_ptr& conn){
             receive_msg(
                   conn,
-                  ring_buffer::create(64),
+                  std::make_shared<ring_buffer>(64),
                   "Hello World!",
                   [&consumed]() { consumed = true; });
          },
@@ -492,10 +492,10 @@ BOOST_AUTO_TEST_CASE(ServerShouldConsumeBigMessage)
 {
    bool consumed = false;
    test(
-         [&consumed](const async_tcp_connection::ptr_type& conn){
+         [&consumed](const async_tcp_connection_ptr& conn){
             receive_dwords(
                   conn,
-                  ring_buffer::create(65536 * sizeof(std::uint32_t)),
+                  std::make_shared<ring_buffer>(65536 * sizeof(std::uint32_t)),
                   65536,
                   [&consumed]() { consumed = true; });
          },

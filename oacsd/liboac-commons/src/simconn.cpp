@@ -382,7 +382,7 @@ throw (server_unavailable_error)
       OAC_THROW_EXCEPTION(server_unavailable_error());
 }
 
-ptr<simconnect_client::abstract_message_receiver>&
+simconnect_client::abstract_message_receiver_ptr&
 simconnect_client::receiver(SIMCONNECT_RECV_ID message_type)
 {
    if (_msg_receivers.size() <= std::size_t(message_type))
@@ -390,4 +390,4 @@ simconnect_client::receiver(SIMCONNECT_RECV_ID message_type)
    return _msg_receivers[message_type];
 }
 
-}; // namespace oac
+} // namespace oac

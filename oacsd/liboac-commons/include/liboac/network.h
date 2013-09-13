@@ -82,11 +82,15 @@ public:
    typedef sync_read_stream_adapter<
          boost::asio::ip::tcp::socket> input_stream;
 
+   typedef std::shared_ptr<input_stream> input_stream_ptr;
+
    /**
     * The type of output stream used by TCP connections.
     */
    typedef sync_write_stream_adapter<
          boost::asio::ip::tcp::socket> output_stream;
+
+   typedef std::shared_ptr<output_stream> output_stream_ptr;
 
    tcp_connection();
 
@@ -94,15 +98,17 @@ public:
 
    boost::asio::ip::tcp::socket& socket();
 
-   ptr<input_stream> input();
+   input_stream_ptr input();
 
-   ptr<output_stream> output();
+   output_stream_ptr output();
 
 private:
 
    boost::asio::io_service _io_service;
-   ptr<boost::asio::ip::tcp::socket> _socket;
+   std::shared_ptr<boost::asio::ip::tcp::socket> _socket;
 };
+
+typedef std::shared_ptr<tcp_connection> tcp_connection_ptr;
 
 /**
  * A TCP server which submits each new connection to an Worker compliant
@@ -152,7 +158,7 @@ private:
 
    void start_accept();
 
-   void on_accept(const ptr<tcp_connection>& conn);
+   void on_accept(const tcp_connection_ptr& conn);
 };
 
 /**
@@ -184,17 +190,17 @@ public:
     * A convenience function to obtain the input stream
     * from the TCP connection.
     */
-   ptr<tcp_connection::input_stream> input();
+   tcp_connection::input_stream_ptr input();
 
    /**
     * A convenience function to obtain the output stream
     * from the TCP connection.
     */
-   ptr<tcp_connection::output_stream> output();
+   tcp_connection::output_stream_ptr output();
 
 private:
 
-   ptr<tcp_connection> _connection;
+   tcp_connection_ptr _connection;
 };
 
 /**
@@ -207,7 +213,6 @@ private:
  * received, since input_stream does that for him.
  */
 class async_tcp_connection :
-      public shared_by_ptr<async_tcp_connection>,
       public std::enable_shared_from_this<async_tcp_connection> {
 public:  
 
@@ -290,6 +295,8 @@ private:
          std::size_t bytes_read);
 };
 
+typedef std::shared_ptr<async_tcp_connection> async_tcp_connection_ptr;
+
 /**
  * An asynchronous TCP server. This class provides an async TCP server
  * based on Boost ASIO library. It provides some glue code to make it
@@ -311,7 +318,7 @@ public:
     * A handler able to process new TCP connections once they are received.
     */
    typedef std::function<
-         void(const async_tcp_connection::ptr_type&)> connection_handler;
+         void(const async_tcp_connection_ptr&)> connection_handler;
 
    /**
     * Creates a new asynchronous TCP server.
@@ -350,7 +357,7 @@ private:
 
    void start_accept();
 
-   void on_accept(const async_tcp_connection::ptr_type& conn);
+   void on_accept(const async_tcp_connection_ptr& conn);
 };
 
 /**
@@ -398,15 +405,17 @@ private:
 
 namespace network {
 
-typedef std::function<void(const ptr<tcp_connection>&)> connection_handler;
-typedef thread_worker<network::connection_handler,
-                      ptr<tcp_connection>> dedicated_thread_connection_handler;
+typedef std::function<void(const tcp_connection_ptr&)> connection_handler;
+typedef thread_worker<
+      network::connection_handler,
+      tcp_connection_ptr> dedicated_thread_connection_handler;
 
 /**
  * Create a new TCP server supported by a threaded worker.
  */
 template <typename Worker>
-ptr<tcp_server<thread_worker<Worker, ptr<tcp_connection>>>> make_tcp_server(
+std::shared_ptr<tcp_server<thread_worker<Worker, tcp_connection_ptr>>>
+make_tcp_server(
       network::tcp_port port, const Worker& worker);
 
 } // namespace network

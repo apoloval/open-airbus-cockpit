@@ -22,7 +22,7 @@ namespace oac {
 
 file_input_stream::mode file_input_stream::OPEN_READ("r");
 
-ptr<file_input_stream> file_input_stream::STDIN(new file_input_stream(stdin));
+file_input_stream_ptr file_input_stream::STDIN(new file_input_stream(stdin));
 
 file_input_stream::file_input_stream(
       const boost::filesystem::path& path,
@@ -60,9 +60,9 @@ throw (io_exception)
 file_output_stream::mode file_output_stream::OPEN_APPEND("a");
 file_output_stream::mode file_output_stream::OPEN_WRITE("w");
 
-ptr<file_output_stream> file_output_stream::STDOUT(
+file_output_stream_ptr file_output_stream::STDOUT(
       new file_output_stream(stdout));
-ptr<file_output_stream> file_output_stream::STDERR(
+file_output_stream_ptr file_output_stream::STDERR(
       new file_output_stream(stderr));
 
 file_output_stream::file_output_stream(
@@ -118,19 +118,31 @@ bool
 file::is_directory() const
 { return boost::filesystem::is_directory(_path); }
 
-ptr<file_input_stream>
+file_input_stream_ptr
 file::read() const
 throw (filesystem::open_error)
-{ return new file_input_stream(_path, file_input_stream::OPEN_READ); }
+{
+   return std::make_shared<file_input_stream>(
+         _path,
+         file_input_stream::OPEN_READ);
+}
 
-ptr<file_output_stream>
+file_output_stream_ptr
 file::append() const
 throw (filesystem::open_error)
-{ return new file_output_stream(_path, file_output_stream::OPEN_APPEND); }
+{
+   return std::make_shared<file_output_stream>(
+         _path,
+         file_output_stream::OPEN_APPEND);
+}
 
-ptr<file_output_stream>
+file_output_stream_ptr
 file::write() const
 throw (filesystem::open_error)
-{ return new file_output_stream(_path, file_output_stream::OPEN_WRITE); }
+{
+   return std::make_shared<file_output_stream>(
+         _path,
+         file_output_stream::OPEN_WRITE);
+}
 
 } // namespace oac

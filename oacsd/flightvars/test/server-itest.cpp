@@ -51,7 +51,10 @@ struct let_test
       _port = rand() % 7000 + 1025;
 
       _fsuipc = std::make_shared<dummy_fsuipc_flight_vars>();
-      _server = flight_vars_server::create(_fsuipc, _port, _io_service);
+      _server = std::make_shared<flight_vars_server>(
+            _fsuipc,
+            _port,
+            _io_service);
       _server_thread = boost::thread([this]() {
          _io_service->run();
       });
@@ -267,7 +270,7 @@ private:
    std::shared_ptr<boost::asio::io_service> _io_service;
    network::tcp_port _port;
    std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
-   flight_vars_server::ptr_type _server;
+   flight_vars_server_ptr _server;
    boost::thread _server_thread;
    std::shared_ptr<tcp_client> _client;
    std::unordered_map<

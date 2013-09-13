@@ -38,25 +38,25 @@ void fill_buffer(Buffer& buff, DWORD from_offset)
 }
 
 template <typename BufferFactory>
-void buffer_write_test(const ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
 {
-   ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
+   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
    DWORD d = 600;
    buff->write(&d, offset, sizeof(DWORD));
 }
 
 template <typename BufferFactory>
-void buffer_read_test(const ptr<BufferFactory>& fact, DWORD offset)
+void buffer_read_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
 {
-   ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
+   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
    DWORD d = 600;
    buff->read(&d, offset, sizeof(DWORD));
 }
 
 template <typename BufferFactory>
-void buffer_write_read_test(const ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_read_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
 {
-   ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
+   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
    DWORD d1 = 600, d2;
    buff->write(&d1, offset, sizeof(DWORD));
    buff->read(&d2, offset, sizeof(DWORD));
@@ -64,25 +64,25 @@ void buffer_write_read_test(const ptr<BufferFactory>& fact, DWORD offset)
 }
 
 template <typename BufferFactory>
-void buffer_write_as_read_as_test(const ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_as_read_as_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
 {
-   ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
+   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
    buffer::write_as<DWORD>(*buff, offset, 600);
    BOOST_CHECK_EQUAL(600, buffer::read_as<DWORD>(*buff, offset));
 }
 
 template <typename BufferFactory1, typename BufferFactory2>
 void buffer_copy_test(
-      const ptr<BufferFactory1>& fact0,
-      const ptr<BufferFactory2>& fact1,
+      const std::shared_ptr<BufferFactory1>& fact0,
+      const std::shared_ptr<BufferFactory2>& fact1,
       DWORD fill_from_offset,
       DWORD offset0,
       DWORD offset1,
       DWORD length)
 throw (buffer::index_out_of_bounds)
 {
-   ptr<typename BufferFactory1::value_type> buff0(fact0->create_buffer());
-   ptr<typename BufferFactory2::value_type> buff1(fact1->create_buffer());
+   std::shared_ptr<typename BufferFactory1::value_type> buff0(fact0->create_buffer());
+   std::shared_ptr<typename BufferFactory2::value_type> buff1(fact1->create_buffer());
 
    fill_buffer(*buff0, fill_from_offset);
    buff1->copy(*buff0, offset0, offset1, length);
@@ -92,7 +92,9 @@ throw (buffer::index_out_of_bounds)
 
 void double_buffer_test(DWORD* seq, unsigned int seql, bool expect_mod)
 {
-   double_buffer<> buff(new linear_buffer(12), new linear_buffer(12));
+   double_buffer<> buff(
+         std::make_shared<linear_buffer>(12),
+         std::make_shared<linear_buffer>(12));
    for (unsigned int i = 0; i < seql; i++)
    {
       buffer::write_as<DWORD>(buff, 0, seq[i]);
@@ -101,9 +103,9 @@ void double_buffer_test(DWORD* seq, unsigned int seql, bool expect_mod)
    BOOST_CHECK(expect_mod == buff.is_modified<sizeof(DWORD)>(0));
 }
 
-ptr<linear_buffer> prepare_buffer(std::size_t length)
+linear_buffer_ptr prepare_buffer(std::size_t length)
 {
-   auto b = new linear_buffer(length);
+   auto b = std::make_shared<linear_buffer>(length);
    fill_buffer(*b, 0);
    return b;
 }
@@ -119,57 +121,57 @@ BOOST_AUTO_TEST_CASE(ShouldCreate)
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
    auto fact = std::make_shared<linear_buffer::factory>(12);
-   ptr<linear_buffer> buff(fact->create_buffer());
+   linear_buffer_ptr buff(fact->create_buffer());
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
-   buffer_write_read_test(make_ptr(new linear_buffer::factory(12)), 0);
+   buffer_write_read_test(std::make_shared<linear_buffer::factory>(12), 0);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnMiddlePosition)
 {
-   buffer_write_read_test(make_ptr(new linear_buffer::factory(12)), 4);
+   buffer_write_read_test(std::make_shared<linear_buffer::factory>(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
-   buffer_write_read_test(make_ptr(new linear_buffer::factory(12)), 8);
+   buffer_write_read_test(std::make_shared<linear_buffer::factory>(12), 8);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndread_as)
 {
-   buffer_write_as_read_as_test(make_ptr(new linear_buffer::factory(12)), 4);
+   buffer_write_as_read_as_test(std::make_shared<linear_buffer::factory>(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         buffer_write_test(make_ptr(new linear_buffer::factory(12)), 12),
+         buffer_write_test(std::make_shared<linear_buffer::factory>(12), 12),
          buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         buffer_read_test(make_ptr(new linear_buffer::factory(12)), 12),
+         buffer_read_test(std::make_shared<linear_buffer::factory>(12), 12),
          buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnSameOffsets)
 {
    buffer_copy_test(
-         make_ptr(new linear_buffer::factory(12)),
-         make_ptr(new linear_buffer::factory(12)),
+         std::make_shared<linear_buffer::factory>(12),
+         std::make_shared<linear_buffer::factory>(12),
          0, 0, 0, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnDifferentOffsets)
 {
    buffer_copy_test(
-         make_ptr(new linear_buffer::factory(12)),
-         make_ptr(new linear_buffer::factory(24)),
+         std::make_shared<linear_buffer::factory>(12),
+         std::make_shared<linear_buffer::factory>(24),
          0, 0, 12, 12);
 }
 
@@ -177,8 +179,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               make_ptr(new linear_buffer::factory(12)),
+               std::make_shared<linear_buffer::factory>(12),
+               std::make_shared<linear_buffer::factory>(12),
                0, 16, 0, 12),
          buffer::index_out_of_bounds);
 }
@@ -187,8 +189,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               make_ptr(new linear_buffer::factory(12)),
+               std::make_shared<linear_buffer::factory>(12),
+               std::make_shared<linear_buffer::factory>(12),
                0, 0, 16, 12),
          buffer::index_out_of_bounds);
 }
@@ -197,8 +199,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               make_ptr(new linear_buffer::factory(12)),
+               std::make_shared<linear_buffer::factory>(12),
+               std::make_shared<linear_buffer::factory>(12),
                0, 0, 0, 24),
          buffer::index_out_of_bounds);
 }
@@ -272,57 +274,57 @@ BOOST_AUTO_TEST_CASE(ShouldCreateBuffer)
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
    auto fact = std::make_shared<ring_buffer::factory>(12);
-   ptr<ring_buffer> buff(fact->create_buffer());
+   ring_buffer_ptr buff(fact->create_buffer());
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
-   buffer_write_read_test(make_ptr(new ring_buffer::factory(12)), 0);
+   buffer_write_read_test(std::make_shared<ring_buffer::factory>(12), 0);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnMiddlePosition)
 {
-   buffer_write_read_test(make_ptr(new ring_buffer::factory(12)), 4);
+   buffer_write_read_test(std::make_shared<ring_buffer::factory>(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
-   buffer_write_read_test(make_ptr(new ring_buffer::factory(12)), 8);
+   buffer_write_read_test(std::make_shared<ring_buffer::factory>(12), 8);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndread_as)
 {
-   buffer_write_as_read_as_test(make_ptr(new ring_buffer::factory(12)), 4);
+   buffer_write_as_read_as_test(std::make_shared<ring_buffer::factory>(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         buffer_write_test(make_ptr(new ring_buffer::factory(12)), 12),
+         buffer_write_test(std::make_shared<ring_buffer::factory>(12), 12),
          buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
-         buffer_read_test(make_ptr(new ring_buffer::factory(12)), 12),
+         buffer_read_test(std::make_shared<ring_buffer::factory>(12), 12),
          buffer::index_out_of_bounds);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnSameOffsets)
 {
    buffer_copy_test(
-         make_ptr(new ring_buffer::factory(12)),
-         make_ptr(new ring_buffer::factory(12)),
+         std::make_shared<ring_buffer::factory>(12),
+         std::make_shared<ring_buffer::factory>(12),
          0, 0, 0, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyOnDifferentOffsets)
 {
    buffer_copy_test(
-         make_ptr(new ring_buffer::factory(12)),
-         make_ptr(new ring_buffer::factory(24)),
+         std::make_shared<ring_buffer::factory>(12),
+         std::make_shared<ring_buffer::factory>(24),
          0, 0, 12, 12);
 }
 
@@ -330,8 +332,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new ring_buffer::factory(12)),
-               make_ptr(new ring_buffer::factory(12)),
+               std::make_shared<ring_buffer::factory>(12),
+               std::make_shared<ring_buffer::factory>(12),
                0, 16, 0, 12),
          buffer::index_out_of_bounds);
 }
@@ -340,8 +342,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new ring_buffer::factory(12)),
-               make_ptr(new ring_buffer::factory(12)),
+               std::make_shared<ring_buffer::factory>(12),
+               std::make_shared<ring_buffer::factory>(12),
                0, 0, 16, 12),
          buffer::index_out_of_bounds);
 }
@@ -350,8 +352,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new ring_buffer::factory(12)),
-               make_ptr(new ring_buffer::factory(12)),
+               std::make_shared<ring_buffer::factory>(12),
+               std::make_shared<ring_buffer::factory>(12),
                0, 0, 0, 24),
          buffer::index_out_of_bounds);
 }
@@ -503,38 +505,38 @@ BOOST_AUTO_TEST_CASE(ShouldOperateWithMark)
    BOOST_CHECK_EQUAL(16, buff.available_for_write());
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()
 
 
 
-BOOST_AUTO_TEST_SUITE(ShiftedBufferTestSuite);
+BOOST_AUTO_TEST_SUITE(ShiftedBufferTestSuite)
 
 BOOST_AUTO_TEST_CASE(ShouldCreate)
 {
-   auto inner = make_ptr(linear_buffer::factory(12).create_buffer());
+   auto inner = linear_buffer_ptr(linear_buffer::factory(12).create_buffer());
    shifted_buffer<linear_buffer> outer(inner, 1024);
    BOOST_CHECK_EQUAL(12, outer.capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
-   auto fixed_buff_fact = make_ptr(new linear_buffer::factory(12));
+   auto fixed_buff_fact = std::make_shared<linear_buffer::factory>(12);
    auto shifted_buff_fact = buffer::shift_factory(fixed_buff_fact, 1024);
-   auto outer = make_ptr(shifted_buff_fact->create_buffer());
+   auto outer = shifted_buff_fact->create_buffer(); // FIXME memory leak
    BOOST_CHECK_EQUAL(12, outer->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
    buffer_write_read_test(
-         buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+         buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
          1024);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
    buffer_write_read_test(
-         buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+         buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
          1032);
 }
 
@@ -542,7 +544,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadBeforeFirstPosition)
 {
    BOOST_CHECK_THROW(
          buffer_read_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                512),
          buffer::index_out_of_bounds);
 }
@@ -551,7 +553,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteBeforeFirstPosition)
 {
    BOOST_CHECK_THROW(
          buffer_write_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                512),
          buffer::index_out_of_bounds);
 }
@@ -560,7 +562,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_read_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                1036),
          buffer::index_out_of_bounds);
 }
@@ -569,7 +571,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_write_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                1036),
          buffer::index_out_of_bounds);
 }
@@ -577,16 +579,16 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 BOOST_AUTO_TEST_CASE(ShouldCopyFromshifted_buffer)
 {
    buffer_copy_test(
-         buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
-         make_ptr(new linear_buffer::factory(12)),
+         buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
+         std::make_shared<linear_buffer::factory>(12),
          1024, 1024, 0, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyToshifted_buffer)
 {
    buffer_copy_test(
-         make_ptr(new linear_buffer::factory(12)),
-         buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+         std::make_shared<linear_buffer::factory>(12),
+         buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
          0, 0, 1024, 12);
 }
 
@@ -594,8 +596,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
+               std::make_shared<linear_buffer::factory>(12),
                1024, 512, 0, 12),
          buffer::index_out_of_bounds);
 }
@@ -604,8 +606,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongDestinationOffse
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
+               std::make_shared<linear_buffer::factory>(12),
                1024, 1024, 16, 12),
          buffer::index_out_of_bounds);
 }
@@ -614,8 +616,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromshifted_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
+               std::make_shared<linear_buffer::factory>(12),
                1024, 1024, 0, 24),
          buffer::index_out_of_bounds);
 }
@@ -624,8 +626,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                0, 16, 1024, 12),
          buffer::index_out_of_bounds);
 }
@@ -634,8 +636,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                0, 0, 512, 12),
          buffer::index_out_of_bounds);
 }
@@ -644,13 +646,13 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyToshifted_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::shift_factory(make_ptr(new linear_buffer::factory(12)), 1024),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::shift_factory(std::make_shared<linear_buffer::factory>(12), 1024),
                0, 0, 1024, 24),
          buffer::index_out_of_bounds);
 }
 
-BOOST_AUTO_TEST_SUITE_END();
+BOOST_AUTO_TEST_SUITE_END()
 
 
 
@@ -659,15 +661,15 @@ BOOST_AUTO_TEST_SUITE(DoubleBufferTestSuite)
 
 BOOST_AUTO_TEST_CASE(ShouldCreate)
 {
-   auto buff = buffer::dup_buffers(
-            make_ptr(new linear_buffer(12)),
-            make_ptr(new linear_buffer(12)));
+   auto buff = buffer::dup_buffers<linear_buffer>(
+            std::make_shared<linear_buffer>(12),
+            std::make_shared<linear_buffer>(12));
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 {
-   auto fact = buffer::dup_factory(make_ptr(new linear_buffer::factory(12)));
+   auto fact = buffer::dup_factory(std::make_shared<linear_buffer::factory>(12));
    auto buff = fact->create_buffer();
    BOOST_CHECK_EQUAL(12, buff->capacity());
 }
@@ -675,14 +677,14 @@ BOOST_AUTO_TEST_CASE(ShouldCreateFromFactory)
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnFirstPosition)
 {
    buffer_write_read_test(
-         buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+         buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
          0);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 {
    buffer_write_read_test(
-            buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+            buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
          8);
 }
 
@@ -690,7 +692,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnReadAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_read_test(
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
                12),
          buffer::index_out_of_bounds);
 }
@@ -699,7 +701,7 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 {
    BOOST_CHECK_THROW(
          buffer_write_test(
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
                12),
          buffer::index_out_of_bounds);
 }
@@ -707,16 +709,16 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
 BOOST_AUTO_TEST_CASE(ShouldCopyFromdouble_buffer)
 {
    buffer_copy_test(
-         buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
-         make_ptr(new linear_buffer::factory(12)),
+         buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
+         std::make_shared<linear_buffer::factory>(12),
          0, 0, 0, 12);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldCopyTodouble_buffer)
 {
    buffer_copy_test(
-         make_ptr(new linear_buffer::factory(12)),
-         buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+         std::make_shared<linear_buffer::factory>(12),
+         buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
          0, 0, 0, 12);
 }
 
@@ -724,8 +726,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
+               std::make_shared<linear_buffer::factory>(12),
                0, 12, 0, 12),
          buffer::index_out_of_bounds);
 }
@@ -734,8 +736,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongDestinationOffset
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
+               std::make_shared<linear_buffer::factory>(12),
                0, 0, 12, 12),
          buffer::index_out_of_bounds);
 }
@@ -744,8 +746,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyFromdouble_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
-               make_ptr(new linear_buffer::factory(12)),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
+               std::make_shared<linear_buffer::factory>(12),
                0, 0, 0, 24),
          buffer::index_out_of_bounds);
 }
@@ -754,8 +756,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongSourceOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
                0, 12, 0, 12),
          buffer::index_out_of_bounds);
 }
@@ -764,8 +766,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongDestinationOffset)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
                0, 0, 12, 12),
          buffer::index_out_of_bounds);
 }
@@ -774,8 +776,8 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongLength)
 {
    BOOST_CHECK_THROW(
          buffer_copy_test(
-               make_ptr(new linear_buffer::factory(12)),
-               buffer::dup_factory(make_ptr(new linear_buffer::factory(12))),
+               std::make_shared<linear_buffer::factory>(12),
+               buffer::dup_factory(std::make_shared<linear_buffer::factory>(12)),
                0, 0, 0, 24),
          buffer::index_out_of_bounds);
 }

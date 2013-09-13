@@ -80,6 +80,8 @@ protected:
    std::string get_time();
 };
 
+typedef std::shared_ptr<logger> logger_ptr;
+
 /**
  * A logger able to print log messages into an output stream.
  */
@@ -87,6 +89,8 @@ template <typename OutputStream>
 class output_stream_logger : public logger
 {
 public:
+
+   typedef std::shared_ptr<OutputStream> output_stream_ptr;
 
    /**
     * Create a new logger for given level and output stream.
@@ -97,7 +101,7 @@ public:
     */
    output_stream_logger(
          const log_level& level,
-         const std::shared_ptr<OutputStream>& output)
+         const output_stream_ptr& output)
       : _output(output), _level(level)
    {}
 
@@ -117,10 +121,10 @@ public:
 
 private:
 
-   ptr<OutputStream> _output;
+   output_stream_ptr _output;
    log_level _level;
 
-   static ptr<logger> _main;
+   static logger_ptr _main;
 };
 
 class logger_component : public logger

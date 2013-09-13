@@ -29,7 +29,6 @@
 #include <boost/bimap.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <liboac/fsuipc.h>
-#include <liboac/lang-utils.h>
 #include <liboac/logging.h>
 #include <liboac/simconn.h>
 

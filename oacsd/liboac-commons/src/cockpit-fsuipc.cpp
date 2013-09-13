@@ -31,6 +31,8 @@ namespace {
 
 typedef double_buffer<shifted_buffer<linear_buffer>> buffer_type;
 
+typedef std::shared_ptr<buffer_type> buffer_ptr;
+
 template <DWORD offset, typename Data, typename event_type>
 inline void import_nullary_event(
       buffer_type& buff,
@@ -67,7 +69,7 @@ inline static void ImportUnaryEvent(
 class flight_control_unit_back : public cockpit_back::flight_control_unit {
 public:
 
-   inline flight_control_unit_back(const ptr<buffer_type>& buffer) :
+   inline flight_control_unit_back(const buffer_ptr& buffer) :
       _buffer(buffer)
    {}
 
@@ -183,13 +185,13 @@ public:
 
 private:
 
-   ptr<buffer_type> _buffer;
+   buffer_ptr _buffer;
 };
 
 class efis_control_panel_back : public cockpit_back::efis_control_panel {
 public:
 
-   inline efis_control_panel_back(const ptr<buffer_type>& buffer) :
+   inline efis_control_panel_back(const buffer_ptr& buffer) :
       _buffer(buffer)
    {}
 
@@ -269,7 +271,7 @@ public:
 
 private:
 
-   ptr<buffer_type> _buffer;
+   buffer_ptr _buffer;
 };
 
 } // anonymous namespace
@@ -330,13 +332,13 @@ throw (sync_error)
 void
 fsuipc_cockpit_back::init_buffer()
 {
-   auto fb_fact = new linear_buffer::factory(512);
-   auto sh_fact = new shifted_buffer<linear_buffer>::factory(
+   auto fb_fact = std::make_shared<linear_buffer::factory>(512);
+   auto sh_fact = std::make_shared<shifted_buffer<linear_buffer>::factory>(
             fb_fact, 0x5600);
    auto do_fact =
          std::make_shared<double_buffer<shifted_buffer<linear_buffer>>::factory>(
                sh_fact);
-   _buffer = do_fact->create_buffer();
+   _buffer = buffer_ptr(do_fact->create_buffer());
 }
 
 void
@@ -345,7 +347,7 @@ throw (sync_error)
 {
    try 
    {
-      _fsuipc = _fsuipc_fact->create_fsuipc();
+      _fsuipc = local_fsuipc_ptr(_fsuipc_fact->create_fsuipc());
    }
    catch (fsuipc_error& e)
    {
@@ -359,7 +361,7 @@ throw (sync_error)
 {
    if (!this->is_sync())
       OAC_THROW_EXCEPTION(sync_error());
-   _fcu = new flight_control_unit_back(_buffer);
+   _fcu = std::make_shared<flight_control_unit_back>(_buffer);
 }
 
 void
@@ -368,7 +370,7 @@ throw (sync_error)
 {
    if (!this->is_sync())
       OAC_THROW_EXCEPTION(sync_error());
-   _efis_ctrl_panel = new efis_control_panel_back(_buffer);
+   _efis_ctrl_panel = std::make_shared<efis_control_panel_back>(_buffer);
 }
 
 bool

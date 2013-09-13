@@ -23,9 +23,9 @@ namespace oac { namespace fv {
 namespace {
 
 template <typename T>
-ptr<linear_buffer> make_buffer_of(const T& value)
+linear_buffer_ptr make_buffer_of(const T& value)
 {
-   auto buff = new linear_buffer(sizeof(T));
+   auto buff = std::make_shared<linear_buffer>(sizeof(T));
    buffer::write_as(*buff, 0, value);
    return buff;
 }
@@ -116,11 +116,16 @@ variable_value::to_string() const
 {
    switch (_type)
    {
-      case variable_type::BOOLEAN: return as_bool() ? "true(bool)" : "false(bool)";
-      case variable_type::BYTE: return str(boost::format("%d(byte)") % int(as_byte()));
-      case variable_type::WORD: return str(boost::format("%d(word)") % as_word());
-      case variable_type::DWORD: return str(boost::format("%d(dword)") % as_dword());
-      case variable_type::FLOAT: return str(boost::format("%f(float)") % as_float());
+      case variable_type::BOOLEAN:
+         return as_bool() ? "true(bool)" : "false(bool)";
+      case variable_type::BYTE:
+         return str(boost::format("%d(byte)") % int(as_byte()));
+      case variable_type::WORD:
+         return str(boost::format("%d(word)") % as_word());
+      case variable_type::DWORD:
+         return str(boost::format("%d(dword)") % as_dword());
+      case variable_type::FLOAT:
+         return str(boost::format("%f(float)") % as_float());
       default:
          // never reached
          OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()

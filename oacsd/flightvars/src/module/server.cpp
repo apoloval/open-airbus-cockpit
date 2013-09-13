@@ -83,15 +83,15 @@ flight_vars_server::session::unsubscribe_all()
 
 void
 flight_vars_server::accept_connection(
-      const async_tcp_connection::ptr_type& conn)
+      const async_tcp_connection_ptr& conn)
 {
-   auto session = session::create(shared_from_this(), conn);
-   read_begin_session(session);
+   auto s = std::make_shared<session>(shared_from_this(), conn);
+   read_begin_session(s);
 }
 
 void
 flight_vars_server::read_begin_session(
-      const session::ptr_type& session)
+      const session_ptr& session)
 {
    session->conn->read(
             *session->input_buffer,
@@ -105,7 +105,7 @@ flight_vars_server::read_begin_session(
 
 void
 flight_vars_server::on_read_begin_session(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const boost::system::error_code& ec,
       std::size_t bytes_transferred)
 {
@@ -161,7 +161,7 @@ flight_vars_server::on_read_begin_session(
 
 void
 flight_vars_server::read_request(
-      const session::ptr_type& session)
+      const session_ptr& session)
 {
    try
    {
@@ -186,7 +186,7 @@ flight_vars_server::read_request(
 
 void
 flight_vars_server::on_read_request(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const boost::system::error_code& ec,
       std::size_t bytes_transferred)
 {
@@ -264,7 +264,7 @@ flight_vars_server::on_read_request(
 
 proto::subscription_reply_message
 flight_vars_server::handle_subscription_request(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const proto::subscription_request_message& req)
 {
    auto var_id = make_var_id(req.var_grp, req.var_name);
@@ -308,7 +308,7 @@ flight_vars_server::handle_subscription_request(
 
 proto::unsubscription_reply_message
 flight_vars_server::handle_unsubscription_request(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const proto::unsubscription_request_message& req)
 {
    auto subs_id = req.subs_id;
@@ -351,7 +351,7 @@ flight_vars_server::handle_unsubscription_request(
 
 void
 flight_vars_server::handle_var_update(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const variable_id& var_id,
       const variable_value& var_value)
 {
@@ -371,7 +371,7 @@ flight_vars_server::handle_var_update(
 
 void
 flight_vars_server::send_var_update(
-      const session::ptr_type& session,
+      const session_ptr& session,
       const variable_id& var_id,
       const variable_value& var_value)
 {
@@ -406,11 +406,11 @@ flight_vars_server::send_var_update(
 
 void
 flight_vars_server::write_message(
-      const async_tcp_connection::ptr_type& conn,
+      const async_tcp_connection_ptr& conn,
       const proto::message& msg,
       const after_write_handler& after_write)
 {
-   auto buff = linear_buffer::create(1024);
+   auto buff = std::make_shared<linear_buffer>(1024);
    proto::serialize<proto::binary_message_serializer>(msg, *buff);
    conn->write(
             *buff,
@@ -425,7 +425,7 @@ flight_vars_server::write_message(
 
 void
 flight_vars_server::on_write_message(
-      const linear_buffer::ptr_type& buffer,
+      const linear_buffer_ptr& buffer,
       const after_write_handler& after_write,
       const boost::system::error_code& ec,
       std::size_t bytes_transferred)

@@ -22,7 +22,6 @@
 #include "buffer.h"
 #include "cockpit.h"
 #include "fsuipc.h"
-#include "lang-utils.h"
 
 namespace oac {
 
@@ -31,7 +30,7 @@ class fsuipc_cockpit_back : public cockpit_back
 public:
 
    inline fsuipc_cockpit_back(
-         const ptr<local_fsuipc::factory>& fsuipc_fact) :
+         const local_fsuipc::factory_ptr& fsuipc_fact) :
       _fsuipc_fact(fsuipc_fact)
    {}
 
@@ -42,11 +41,11 @@ public:
 
 private:
 
-   ptr<double_buffer<shifted_buffer<linear_buffer>>> _buffer;
-   ptr<local_fsuipc::factory> _fsuipc_fact;
-   ptr<local_fsuipc> _fsuipc;
-   ptr<flight_control_unit> _fcu;
-   ptr<efis_control_panel> _efis_ctrl_panel;
+   double_buffer<shifted_buffer<linear_buffer>>::ptr_type _buffer;
+   local_fsuipc::factory_ptr _fsuipc_fact;
+   local_fsuipc_ptr _fsuipc;
+   flight_control_unit_ptr _fcu;
+   efis_control_panel_ptr _efis_ctrl_panel;
 
    void init_buffer();
    void init_fsuipc() throw (sync_error);
@@ -55,6 +54,8 @@ private:
    bool is_sync() const;
 };
 
-}; // namespace oac
+typedef std::shared_ptr<fsuipc_cockpit_back> fsuipc_cockpit_back_ptr;
+
+} // namespace oac
 
 #endif

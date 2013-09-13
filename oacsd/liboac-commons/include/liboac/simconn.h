@@ -29,7 +29,6 @@
 #include <SimConnect.h>
 
 #include "exception.h"
-#include "lang-utils.h"
 #include "logging.h"
 
 namespace oac {
@@ -270,7 +269,7 @@ public:
 
    private:
 
-      ptr<simconnect_client> _client;
+      std::shared_ptr<simconnect_client> _client;
       client_event _event;
    };
 
@@ -434,6 +433,9 @@ private:
       virtual ~abstract_message_receiver() {}
    };
 
+   typedef std::shared_ptr<
+         abstract_message_receiver> abstract_message_receiver_ptr;
+
    template <typename Message>
    class message_receiver : public abstract_message_receiver
    {
@@ -459,17 +461,21 @@ private:
          const std::function<void(simconnect_client&, const Message&)>& callback,
          SIMCONNECT_RECV_ID message_type)
    {
-      this->receiver(message_type) = new message_receiver<Message>(callback);
+      this->receiver(message_type) =
+            std::make_shared<message_receiver<Message>>(callback);
    }
 
    void open() throw (server_unavailable_error);
 
-   ptr<abstract_message_receiver>& receiver(SIMCONNECT_RECV_ID message_type);
+   abstract_message_receiver_ptr& receiver(
+         SIMCONNECT_RECV_ID message_type);
 
    std::string _name;
    HANDLE _handle;
-   std::vector<ptr<abstract_message_receiver>> _msg_receivers;
+   std::vector<abstract_message_receiver_ptr> _msg_receivers;
 };
+
+typedef std::shared_ptr<simconnect_client> simconnect_client_ptr;
 
 }; // namespace oac
 

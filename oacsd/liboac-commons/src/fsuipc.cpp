@@ -65,11 +65,14 @@ class local_fsuipc_handler
 {
 public:
 
+   typedef std::shared_ptr<local_fsuipc_handler> ptr_type;
+
    inline static void init()
    throw (fsuipc_error)
    {
       if (!_singleton)
-         _singleton = new local_fsuipc_handler();
+         _singleton = local_fsuipc_handler::ptr_type(
+               new local_fsuipc_handler());
    }
 
    inline static void reset()
@@ -82,10 +85,10 @@ public:
 
 private:
 
-   static ptr<local_fsuipc_handler> _singleton;
+   static local_fsuipc_handler::ptr_type _singleton;
    BYTE _buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
-   inline local_fsuipc_handler()
+   local_fsuipc_handler()
    throw (fsuipc_error)
    {
       DWORD result;
@@ -97,7 +100,9 @@ private:
 
 };
 
-ptr<local_fsuipc_handler> local_fsuipc_handler::_singleton;
+typedef local_fsuipc_handler::ptr_type local_fsuipc_handler_ptr;
+
+local_fsuipc_handler_ptr local_fsuipc_handler::_singleton;
 
 } // anonymous namespace
 

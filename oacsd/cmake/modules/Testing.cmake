@@ -29,8 +29,7 @@ endmacro(test_link_libraries)
 
 #
 # Internal function. Do not use.
-function(add_simple_test testname)
-   set(target_name_prefix ${ARGV1})
+function(add_simple_test target_name_prefix testname is_unit)
    set(test_source "test/${testname}.cpp")
    get_filename_component(testname ${testname} NAME)
    if (target_name_prefix)
@@ -41,6 +40,9 @@ function(add_simple_test testname)
 
    add_executable(${target_name} ${test_source})
    target_link_libraries(${target_name} ${test_libraries})
+   if (is_unit)
+      add_test(NAME ${target_name} COMMAND ${target_name})
+   endif()
 endfunction(add_simple_test)
 
 #
@@ -48,7 +50,7 @@ endfunction(add_simple_test)
 # include it as a test target
 function(add_integration_test testname)
    set(target_name_prefix ${ARGV1})
-   add_simple_test(${testname} ${target_name_prefix})
+   add_simple_test("${target_name_prefix}" ${testname} FALSE)
 endfunction(add_integration_test)
 
 #
@@ -56,6 +58,5 @@ endfunction(add_integration_test)
 # target.
 function(add_unit_test testname)
    set(target_name_prefix ${ARGV1})
-   add_simple_test(${testname} ${target_name_prefix})
-   add_test(NAME ${testname} COMMAND ${testname})
+   add_simple_test("${target_name_prefix}" ${testname} TRUE)
 endfunction(add_unit_test)

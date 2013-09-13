@@ -83,13 +83,13 @@ inline boost::asio::ip::tcp::socket&
 tcp_connection::socket()
 { return *_socket; }
 
-inline ptr<tcp_connection::input_stream>
+inline tcp_connection::input_stream_ptr
 tcp_connection::input()
-{ return new input_stream(_socket); }
+{ return std::make_shared<input_stream>(_socket); }
 
-inline ptr<tcp_connection::output_stream>
+inline tcp_connection::output_stream_ptr
 tcp_connection::output()
-{ return new output_stream(_socket); }
+{ return std::make_shared<output_stream>(_socket); }
 
 
 
@@ -149,14 +149,14 @@ tcp_server<Worker>::start_accept()
 {
    if (_io_service.stopped())
       return;
-   auto conn = make_ptr(new tcp_connection());
+   auto conn = std::make_shared<tcp_connection>();
    _acceptor.async_accept(
             conn->socket(), std::bind(&tcp_server::on_accept, this, conn));
 }
 
 template <typename Worker>
 void
-tcp_server<Worker>::on_accept(const ptr<tcp_connection>& conn)
+tcp_server<Worker>::on_accept(const tcp_connection_ptr& conn)
 {
    _worker(conn);
    start_accept();
@@ -172,7 +172,7 @@ throw (network::connection_refused)
 {
    try
    {
-      _connection = new tcp_connection();
+      _connection = std::make_shared<tcp_connection>();
       connect(
             hostname,
             port,
@@ -192,11 +192,11 @@ inline tcp_connection&
 tcp_client::connection()
 { return *_connection; }
 
-inline ptr<tcp_connection::input_stream>
+inline tcp_connection::input_stream_ptr
 tcp_client::input()
 { return _connection->input(); }
 
-inline ptr<tcp_connection::output_stream>
+inline tcp_connection::output_stream_ptr
 tcp_client::output()
 { return _connection->output(); }
 
@@ -343,7 +343,7 @@ async_tcp_server::io_service()
 inline void
 async_tcp_server::start_accept()
 {
-   auto conn = async_tcp_connection::create(*_io_service, _ehandler);
+   auto conn = std::make_shared<async_tcp_connection>(*_io_service, _ehandler);
    _acceptor.async_accept(
             conn->socket(),
             std::bind(&async_tcp_server::on_accept, this, conn));
@@ -351,7 +351,7 @@ async_tcp_server::start_accept()
 
 inline void
 async_tcp_server::on_accept(
-      const async_tcp_connection::ptr_type& conn)
+      const async_tcp_connection_ptr& conn)
 {
    _handler(conn);
    start_accept();
@@ -388,11 +388,13 @@ throw (network::connection_refused)
 namespace network {
 
 template <typename Worker>
-ptr<tcp_server<thread_worker<Worker, ptr<tcp_connection>>>> make_tcp_server(
+std::shared_ptr<tcp_server<thread_worker<Worker, tcp_connection_ptr>>>
+make_tcp_server(
       network::tcp_port port, const Worker& worker)
 {
-   return new tcp_server<thread_worker<Worker, ptr<tcp_connection>>>(
-         port, worker);
+   return std::make_shared<
+         tcp_server<thread_worker<Worker, tcp_connection_ptr>>>(
+               port, worker);
 }
 
 } // namespace network

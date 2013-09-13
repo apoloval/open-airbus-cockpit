@@ -26,7 +26,6 @@
 
 #include "exception.h"
 #include "io.h"
-#include "lang-utils.h"
 
 namespace oac {
 
@@ -198,7 +197,10 @@ class sync_read_stream_adapter
 {
 public:
 
-   inline sync_read_stream_adapter(const ptr<SyncReadStream>& adapted)
+   typedef SyncReadStream adapted_type;
+   typedef std::shared_ptr<adapted_type> adapted_ptr;
+
+   inline sync_read_stream_adapter(const adapted_ptr& adapted)
       : _adapted(adapted)
    {}
 
@@ -218,7 +220,7 @@ public:
 
 private:
 
-   ptr<SyncReadStream> _adapted;
+  adapted_ptr _adapted;
 };
 
 /**
@@ -230,7 +232,10 @@ class sync_write_stream_adapter
 {
 public:
 
-   inline sync_write_stream_adapter(const ptr<SyncWriteStream>& adapted)
+   typedef SyncWriteStream adapted_type;
+   typedef std::shared_ptr<adapted_type> adapted_ptr;
+
+   inline sync_write_stream_adapter(const adapted_ptr& adapted)
       : _adapted(adapted)
    {}
 
@@ -252,7 +257,7 @@ public:
 
 private:
 
-   ptr<SyncWriteStream> _adapted;
+  adapted_ptr _adapted;
 };
 
 namespace stream {
@@ -262,8 +267,9 @@ namespace stream {
  * Boost SyncReadStream object.
  */
 template <typename SyncReadStream>
-inline ptr<sync_read_stream_adapter<SyncReadStream>> make_input_adapter(
-      const ptr<SyncReadStream>& s)
+std::shared_ptr<sync_write_stream_adapter<SyncReadStream>>
+make_input_adapter(
+      const std::shared_ptr<SyncReadStream>& s)
 { return new sync_read_stream_adapter<SyncReadStream>(s); }
 
 /**
@@ -271,8 +277,9 @@ inline ptr<sync_read_stream_adapter<SyncReadStream>> make_input_adapter(
  * Boost SyncWriteStream object.
  */
 template <typename SyncWriteStream>
-inline ptr<sync_write_stream_adapter<SyncWriteStream>> make_output_adapter(
-  const ptr<SyncWriteStream>& s)
+std::shared_ptr<sync_write_stream_adapter<SyncWriteStream>>
+make_output_adapter(
+  const std::shared_ptr<SyncWriteStream>& s)
 { return new sync_write_stream_adapter<SyncWriteStream>(s); }
 
 } // namespace stream

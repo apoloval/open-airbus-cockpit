@@ -28,19 +28,19 @@ using namespace oac;
 
 std::pair<std::shared_ptr<linear_buffer>, std::shared_ptr<logger>> init_logger()
 {
-   auto buff = linear_buffer::create(1024);
+   auto buff = std::make_shared<linear_buffer>(1024);
    auto log = make_logger(log_level::INFO, buff);
    return std::make_pair(buff, log);
 }
 
-BOOST_AUTO_TEST_CASE(ShouldInitlogger)
+BOOST_AUTO_TEST_CASE(MustInitlogger)
 {
    auto log = init_logger();
    set_main_logger(log.second);
    BOOST_CHECK_EQUAL(log.second, get_main_logger());
 }
 
-BOOST_AUTO_TEST_CASE(ShouldWriteInlogger)
+BOOST_AUTO_TEST_CASE(MustWriteInlogger)
 {
    auto log = init_logger();
    log.second->log("COMPONENT", log_level::INFO, "ABCD");

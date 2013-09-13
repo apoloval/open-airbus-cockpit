@@ -50,9 +50,11 @@ public:
 
    typedef std::string mode;
 
+   typedef std::shared_ptr<file_input_stream> ptr_type;
+
    static mode OPEN_READ;
 
-   static ptr<file_input_stream> STDIN;
+   static file_input_stream::ptr_type STDIN;
 
    inline file_input_stream(FILE* fd) : _fd(fd) {}
 
@@ -74,6 +76,8 @@ private:
    FILE* _fd;
 };
 
+typedef file_input_stream::ptr_type file_input_stream_ptr;
+
 /**
  * An output stream which writes bytes to a file. It conforms OutputStream
  * concept.
@@ -82,13 +86,14 @@ class file_output_stream
 {
 public:
 
+   typedef std::shared_ptr<file_output_stream> ptr_type;
    typedef std::string mode;
 
    static mode OPEN_APPEND;
    static mode OPEN_WRITE;
 
-   static ptr<file_output_stream> STDOUT;
-   static ptr<file_output_stream> STDERR;
+   static file_output_stream::ptr_type STDOUT;
+   static file_output_stream::ptr_type STDERR;
 
    inline file_output_stream(FILE* fd) : _fd(fd) {}
 
@@ -112,6 +117,8 @@ private:
    FILE* _fd;
 };
 
+typedef file_output_stream::ptr_type file_output_stream_ptr;
+
 class file {
 public:
 
@@ -125,11 +132,11 @@ public:
 
    bool is_directory() const;
 
-   ptr<file_input_stream> read() const throw (filesystem::open_error);
+   file_input_stream_ptr read() const throw (filesystem::open_error);
 
-   ptr<file_output_stream> append() const throw (filesystem::open_error);
+   file_output_stream_ptr append() const throw (filesystem::open_error);
 
-   ptr<file_output_stream> write() const throw (filesystem::open_error);
+   file_output_stream_ptr write() const throw (filesystem::open_error);
 
 private:
 

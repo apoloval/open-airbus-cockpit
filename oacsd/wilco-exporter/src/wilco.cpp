@@ -54,8 +54,12 @@ public:
    {
       auto& dll_info = dll_info::for_aircraft(ac);
       auto dll_instance = this->get_dll_instance();
-      _efis_ctrl_panel = new efis_control_panel_impl(dll_info, dll_instance);
-      _fcu = new flight_control_unit_impl(dll_info, dll_instance);
+      _efis_ctrl_panel = std::make_shared<efis_control_panel_impl>(
+            dll_info,
+            dll_instance);
+      _fcu = std::make_shared<flight_control_unit_impl>(
+            dll_info,
+            dll_instance);
    }
 
    virtual ~wilco_cockpit_impl()
@@ -123,8 +127,8 @@ private:
    { return tobinary_switch(expr > 0); }
 
    aircraft _aircraft;
-   ptr<efis_control_panel> _efis_ctrl_panel;
-   ptr<flight_control_unit> _fcu;
+   efis_control_panel_ptr _efis_ctrl_panel;
+   flight_control_unit_ptr _fcu;
 };
 
 aircraft_type
@@ -150,10 +154,10 @@ aircraft::aircraft(const aircraft_title& title)
 throw (invalid_title) :
       type(resolve_aircraft_type_from_title(title)), title(title) {}
 
-wilco_cockpit*
+wilco_cockpit_ptr
 wilco_cockpit::new_cockpit(const aircraft& aircraft)
 {
-   return new wilco_cockpit_impl(aircraft);
+   return std::make_shared<wilco_cockpit_impl>(aircraft);
 }
 
-}}; // namespace oac::we
+}} // namespace oac::we

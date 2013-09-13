@@ -34,14 +34,14 @@
 using namespace oac;
 using namespace oac::we;
 
-ptr<plugin> plug;
+plugin_ptr plug;
 
 void __stdcall DLLStart(void)
 {
    file log_file(LOG_FILE);
    set_main_logger(make_logger(log_level::INFO, log_file.append()));
    log("DLLStart", log_level::INFO, "The Wilco Exporter module is starting");
-   plug = new plugin();
+   plug = std::make_shared<plugin>();
    log("DLLStart", log_level::INFO, "The Wilco Exporter module has been started");
 }
 

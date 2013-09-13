@@ -280,7 +280,7 @@ struct let_test
 private:
 
    typedef std::function<
-         void(const async_tcp_connection::ptr_type&)> server_action;
+         void(const async_tcp_connection_ptr&)> server_action;
 
    struct var_update_reception
    {
@@ -317,7 +317,7 @@ private:
 
    }
 
-   void server_read_message(const async_tcp_connection::ptr_type& conn)
+   void server_read_message(const async_tcp_connection_ptr& conn)
    {
       _server_conn = conn;
       conn->read(
@@ -331,7 +331,7 @@ private:
    }
 
    void on_server_message_read(
-         const async_tcp_connection::ptr_type& conn,
+         const async_tcp_connection_ptr& conn,
          const boost::system::error_code& ec,
          std::size_t bytes_read)
    {
@@ -340,7 +340,7 @@ private:
    }
 
    void server_handshake(
-         const async_tcp_connection::ptr_type& conn)
+         const async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<proto::begin_session_message>();
       BOOST_CHECK_EQUAL("it-client", req.pname);
@@ -350,7 +350,7 @@ private:
       server_write_message(conn, rep);
    }
 
-   void server_receive_close(const async_tcp_connection::ptr_type& conn)
+   void server_receive_close(const async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<proto::end_session_message>();
       BOOST_CHECK_EQUAL("Client disconnected", req.cause);
@@ -359,7 +359,7 @@ private:
    void server_subscribe(
          const variable_id& var_id,
          subscription_id subs_id,
-         const async_tcp_connection::ptr_type& conn)
+         const async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::subscription_request_message>();
@@ -389,7 +389,7 @@ private:
    void server_unsubscribe(
          subscription_id expected_subs_id,
          subscription_id reply_subs_id,
-         const async_tcp_connection::ptr_type& conn)
+         const async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::unsubscription_request_message>();
@@ -412,7 +412,7 @@ private:
    void server_receive_var_update(
          subscription_id expected_subs_id,
          const variable_value& expected_var_value,
-         const async_tcp_connection::ptr_type& conn)
+         const async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::var_update_message>();
@@ -421,7 +421,7 @@ private:
    }
 
    void server_send_garbage(
-         const async_tcp_connection::ptr_type& conn)
+         const async_tcp_connection_ptr& conn)
    {
       _srv_output_buff.reset(new linear_buffer(1024));
       for (int i = 0; i < 8; i++)
@@ -451,7 +451,7 @@ private:
 
    template <typename MessageType>
    void server_write_message(
-         const async_tcp_connection::ptr_type& conn,
+         const async_tcp_connection_ptr& conn,
          const MessageType& msg,
          bool request_read = true)
    {

@@ -226,11 +226,11 @@ public:
 private:
 
    variable_type _type;
-   ptr<linear_buffer> _buffer;
+   linear_buffer_ptr _buffer;
 
    inline variable_value(
          const variable_type& type,
-         const ptr<linear_buffer>& buffer)
+         const linear_buffer_ptr& buffer)
       : _type(type), _buffer(buffer) {}
 
    void check_type(

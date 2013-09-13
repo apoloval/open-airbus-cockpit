@@ -29,7 +29,7 @@
 
 #include <liboac/cockpit.h>
 #include <liboac/exception.h>
-#include <liboac/lang-utils.h>
+
 namespace oac { namespace we {
 
 enum apu_status
@@ -256,7 +256,9 @@ class wilco_cockpit : public cockpit_front
 {
 public:
 
-   static wilco_cockpit* new_cockpit(
+   typedef std::shared_ptr<wilco_cockpit> ptr_type;
+
+   static wilco_cockpit::ptr_type new_cockpit(
          const aircraft& aircraft);
 
    inline virtual ~wilco_cockpit() {}
@@ -282,6 +284,8 @@ protected:
    inline wilco_cockpit() {}
 };
 
-}}; // namespace oac
+typedef wilco_cockpit::ptr_type wilco_cockpit_ptr;
+
+}} // namespace oac
 
 #endif

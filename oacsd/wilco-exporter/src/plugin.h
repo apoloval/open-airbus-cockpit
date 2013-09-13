@@ -65,9 +65,11 @@ private:
    void reset_cockpit(const aircraft& aircraft);
 
    simconnect_client _sc;
-   ptr<wilco_cockpit> _wilco;
-   ptr<cockpit_back> _fsuipc;
+   wilco_cockpit_ptr _wilco;
+   cockpit_back_ptr _fsuipc;
 };
+
+typedef std::shared_ptr<plugin> plugin_ptr;
 
 }}; // namespace oac::we
 

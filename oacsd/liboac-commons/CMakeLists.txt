@@ -14,7 +14,6 @@ set(liboac-commons_HEADERS
    include/liboac/format.h
    include/liboac/fsuipc.h
    include/liboac/io.h
-   include/liboac/lang-utils.h
    include/liboac/logging.h
    include/liboac/network.h
    include/liboac/network.inl
@@ -66,7 +65,6 @@ add_unit_test(concurrency-test liboac)
 add_unit_test(exception-test liboac)
 add_unit_test(filesystem-test liboac)
 add_unit_test(fsuipc-test liboac)
-add_unit_test(lang-utils-test liboac)
 add_unit_test(stream-test liboac)
 add_unit_test(timing-test liboac)
 

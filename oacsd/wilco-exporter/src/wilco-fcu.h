@@ -102,7 +102,7 @@ private:
       return accessor(*fcu);
    }
 
-   ptr<local_fsuipc> _fsuipc;
+   local_fsuipc_ptr _fsuipc;
 };
 
 }} // namespace oac

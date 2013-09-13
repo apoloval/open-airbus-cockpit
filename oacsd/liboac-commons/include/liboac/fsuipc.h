@@ -57,10 +57,11 @@ OAC_EXCEPTION_END()
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
 class local_fsuipc :
-      public shared_by_ptr<local_fsuipc>,
       public linear_stream_buffer_base<local_fsuipc>
 {
 public:
+
+   typedef std::shared_ptr<local_fsuipc> ptr_type;
 
    typedef DWORD Offset;
 
@@ -73,6 +74,9 @@ public:
       local_fsuipc* create_fsuipc() throw (fsuipc_error)
       { return new local_fsuipc(); }
    };
+
+   typedef factory factory_type;
+   typedef std::shared_ptr<factory_type> factory_ptr;
 
    local_fsuipc();
 
@@ -130,6 +134,8 @@ public:
       }
    }
 };
+
+typedef local_fsuipc::ptr_type local_fsuipc_ptr;
 
 /**
  * The address of a FSUIPC offset.
@@ -367,10 +373,7 @@ private:
 template <typename FsuipcUserAdapter,
           typename FsuipcValuedOffsetEvaluator =
                std::function<void(const fsuipc_valued_offset&)>>
-class fsuipc_update_observer :
-      public shared_by_ptr<fsuipc_update_observer<
-                              FsuipcUserAdapter,
-                              FsuipcValuedOffsetEvaluator>>
+class fsuipc_update_observer
 {
 public:
 

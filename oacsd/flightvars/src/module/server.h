@@ -34,7 +34,6 @@
 namespace oac { namespace fv {
 
 class flight_vars_server :
-      public shared_by_ptr<flight_vars_server>,
       public std::enable_shared_from_this<flight_vars_server>,
       public logger_component
 {
@@ -59,75 +58,77 @@ public:
 
 private:
 
-   struct session : shared_by_ptr<session>
+   struct session
    {
       std::shared_ptr<flight_vars_server> server;
       subscription_mapper subscriptions;
-      ring_buffer::ptr_type input_buffer;
-      async_tcp_connection::ptr_type conn;
+      ring_buffer_ptr input_buffer;
+      async_tcp_connection_ptr conn;
 
       session(const std::shared_ptr<flight_vars_server>& srv,
-              const async_tcp_connection::ptr_type& c)
+              const async_tcp_connection_ptr& c)
          : server(srv),
-           input_buffer(ring_buffer::create(64*1024)),
+           input_buffer(std::make_shared<ring_buffer>(64*1024)),
            conn(c)
       {}
 
       ~session();
 
       void unsubscribe_all();
-   };
+   };     
 
    friend struct session;
+
+   typedef std::shared_ptr<session> session_ptr;
 
    typedef std::function<void(void)> after_write_handler;
 
    std::shared_ptr<flight_vars> _delegate;
    async_tcp_server _tcp_server;
 
-   void accept_connection(const async_tcp_connection::ptr_type& conn);
+   void accept_connection(const async_tcp_connection_ptr& conn);
 
    void read_begin_session(
-         const session::ptr_type& session);
+         const session_ptr& session);
 
    void on_read_begin_session(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const boost::system::error_code& ec,
          std::size_t bytes_transferred);
 
    void read_request(
-         const session::ptr_type& session);
+         const session_ptr& session);
 
    void on_read_request(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const boost::system::error_code& ec,
          std::size_t bytes_transferred);
 
    proto::subscription_reply_message handle_subscription_request(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const proto::subscription_request_message& req);
 
    proto::unsubscription_reply_message handle_unsubscription_request(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const proto::unsubscription_request_message& req);
 
    void handle_var_update(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const variable_id& var_id,
          const variable_value& var_value);
 
    void send_var_update(
-         const session::ptr_type& session,
+         const session_ptr& session,
          const variable_id& var_id,
          const variable_value& var_value);
 
    void write_message(
-         const async_tcp_connection::ptr_type& conn,
+         const async_tcp_connection_ptr& conn,
          const proto::message& msg,
          const after_write_handler& after_write);
 
    void on_write_message(
-         const linear_buffer::ptr_type& buffer,
+         const linear_buffer_ptr& buffer,
          const after_write_handler& after_write,
          const boost::system::error_code& ec,
          std::size_t bytes_transferred);
@@ -135,6 +136,8 @@ private:
    void handle_var_update_request(
          const proto::var_update_message& req);
 };
+
+typedef std::shared_ptr<flight_vars_server> flight_vars_server_ptr;
 
 }} // namespace oac::fv
 
