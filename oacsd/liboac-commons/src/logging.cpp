@@ -27,7 +27,7 @@ namespace {
 
 const char* LEVEL_STR[] =
 {
-   "INFO", "WARN", "FAIL"
+   "TRACE", "INFO", "WARN", "ERROR", "FATAL"
 };
 
 std::shared_ptr<logger> main_logger;
