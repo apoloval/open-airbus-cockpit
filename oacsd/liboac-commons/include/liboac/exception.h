@@ -22,6 +22,8 @@
 #include <exception>
 #include <string>
 
+#include <boost/preprocessor.hpp>
+
 #include "format.h"
 
 #pragma warning( disable : 4290 )
@@ -86,6 +88,20 @@ protected:
         _cause(nullptr)
    {}
 
+   template <typename... Args>
+   exception(const char* fmt, const Args&... args)
+      : _source("unknown source"),
+        _msg(format(fmt, args...)),
+        _cause(nullptr)
+   {}
+
+   template <typename Exception, typename... Args>
+   exception(const Exception& cause, const char* fmt, const Args&... args)
+      : _source("unknown source"),
+        _msg(format(fmt, args...)),
+        _cause(std::make_shared<Exception>(cause))
+   {}
+
    void _set_source(const std::string& source)
    { _source = source; }
 
@@ -103,76 +119,121 @@ private:
    std::shared_ptr<std::exception> _cause;
 };
 
-#define _OAC_EXCEPTION_SETTERS(class_name)                     \
-         class_name& set_source(const std::string& source)     \
-         {                                                     \
-            _set_source(source);                               \
-            return *this;                                      \
-         }                                                     \
-                                                               \
-         template <typename Exception>                         \
-         class_name& with_cause(const Exception& e)            \
-         {                                                     \
-            _set_cause(e);                                     \
-            return *this;                                      \
-         }
+#define OAC_DECL_EXCEPTION(class_name, parent_class, msg)                  \
+   class class_name : public parent_class                                  \
+   {                                                                       \
+   public:                                                                 \
+                                                                           \
+      class_name() : parent_class(msg)                                     \
+      {}                                                                   \
+                                                                           \
+      template <typename Exception>                                        \
+      class_name(const Exception& cause) : parent_class(cause, msg)        \
+      {}                                                                   \
+                                                                           \
+      class_name& set_source(const std::string& source)                    \
+      { _set_source(source); return *this; }                               \
+   }
 
-#define OAC_EXCEPTION_BEGIN(class_name, parent)                \
-      class class_name : public parent                         \
-      {                                                        \
-      public:                                                  \
-         typedef class_name __this_type;                       \
-                                                               \
-         _OAC_EXCEPTION_SETTERS(class_name)
+#define OAC_EXCEPTION_CTOR_PARAM(r, data, i, param)                        \
+   BOOST_PP_COMMA_IF(i)                                                    \
+   const BOOST_PP_TUPLE_ELEM(2, 1, param)&                                 \
+   BOOST_PP_TUPLE_ELEM(2, 0, param)
+
+#define OAC_EXCEPTION_CTOR_PARAMS(...)                                     \
+   BOOST_PP_LIST_FOR_EACH_I(                                               \
+      OAC_EXCEPTION_CTOR_PARAM,                                            \
+      _,                                                                   \
+      BOOST_PP_VARIADIC_TO_LIST(__VA_ARGS__))
+
+#define OAC_EXCEPTION_INIT_FIELD(r, data, i, param)                        \
+   BOOST_PP_COMMA_IF(i)                                                    \
+   BOOST_PP_CAT(_, BOOST_PP_TUPLE_ELEM(2, 0, param))                       \
+   (BOOST_PP_TUPLE_ELEM(2, 0, param))
+
+#define OAC_EXCEPTION_INIT_FIELDS(...)                                     \
+   BOOST_PP_LIST_FOR_EACH_I(                                               \
+      OAC_EXCEPTION_INIT_FIELD,                                            \
+      _,                                                                   \
+      BOOST_PP_VARIADIC_TO_LIST(__VA_ARGS__))
+
+#define OAC_EXCEPTION_DECL_FIELD(r, data, param)                           \
+   BOOST_PP_TUPLE_ELEM(2, 1, param)                                        \
+   BOOST_PP_CAT(_, BOOST_PP_TUPLE_ELEM(2, 0, param));
+
+#define OAC_EXCEPTION_DECL_FIELDS(...)                                     \
+   BOOST_PP_LIST_FOR_EACH(                                                 \
+      OAC_EXCEPTION_DECL_FIELD,                                            \
+      _,                                                                   \
+      BOOST_PP_VARIADIC_TO_LIST(__VA_ARGS__))
+
+#define OAC_EXCEPTION_DECL_GETTER(r, data, param)                          \
+   const BOOST_PP_TUPLE_ELEM(2, 1, param)&                                 \
+   BOOST_PP_CAT(get_, BOOST_PP_TUPLE_ELEM(2, 0, param))() const            \
+   { return BOOST_PP_CAT(_, BOOST_PP_TUPLE_ELEM(2, 0, param)); }
+
+#define OAC_EXCEPTION_DECL_GETTERS(...)                                    \
+   BOOST_PP_LIST_FOR_EACH(                                                 \
+      OAC_EXCEPTION_DECL_GETTER,                                           \
+      _,                                                                   \
+      BOOST_PP_VARIADIC_TO_LIST(__VA_ARGS__))
 
 
-#define OAC_EXCEPTION_MSG(...)                                 \
-         void regen_message()                                  \
-         {                                                     \
-            _set_message(format(__VA_ARGS__));                 \
-         }                                                     \
+#define OAC_DECL_EXCEPTION_WITH_PARAMS(class_name, parent_class, msg, ...) \
+   class class_name : public parent_class                                  \
+   {                                                                       \
+   public:                                                                 \
+                                                                           \
+      class_name(OAC_EXCEPTION_CTOR_PARAMS(__VA_ARGS__))                   \
+         : parent_class(BOOST_PP_TUPLE_REM_CTOR(msg)),                     \
+           OAC_EXCEPTION_INIT_FIELDS(__VA_ARGS__)                          \
+      {}                                                                   \
+                                                                           \
+      template <typename Exception>                                        \
+      class_name(                                                          \
+            OAC_EXCEPTION_CTOR_PARAMS(__VA_ARGS__),                        \
+            const Exception& cause)                                        \
+         : parent_class(cause, BOOST_PP_TUPLE_REM_CTOR(msg)),              \
+           OAC_EXCEPTION_INIT_FIELDS(__VA_ARGS__)                          \
+      {}                                                                   \
+                                                                           \
+      OAC_EXCEPTION_DECL_GETTERS(__VA_ARGS__)                              \
+                                                                           \
+      class_name& set_source(const std::string& source)                    \
+      { _set_source(source); return *this; }                               \
+                                                                           \
+   private:                                                                \
+                                                                           \
+      OAC_EXCEPTION_DECL_FIELDS(__VA_ARGS__)                               \
+   }
 
-#define OAC_EXCEPTION_FIELD(name, type)                        \
-      private:                                                 \
-         type name;                                            \
-      public:                                                  \
-         __this_type& with_##name(const type& _v)              \
-         {                                                     \
-            name = _v;                                         \
-            regen_message();                                   \
-            return *this;                                      \
-         }                                                     \
-                                                               \
-         const type& get_##name() const                        \
-         { return name; }
-
-#define OAC_EXCEPTION_END()                                    \
-      };
-
-#define OAC_ABSTRACT_EXCEPTION(class_name)                     \
-      struct class_name : ::oac::exception                     \
-      {                                                        \
-         class_name(const class_name& e)                       \
-            : ::oac::exception(e)                              \
-         {}                                                    \
-                                                               \
-      protected:                                               \
-                                                               \
-         class_name() : ::oac::exception() {}                  \
-                                                               \
-         template <typename Exception>                         \
-         class_name(const Exception& cause)                    \
-            : ::oac::exception(cause)                          \
-         {}                                                    \
-      }
-
-#define OAC_EXCEPTION(class_name, parent, error_msg)           \
-      struct class_name : parent                               \
-      {                                                        \
-         class_name() : parent()                               \
-         { _set_message(error_msg); }                          \
-         _OAC_EXCEPTION_SETTERS(class_name)                    \
-      }
+#define OAC_DECL_ABSTRACT_EXCEPTION(class_name)                            \
+   struct class_name : ::oac::exception                                    \
+   {                                                                       \
+      class_name(const class_name& e)                                      \
+         : ::oac::exception(e)                                             \
+      {}                                                                   \
+                                                                           \
+   protected:                                                              \
+                                                                           \
+      template <typename... Args>                                          \
+      class_name(const char* fmt, const Args&... args)                     \
+         : ::oac::exception(fmt, args...)                                  \
+      {}                                                                   \
+                                                                           \
+      template <typename Exception, typename... Args>                      \
+      class_name(                                                          \
+            const Exception& cause,                                        \
+            const char* fmt, const                                         \
+            Args&... args)                                                 \
+         : ::oac::exception(cause, fmt, args...)                           \
+      {}                                                                   \
+                                                                           \
+      template <typename Exception>                                        \
+      class_name(const Exception& cause)                                   \
+         : ::oac::exception(cause)                                         \
+      {}                                                                   \
+   }
 
 #define OAC_MAKE_EXCEPTION(...)                                \
    (__VA_ARGS__)                                               \
@@ -187,12 +248,9 @@ private:
  * An exception caused by a enum value out of its range.
  */
 template <typename Enum>
-OAC_EXCEPTION_BEGIN(enum_out_of_range_error, oac::exception)
-   OAC_EXCEPTION_FIELD(value, Enum)
-   OAC_EXCEPTION_MSG(
-         "invalid value %d out of range of enumeration",
-         int(value))
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(enum_out_of_range_error, oac::exception,
+   ("invalid value %d out of range of enumeration", int(value)),
+   (value, Enum));
 
 } // namespace oac
 

@@ -48,7 +48,7 @@ public:
     * Exception thrown when a communication error occurs. Contains:
     *  - nested_error_info, indicating the nested IO error
     */
-   OAC_EXCEPTION(
+   OAC_DECL_EXCEPTION(
          communication_error,
          oac::exception,
          "something went wrong while communicating with FlightVars server");

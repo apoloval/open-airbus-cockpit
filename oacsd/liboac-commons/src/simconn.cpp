@@ -52,9 +52,7 @@ throw (data_definition_error)
    auto result = SimConnect_AddToDataDefinition(
          _handle, _id, name.c_str(), units.c_str(), data_type); 
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(data_definition_error()
-            .with_name(name)
-            .with_units(units));
+      OAC_THROW_EXCEPTION(data_definition_error(name, units));
    return *this;
 }
 
@@ -66,8 +64,7 @@ throw (data_request_error)
          _handle, _id, _data_def, _object, _period, 
          _flags, _origin, _interval, _limit);
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(data_request_error()
-            .with_data_def(_data_def));
+      OAC_THROW_EXCEPTION(data_request_error(_data_def));
 }
 
 void
@@ -77,8 +74,7 @@ throw (data_request_error)
    auto result = SimConnect_SetDataOnSimObject(
          _handle, _data_def, _object, _flags, _count, _element_size, data);
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(data_request_error()
-            .with_data_def(_data_def));
+      OAC_THROW_EXCEPTION(data_request_error(_data_def));
 }
 
 simconnect_client::client_event::client_event(
@@ -93,8 +89,7 @@ throw (event_error) :
    auto result = SimConnect_MapClientEventToSimEvent(
          _handle, _id, ev_name.c_str());
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(event_error()
-            .with_event(_id));
+      OAC_THROW_EXCEPTION(event_error(_id));
 }
 
 simconnect_client::client_event::client_event(
@@ -107,8 +102,7 @@ throw (event_error) :
 {
    auto result = SimConnect_MapClientEventToSimEvent(_handle, _id);
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(event_error()
-            .with_event(_id));
+      OAC_THROW_EXCEPTION(event_error(_id));
 }
 
 void 
@@ -118,8 +112,7 @@ throw (event_error)
    auto result = SimConnect_TransmitClientEvent(
          _handle, _object, _id, value, _group, _flags);
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(event_error()
-            .with_event(_id));
+      OAC_THROW_EXCEPTION(event_error(_id));
 }
 
 simconnect_client::event_transmitter::event_transmitter(
@@ -343,8 +336,7 @@ throw (unknown_event_name_error)
    auto result = SimConnect_SubscribeToSystemEvent(
          _handle, event_id, event_name.c_str());
    if (result != S_OK)
-      OAC_THROW_EXCEPTION(unknown_event_name_error()
-            .with_event(event_name));
+      OAC_THROW_EXCEPTION(unknown_event_name_error(event_name));
 }
 
 simconnect_client::data_definition

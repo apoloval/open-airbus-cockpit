@@ -93,9 +93,7 @@ private:
    {
       DWORD result;
       if (!FSUIPC_Open2(SIM_ANY, &result, _buffer, LOCAL_FSUIPC_BUFFER_SIZE))
-         OAC_THROW_EXCEPTION(fsuipc_error()
-               .with_error_code(result)
-               .with_error_message(get_result_message(result)));
+         OAC_THROW_EXCEPTION(fsuipc_error(result, get_result_message(result)));
    }
 
 };
@@ -120,9 +118,7 @@ throw (buffer::index_out_of_bounds, io_exception)
    if (FSUIPC_Read(offset, length, dst, &error))
       if (FSUIPC_Process(&error))
          return;
-   OAC_THROW_EXCEPTION(fsuipc_error()
-         .with_error_code(error)
-         .with_error_message(get_result_message(error)));
+   OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
 }
 
 void
@@ -133,9 +129,7 @@ throw (buffer::index_out_of_bounds, io_exception)
    if (FSUIPC_Write(offset, length, (void*) src, &error))
       if (FSUIPC_Process(&error))
          return;
-   OAC_THROW_EXCEPTION(fsuipc_error()
-         .with_error_code(error)
-         .with_error_message(get_result_message(error)));
+   OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
 }
 
 
@@ -152,16 +146,14 @@ throw (fsuipc_error)
    {
       // No previous instance, let's open FSUIPC
       log_info("Opening local channel to FSUIPC");
-      DWORD result;
+      DWORD error;
       if (!FSUIPC_Open2(
              SIM_ANY,
-             &result,
+             &error,
              _buffer,
              LOCAL_FSUIPC_BUFFER_SIZE))
       {
-         OAC_THROW_EXCEPTION(fsuipc_error()
-               .with_error_code(result)
-               .with_error_message(get_result_message(result)));
+         OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
       }
       log_info("Local channel to FSUIPC successfully open");
    }
@@ -201,9 +193,7 @@ throw (fsuipc_error)
             &valued_offset.value,
             &error))
    {
-      OAC_THROW_EXCEPTION(fsuipc_error()
-               .with_error_code(error)
-               .with_error_message(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
    }
 }
 
@@ -219,9 +209,7 @@ throw (fsuipc_error)
             (void*) valued_offset.value,
             &error))
    {
-      OAC_THROW_EXCEPTION(fsuipc_error()
-         .with_error_code(error)
-         .with_error_message(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
    }
 }
 
@@ -232,9 +220,7 @@ throw (fsuipc_error)
    DWORD error;
    if (!FSUIPC_Process(&error))
    {
-      OAC_THROW_EXCEPTION(fsuipc_error()
-         .with_error_code(error)
-         .with_error_message(get_result_message(error)));
+      OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
    }
 }
 

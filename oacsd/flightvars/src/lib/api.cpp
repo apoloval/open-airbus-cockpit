@@ -46,8 +46,7 @@ variable_value::operator == (
       case variable_type::DWORD: return val.as_dword() == as_dword();
       case variable_type::FLOAT: return val.as_float() == as_float();
       default:
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
-               .with_value(_type));
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>(_type));
    }
 }
 
@@ -128,8 +127,7 @@ variable_value::to_string() const
          return str(boost::format("%f(float)") % as_float());
       default:
          // never reached
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
-               .with_value(_type));
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>(_type));
    }
 }
 
@@ -138,9 +136,7 @@ variable_value::check_type(const variable_type& type) const
 throw (invalid_type_error)
 {
    if (_type != type)
-      OAC_THROW_EXCEPTION(invalid_type_error()
-            .with_expected_type(_type)
-            .with_actual_type(type));
+      OAC_THROW_EXCEPTION(invalid_type_error(_type, type));
 }
 
 

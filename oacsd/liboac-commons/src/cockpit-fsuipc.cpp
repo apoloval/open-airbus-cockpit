@@ -307,7 +307,7 @@ throw (sync_error)
    catch (oac::exception& e)
    {
       _fsuipc.reset();
-      OAC_THROW_EXCEPTION(sync_error().with_cause(e));
+      OAC_THROW_EXCEPTION(sync_error(e));
    } 
 }
 
@@ -349,9 +349,9 @@ throw (sync_error)
    {
       _fsuipc = local_fsuipc_ptr(_fsuipc_fact->create_fsuipc());
    }
-   catch (fsuipc_error& e)
+   catch (const fsuipc_error& e)
    {
-      OAC_THROW_EXCEPTION(sync_error().with_cause(e));
+      OAC_THROW_EXCEPTION(sync_error(e));
    }
 }
 

@@ -33,10 +33,9 @@ namespace filesystem {
 /**
  * Exception caused by a file that cannot be open.
  */
-OAC_EXCEPTION_BEGIN(open_error, io_exception)
-   OAC_EXCEPTION_FIELD(path, boost::filesystem::path)
-   OAC_EXCEPTION_MSG("cannot open file %s", path.string())
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(open_error, io_exception,
+   ("cannot open file %s", path.string()),
+   (path, boost::filesystem::path));
 
 }
 

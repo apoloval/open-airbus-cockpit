@@ -28,24 +28,24 @@ namespace oac {
 /**
  * An exception reporting an error in a input/output operation.
  */
-OAC_ABSTRACT_EXCEPTION(io_exception);
+OAC_DECL_ABSTRACT_EXCEPTION(io_exception);
 
 /**
  * An exception reporting an unexpected end of file while
  * executing an IO operation.
  */
-OAC_EXCEPTION(eof_error, io_exception, "unexpected end of file");
+OAC_DECL_EXCEPTION(eof_error, io_exception, "unexpected end of file");
 
 /**
  * An exception reporting an error in a Boost ASIO operation.
  */
-OAC_EXCEPTION_BEGIN(boost_asio_error, io_exception)
-   OAC_EXCEPTION_FIELD(error_code, boost::system::error_code)
-   OAC_EXCEPTION_MSG(
+OAC_DECL_EXCEPTION_WITH_PARAMS(boost_asio_error, io_exception,
+   (
       "Boost ASIO operation returned with an error code %d (%s)",
       error_code.value(),
-      error_code.message())
-OAC_EXCEPTION_END()
+      error_code.message()
+   ),
+   (error_code, boost::system::error_code));
 
 } // namespace oac
 

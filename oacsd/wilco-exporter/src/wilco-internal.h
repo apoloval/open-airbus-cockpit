@@ -415,10 +415,9 @@ typedef void (__cdecl *wilco_set_nd_mode)(DWORD mode);
 
 typedef void (__cdecl *wilco_send_command)(DWORD cmd, const void* args);
 
-OAC_EXCEPTION_BEGIN(dll_load_error, oac::exception)
-   OAC_EXCEPTION_FIELD(dll, dll_name)
-   OAC_EXCEPTION_MSG("cannot load DLL %s", dll.c_str())
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(dll_load_error, oac::exception,
+   ("cannot load DLL %s", dll.c_str()),
+   (dll, dll_name));
 
 /**
  * Load DLL library for given aircraft. invalid_aircraft_error is thrown if

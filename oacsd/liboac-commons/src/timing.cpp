@@ -36,9 +36,9 @@ throw (simconnect_error)
                   std::placeholders::_2));
       _simconnect->subscribe_to_system_event(sc_event);
    }
-   catch (simconnect_client::invalid_operation_exception& e)
+   catch (const simconnect_client::invalid_operation_exception& e)
    {
-      OAC_THROW_EXCEPTION(simconnect_error().with_cause(e));
+      OAC_THROW_EXCEPTION(simconnect_error(e));
    }
 }
 
@@ -50,9 +50,9 @@ throw (simconnect_error)
    {
       _simconnect->dispatch_message();
    }
-   catch (simconnect_client::invalid_operation_exception& e)
+   catch (const simconnect_client::invalid_operation_exception& e)
    {
-      OAC_THROW_EXCEPTION(simconnect_error().with_cause(e));
+      OAC_THROW_EXCEPTION(simconnect_error(e));
    }
 }
 

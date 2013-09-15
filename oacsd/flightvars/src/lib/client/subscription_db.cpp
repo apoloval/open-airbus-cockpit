@@ -30,12 +30,10 @@ subscription_db::create_entry(
 throw (already_exists_exception)
 {
    if (variable_defined(var_id))
-      OAC_THROW_EXCEPTION(variable_already_exists_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(variable_already_exists_error(var_id));
    if (master_subscription_defined(master_subs_id))
-      OAC_THROW_EXCEPTION(master_subscription_already_exists_error()
-            .with_subs_id(master_subs_id));
+      OAC_THROW_EXCEPTION(
+            master_subscription_already_exists_error(master_subs_id));
 
    init_entry(var_id, master_subs_id);
 
@@ -69,9 +67,7 @@ subscription_db::add_virtual_subscription(
 throw (no_such_element_exception)
 {
    if (!variable_defined(var_id))
-      OAC_THROW_EXCEPTION(no_such_variable_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(no_such_variable_error(var_id));
    auto virtual_subs = subscription(
          make_subscription_id(),
          handler);
@@ -163,9 +159,7 @@ subscription_db::get_entry_by_var(
 throw (no_such_element_exception)
 {
    if (!variable_defined(var_id))
-      OAC_THROW_EXCEPTION(no_such_variable_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(no_such_variable_error(var_id));
    return _var_id_map[var_id];
 }
 
@@ -175,8 +169,7 @@ subscription_db::get_entry_by_master(
 throw (no_such_element_exception)
 {
    if (!master_subscription_defined(master))
-      OAC_THROW_EXCEPTION(no_such_master_subscription_error()
-            .with_subs_id(master));
+      OAC_THROW_EXCEPTION(no_such_master_subscription_error(master));
    return _master_subs_id_map[master];
 }
 
@@ -186,8 +179,7 @@ subscription_db::get_entry_by_virtual(
 throw (no_such_element_exception)
 {
    if (!virtual_subscription_defined(virt_subs_id))
-      OAC_THROW_EXCEPTION(no_such_virtual_subscription_error()
-            .with_subs_id(virt_subs_id));
+      OAC_THROW_EXCEPTION(no_such_virtual_subscription_error(virt_subs_id));
    return _virtual_subs_id_map[virt_subs_id];
 }
 

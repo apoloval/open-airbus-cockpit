@@ -31,8 +31,7 @@ throw (filesystem::open_error)
    : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
 {
    if (!_fd)
-      OAC_THROW_EXCEPTION(filesystem::open_error()
-            .with_path(path));
+      OAC_THROW_EXCEPTION(filesystem::open_error(path));
 }
 
 file_input_stream::file_input_stream(
@@ -72,8 +71,7 @@ throw (filesystem::open_error)
    : _fd(_fsopen(path.string().c_str(), mode.c_str(), _SH_DENYWR))
 {
    if (!_fd)
-      OAC_THROW_EXCEPTION(filesystem::open_error()
-            .with_path(path));
+      OAC_THROW_EXCEPTION(filesystem::open_error(path));
 }
 
 file_output_stream::file_output_stream(file_output_stream&& s)

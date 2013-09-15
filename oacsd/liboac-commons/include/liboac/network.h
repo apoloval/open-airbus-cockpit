@@ -46,22 +46,21 @@ typedef std::string hostname;
 /**
  * An error while binding a socket.
  */
-OAC_EXCEPTION_BEGIN(bind_error, io_exception)
-   OAC_EXCEPTION_FIELD(port, std::uint16_t)
-   OAC_EXCEPTION_MSG("cannot bind on port %d", port)
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(bind_error, io_exception,
+   ("cannot bind on port %d", port),
+   (port, std::uint16_t));
 
 /**
  * An error while connecting to a remote peer.
  */
-OAC_EXCEPTION_BEGIN(connection_refused, io_exception)
-   OAC_EXCEPTION_FIELD(remote_host, std::string)
-   OAC_EXCEPTION_FIELD(remote_port, std::uint16_t)
-   OAC_EXCEPTION_MSG(
-         "connection refused to %s on port %d",
-         remote_host,
-         remote_port)
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(connection_refused, io_exception,
+   (
+      "connection refused to %s on port %d",
+      remote_host,
+      remote_port
+   ),
+   (remote_host, std::string),
+   (remote_port, std::uint16_t));
 
 typedef std::function<void(const io_exception&)> error_handler;
 

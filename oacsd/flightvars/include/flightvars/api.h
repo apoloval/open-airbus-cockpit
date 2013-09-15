@@ -177,8 +177,7 @@ var_type_to_string(
       case variable_type::FLOAT : return "float";
       default:
          // never reached
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>()
-               .with_value(var_type));
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<variable_type>(var_type));
    }
 }
 
@@ -196,14 +195,14 @@ class variable_value
 {
 public:
 
-   OAC_EXCEPTION_BEGIN(invalid_type_error, oac::exception)
-      OAC_EXCEPTION_FIELD(expected_type, variable_type)
-      OAC_EXCEPTION_FIELD(actual_type, variable_type)
-      OAC_EXCEPTION_MSG(
-            "invalid variable type %s (expected %s)",
-            var_type_to_string(actual_type),
-            var_type_to_string(expected_type))
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_type_error, oac::exception,
+      (
+         "invalid variable type %s (expected %s)",
+         var_type_to_string(actual_type),
+         var_type_to_string(expected_type)
+      ),
+      (expected_type, variable_type),
+      (actual_type, variable_type));
 
    bool operator == (const variable_value& val) const;
 
@@ -262,40 +261,35 @@ public:
    /**
     * An illegal value was provided for a variable.
     */
-   OAC_ABSTRACT_EXCEPTION(illegal_value_error);
+   OAC_DECL_ABSTRACT_EXCEPTION(illegal_value_error);
 
    /**
     * An illegal type was provided for a variable.
     */
-   OAC_EXCEPTION_BEGIN(invalid_value_type_error, illegal_value_error)
-      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
-      OAC_EXCEPTION_FIELD(var_type, variable_type)
-      OAC_EXCEPTION_MSG(
-            "invalid value type %s for subscription %d",
-            var_type_to_string(var_type),
-            subs_id)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         invalid_value_type_error,
+         illegal_value_error,
+      (
+         "invalid value type %s for subscription %d",
+         var_type_to_string(var_type),
+         subs_id
+      ),
+      (subs_id, subscription_id),
+      (var_type, variable_type));
 
    /**
     * An operation was requested on a unknown variable.
     */
-   OAC_EXCEPTION_BEGIN(no_such_variable_error, oac::exception)
-      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
-      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
-      OAC_EXCEPTION_MSG(
-            "no such variable with id %s",
-            var_to_string(make_var_id(var_group_tag, var_name_tag)))
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(no_such_variable_error, oac::exception,
+      ( "no such variable with id %s", var_to_string(var_id)),
+      (var_id, variable_id));
 
    /**
     * An operation was requested for an unknown subscription.
     */
-   OAC_EXCEPTION_BEGIN(no_such_subscription_error, oac::exception)
-      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
-      OAC_EXCEPTION_MSG(
-            "no such subscription with id %d",
-            subs_id)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(no_such_subscription_error, oac::exception,
+      ("no such subscription with id %d", subs_id),
+      (subs_id, subscription_id));
 
 
    /**

@@ -214,7 +214,7 @@ public:
          if (ec == boost::asio::error::eof)
             return 0;
          else
-            OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
+            OAC_THROW_EXCEPTION(boost_asio_error(ec));
       }
    }
 
@@ -248,7 +248,7 @@ public:
          if (e.code() == boost::asio::error::eof)
             return 0;
          else
-            OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
+            OAC_THROW_EXCEPTION(boost_asio_error(ec));
       }
    }
 

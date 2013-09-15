@@ -76,61 +76,48 @@ public:
    /**
     * An exception indicating an already existing element in the DB.
     */
-   OAC_ABSTRACT_EXCEPTION(already_exists_exception);
+   OAC_DECL_ABSTRACT_EXCEPTION(already_exists_exception);
 
    /**
     * An exception indicating an already existing variable in the DB.
     */
-   OAC_EXCEPTION_BEGIN(variable_already_exists_error, already_exists_exception)
-      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
-      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
-      OAC_EXCEPTION_MSG(
-            "Variable %s already exists in FV client DB",
-            var_to_string(make_var_id(var_group_tag, var_name_tag)))
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         variable_already_exists_error,
+         already_exists_exception,
+      ("Variable %s already exists in FV client DB", var_to_string(var_id)),
+      (var_id, variable_id));
 
    /**
     * An exception indicating an already existing master subscription in the DB.
     */
-   OAC_EXCEPTION_BEGIN(
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
          master_subscription_already_exists_error,
-         already_exists_exception)
-      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
-      OAC_EXCEPTION_MSG(
-            "Master subscription ID %d already exists in FV client DB",
-            subs_id)
-   OAC_EXCEPTION_END()
+         already_exists_exception,
+      ("Master subscription ID %d already exists in FV client DB", subs_id),
+      (subs_id, subscription_id));
 
    /**
     * An exception indicating an element that was not found.
     */
-   OAC_ABSTRACT_EXCEPTION(no_such_element_exception);
+   OAC_DECL_ABSTRACT_EXCEPTION(no_such_element_exception);
 
-   OAC_EXCEPTION_BEGIN(no_such_variable_error, no_such_element_exception)
-      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
-      OAC_EXCEPTION_FIELD(var_name_tag, variable_name::tag_type)
-      OAC_EXCEPTION_MSG(
-            "Variable %s was not found in FV client DB",
-            var_to_string(make_var_id(var_group_tag, var_name_tag)))
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         no_such_variable_error,
+         no_such_element_exception,
+      ("Variable %s was not found in FV client DB", var_to_string(var_id)),
+      (var_id, variable_id));
 
-   OAC_EXCEPTION_BEGIN(
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
          no_such_master_subscription_error,
-         no_such_element_exception)
-      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
-      OAC_EXCEPTION_MSG(
-            "Master subscription ID %d was not found in FV client DB",
-            subs_id)
-   OAC_EXCEPTION_END()
+         no_such_element_exception,
+      ("Master subscription ID %d was not found in FV client DB", subs_id),
+      (subs_id, subscription_id));
 
-   OAC_EXCEPTION_BEGIN(
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
          no_such_virtual_subscription_error,
-         no_such_element_exception)
-      OAC_EXCEPTION_FIELD(subs_id, subscription_id)
-      OAC_EXCEPTION_MSG(
-            "Virtual subscription ID %d was not found in FV client DB",
-            subs_id)
-   OAC_EXCEPTION_END()
+         no_such_element_exception,
+      ("Virtual subscription ID %d was not found in FV client DB", subs_id),
+      (subs_id, subscription_id));
 
    /**
     * Create a new entry in the DB.

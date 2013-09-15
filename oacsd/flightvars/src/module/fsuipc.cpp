@@ -107,9 +107,9 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
    auto var_name = get_var_name(var_id);
 
    if (var_group.get_tag() != VAR_GROUP_TAG)
-      OAC_THROW_EXCEPTION(fsuipc::invalid_var_group_error()
-            .with_expected_var_group_tag(VAR_GROUP_TAG)
-            .with_actual_var_group_tag(var_group.get_tag()));
+      OAC_THROW_EXCEPTION(
+            fsuipc::invalid_var_group_error(
+                  VAR_GROUP_TAG, var_group.get_tag()));
 
    std::vector<std::string> parts;
    boost::split(parts, var_name.get_tag(), boost::is_any_of(":"));
@@ -133,8 +133,7 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
       return fsuipc_offset(addr, fsuipc_offset_length(len));
    }
 syntax_error:
-   OAC_THROW_EXCEPTION(fsuipc::var_name_syntax_error()
-         .with_var_name_tag(var_name));
+   OAC_THROW_EXCEPTION(fsuipc::var_name_syntax_error(var_name));
 }
 
 variable_value
@@ -151,8 +150,9 @@ to_variable_value(
          return variable_value::from_dword(valued_offset.value);
       default:
          // never reached
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<fsuipc_offset_length>()
-               .with_value(valued_offset.length));
+         OAC_THROW_EXCEPTION(
+               enum_out_of_range_error<fsuipc_offset_length>(
+                     valued_offset.length));
    }
 }
 
@@ -164,12 +164,21 @@ to_fsuipc_offset_value(
    // Rounding to integer? Binary conversion? Exception?
    switch (var_value.get_type())
    {
-      case variable_type::BOOLEAN: return var_value.as_bool();
-      case variable_type::BYTE: return var_value.as_byte();
-      case variable_type::WORD: return var_value.as_word();
-      case variable_type::DWORD: return var_value.as_dword();
-      case variable_type::FLOAT: return fsuipc_offset_value(var_value.as_float());
-      default: return 0; // never reached
+      case variable_type::BOOLEAN:
+         return var_value.as_bool();
+      case variable_type::BYTE:
+         return var_value.as_byte();
+      case variable_type::WORD:
+         return var_value.as_word();
+      case variable_type::DWORD:
+         return var_value.as_dword();
+      case variable_type::FLOAT:
+         return fsuipc_offset_value(var_value.as_float());
+      default:
+         // never reached
+         OAC_THROW_EXCEPTION(
+               enum_out_of_range_error<variable_type>(
+                     var_value.get_type()));
    }
 }
 
@@ -211,9 +220,7 @@ throw (no_such_offset_error)
 {
    auto match = _offset_handlers.find(offset);
    if (match == _offset_handlers.end())
-      OAC_THROW_EXCEPTION(no_such_offset_error()
-            .with_offset_addr(offset.address)
-            .with_offset_len(offset.length));
+      OAC_THROW_EXCEPTION(no_such_offset_error(offset.address, offset.length));
    return match->second;
 }
 
@@ -230,8 +237,7 @@ throw (no_such_subscription_error)
          if (subs.get_subscription_id() == subs_id)
             return offset;
    }
-   OAC_THROW_EXCEPTION(no_such_subscription_error()
-         .with_subscription(subs_id));
+   OAC_THROW_EXCEPTION(no_such_subscription_error(subs_id));
 }
 
 void

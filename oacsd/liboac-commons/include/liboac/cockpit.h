@@ -215,7 +215,7 @@ public:
 class cockpit_back {
 public:
 
-   OAC_EXCEPTION(
+   OAC_DECL_EXCEPTION(
          sync_error,
          oac::exception,
          "synchronization error occurred in cockpit back");

@@ -47,12 +47,9 @@ subscription_mapper::register_subscription(
 throw (variable_already_exists_error, subscription_already_exists_error)
 {
    if (_map.left.find(var_id) != _map.left.end())
-      OAC_THROW_EXCEPTION(variable_already_exists_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(variable_already_exists_error(var_id));
    if (_map.right.find(subs_id) != _map.right.end())
-      OAC_THROW_EXCEPTION(subscription_already_exists_error()
-            .with_subs_id(subs_id));
+      OAC_THROW_EXCEPTION(subscription_already_exists_error(subs_id));
    _map.insert(map_type::value_type(var_id, subs_id));
 }
 
@@ -73,8 +70,7 @@ throw (no_such_subscription_error)
 {
    auto entry = _map.right.find(subs_id);
    if (entry == _map.right.end())
-      OAC_THROW_EXCEPTION(no_such_subscription_error()
-            .with_subs_id(subs_id));
+      OAC_THROW_EXCEPTION(no_such_subscription_error(subs_id));
    return entry->second;
 }
 
@@ -85,9 +81,7 @@ throw (no_such_variable_error)
 {
    auto entry = _map.left.find(var_id);
    if (entry == _map.left.end())
-      OAC_THROW_EXCEPTION(no_such_variable_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(no_such_variable_error(var_id));
    return entry->second;
 }
 
@@ -97,9 +91,7 @@ subscription_mapper::unregister(
 throw (no_such_variable_error)
 {
    if (_map.left.erase(var_id) == 0)
-      OAC_THROW_EXCEPTION(no_such_variable_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(no_such_variable_error(var_id));
 }
 
 void
@@ -108,8 +100,7 @@ subscription_mapper::unregister(
 throw (no_such_subscription_error)
 {
    if (_map.right.erase(subs_id) == 0)
-      OAC_THROW_EXCEPTION(no_such_subscription_error()
-            .with_subs_id(subs_id));
+      OAC_THROW_EXCEPTION(no_such_subscription_error(subs_id));
 }
 
 }} // namespace oac::fv

@@ -26,7 +26,7 @@ namespace oac { namespace fv { namespace client {
 /**
  * Exception thrown when a communication error occurs.
  */
-OAC_EXCEPTION(
+OAC_DECL_EXCEPTION(
       communication_error,
       oac::exception,
       "something went wrong while communicating with FlightVars server");
@@ -34,7 +34,7 @@ OAC_EXCEPTION(
 /**
  * Exception thrown when on request timeout.
  */
-OAC_EXCEPTION(
+OAC_DECL_EXCEPTION(
    request_timeout_error,
    oac::exception,
    "Time out while waiting for the result of the request");

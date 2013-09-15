@@ -31,34 +31,27 @@ namespace {
 /**
  * An exception indicating a invalid variable type code while deserializing.
  */
-OAC_EXCEPTION_BEGIN(invalid_variable_type, protocol_exception)
-   OAC_EXCEPTION_FIELD(var_code, std::uint8_t)
-   OAC_EXCEPTION_MSG(
-      "invalid variable type code 0x%x received",
-      var_code)
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_variable_type, protocol_exception,
+   ("invalid variable type code 0x%x received", var_code),
+   (var_code, std::uint8_t));
 
 /**
  * An exception indicating a invalid message type code while deserializing.
  */
-OAC_EXCEPTION_BEGIN(invalid_message_type, protocol_exception)
-   OAC_EXCEPTION_FIELD(message_code, std::uint16_t)
-   OAC_EXCEPTION_MSG(
-      "invalid message type code 0x%x received",
-      message_code)
-OAC_EXCEPTION_END()
-
+OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_message_type, protocol_exception,
+   ("invalid message type code 0x%x received", message_code),
+   (message_code, std::uint16_t));
 
 /**
  * An exception indicating a invalid message termination mark
  * while deserializing.
  */
-OAC_EXCEPTION_BEGIN(invalid_termination_mark, protocol_exception)
-   OAC_EXCEPTION_FIELD(termination_mark, std::uint16_t)
-   OAC_EXCEPTION_MSG(
+OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_termination_mark, protocol_exception,
+   (
       "invalid termination mark 0x%x received (expected 0x0D0A)",
-      termination_mark)
-OAC_EXCEPTION_END()
+      termination_mark
+   ),
+   (termination_mark, std::uint16_t));
 
 std::uint16_t msg_type_to_code(message_type msg_type)
 {
@@ -313,7 +306,7 @@ throw (protocol_exception, io_exception)
                   variable_value::from_float(
                      Deserializer::read_float_value(input)));
       default:
-         OAC_THROW_EXCEPTION(invalid_variable_type().with_var_code(var_type));
+         OAC_THROW_EXCEPTION(invalid_variable_type(var_type));
    }
 }
 
@@ -341,8 +334,7 @@ message_type_to_string(
       case message_type::VAR_UPDATE:
          return "variable update message";
       default:
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<message_type>()
-               .with_value(msg_type));
+         OAC_THROW_EXCEPTION(enum_out_of_range_error<message_type>(msg_type));
    }
 }
 
@@ -385,8 +377,8 @@ to_string(subscription_status status)
       case subscription_status::UNKNOWN:
          return "unknown";
       default:
-         OAC_THROW_EXCEPTION(enum_out_of_range_error<subscription_status>()
-               .with_value(status));
+         OAC_THROW_EXCEPTION(
+               enum_out_of_range_error<subscription_status>(status));
    }
 }
 
@@ -620,8 +612,7 @@ throw (protocol_exception, io_exception)
          return msg;
       }
       default:
-         OAC_THROW_EXCEPTION(invalid_message_type()
-               .with_message_code(int(msg_begin)));
+         OAC_THROW_EXCEPTION(invalid_message_type(int(msg_begin)));
    }
 }
 
@@ -723,8 +714,7 @@ throw (protocol_exception, io_exception)
 {
    auto eol = native_to_big(stream::read_as<uint16_t>(input));
    if (eol != 0x0d0a)
-      OAC_THROW_EXCEPTION(invalid_termination_mark()
-            .with_termination_mark(eol));
+      OAC_THROW_EXCEPTION(invalid_termination_mark(eol));
 }
 
 template <typename InputStream>

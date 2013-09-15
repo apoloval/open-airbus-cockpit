@@ -60,9 +60,8 @@ BOOST_AUTO_TEST_CASE(MustThrowOnErrorSet)
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
-   req->set_error(OAC_MAKE_EXCEPTION(flight_vars::no_such_variable_error()
-         .with_var_group_tag(get_var_group(var_id))
-         .with_var_name_tag(get_var_name(var_id))));
+   req->set_error(
+         OAC_MAKE_EXCEPTION(flight_vars::no_such_variable_error(var_id)));
 
    BOOST_CHECK_THROW(
          req->get_result(std::chrono::seconds(1)),
@@ -161,9 +160,7 @@ BOOST_AUTO_TEST_CASE(MustPropagateErrors)
    pool.insert(req2);
 
    pool.propagate_error(
-         OAC_MAKE_EXCEPTION(flight_vars::no_such_variable_error()
-               .with_var_group_tag(get_var_group(var_id))
-               .with_var_name_tag(get_var_name(var_id))));
+         OAC_MAKE_EXCEPTION(flight_vars::no_such_variable_error(var_id)));
    BOOST_CHECK_THROW(
          req1->get_result(std::chrono::seconds(1)),
          flight_vars::no_such_variable_error);

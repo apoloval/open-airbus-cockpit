@@ -38,9 +38,9 @@ throw (boost_asio_error)
       acceptor.open(ep.protocol());
       acceptor.bind(ep);
       acceptor.listen();
-   } catch (boost::system::system_error& e)
+   } catch (const boost::system::system_error& e)
    {
-      OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(e.code()));
+      OAC_THROW_EXCEPTION(boost_asio_error(e.code(), e));
    }
 }
 
@@ -61,9 +61,9 @@ throw (boost_asio_error)
             boost::lexical_cast<std::string>(remote_port));
       boost::asio::connect(socket, resolver.resolve(query));
    }
-   catch (boost::system::system_error& e)
+   catch (const boost::system::system_error& e)
    {
-      OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(e.code()));
+      OAC_THROW_EXCEPTION(boost_asio_error(e.code(), e));
    }
 }
 
@@ -105,11 +105,9 @@ throw (network::bind_error)
    {
       bind_port(_acceptor, port);
    }
-   catch (boost_asio_error& e)
+   catch (const boost_asio_error& e)
    {
-      OAC_THROW_EXCEPTION(network::bind_error()
-            .with_port(port)
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(network::bind_error(port, e));
    }
 }
 
@@ -181,10 +179,7 @@ throw (network::connection_refused)
    }
    catch (boost_asio_error& e)
    {
-      OAC_THROW_EXCEPTION(network::connection_refused()
-            .with_remote_host(hostname)
-            .with_remote_port(port)
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(network::connection_refused(hostname, port, e));
    }
 }
 
@@ -283,7 +278,7 @@ async_tcp_connection::on_io_completed_with_promise(
       if (!ec)
          promise->set_value(bytes_read);
       else
-         OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
+         OAC_THROW_EXCEPTION(boost_asio_error(ec));
    }   
    catch (boost_asio_error& e)
    {
@@ -292,7 +287,7 @@ async_tcp_connection::on_io_completed_with_promise(
          switch (e.get_error_code().value())
          {
             case boost::asio::error::eof:
-               OAC_THROW_EXCEPTION(eof_error().with_cause(e));
+               OAC_THROW_EXCEPTION(eof_error(e));
             default:
                throw;
          }
@@ -325,9 +320,7 @@ throw (network::bind_error)
    }
    catch (boost_asio_error& e)
    {
-      OAC_THROW_EXCEPTION(network::bind_error()
-            .with_port(port)
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(network::bind_error(port, e));
    }
    start_accept();
 }
@@ -376,10 +369,7 @@ throw (network::connection_refused)
    }
    catch (boost_asio_error& e)
    {
-      OAC_THROW_EXCEPTION(network::connection_refused()
-            .with_remote_host(hostname)
-            .with_remote_port(port)
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(network::connection_refused(hostname, port, e));
    }
 }
 

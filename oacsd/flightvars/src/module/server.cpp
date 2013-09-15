@@ -114,8 +114,7 @@ flight_vars_server::on_read_begin_session(
    try
    {
       if (!!ec)
-         OAC_THROW_EXCEPTION(boost_asio_error()
-               .with_error_code(ec));
+         OAC_THROW_EXCEPTION(boost_asio_error(ec));
 
       auto msg = unmarshall(*session->input_buffer);
       if (auto* bs_msg = boost::get<begin_session_message>(&msg))

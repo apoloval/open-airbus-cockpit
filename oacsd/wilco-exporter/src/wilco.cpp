@@ -140,8 +140,7 @@ throw (aircraft::invalid_title)
       if (boost::contains(title, "A320 CFM"))
          return aircraft_type::A320_CFM;
    }
-   OAC_THROW_EXCEPTION(aircraft::invalid_title()
-         .with_title(title));
+   OAC_THROW_EXCEPTION(aircraft::invalid_title(title));
 }
 
 } // anonymous namespace

@@ -125,7 +125,7 @@ public:
    /**
     * An exception caused by an initialization error.
     */
-   OAC_EXCEPTION(
+   OAC_DECL_EXCEPTION(
          simconnect_error,
          oac::exception,
          "an unexpected error occurs while observing ticks via SimConnect");

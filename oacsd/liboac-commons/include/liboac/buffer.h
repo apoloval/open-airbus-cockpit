@@ -124,16 +124,16 @@ namespace buffer
    /**
     * An exception indicating a invalid index provided in a buffer operation.
     */
-   OAC_EXCEPTION_BEGIN(index_out_of_bounds, exception)
-      OAC_EXCEPTION_FIELD(lower_bound, int)
-      OAC_EXCEPTION_FIELD(upper_bound, int)
-      OAC_EXCEPTION_FIELD(index, int)
-      OAC_EXCEPTION_MSG(
+   OAC_DECL_EXCEPTION_WITH_PARAMS(index_out_of_bounds, oac::exception,
+      (
             "buffer access with invalid index %d for bounds [%d, %d]",
             index,
             lower_bound,
-            upper_bound)
-   OAC_EXCEPTION_END()
+            upper_bound
+      ),
+      (index, int),
+      (lower_bound, int),
+      (upper_bound, int));
 
    template <typename T, typename Buffer>
    T read_as(
@@ -652,10 +652,10 @@ private:
    throw (buffer::index_out_of_bounds)
    {
       if (offset < _offset_shift || shift(offset) + length > _backed_capacity)
-         OAC_THROW_EXCEPTION(buffer::index_out_of_bounds()
-               .with_lower_bound(0)
-               .with_upper_bound(_backed_capacity - 1)
-               .with_index(offset + length));
+         OAC_THROW_EXCEPTION(buffer::index_out_of_bounds(
+               offset + length,
+               0,
+               _backed_capacity - 1));
    }
 
    inline std::uint32_t shift(std::uint32_t offset) const

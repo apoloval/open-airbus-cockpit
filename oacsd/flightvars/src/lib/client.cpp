@@ -55,8 +55,7 @@ throw (no_such_variable_error)
       log_error(
          "Subscription request to variable %s timed out",
          var_to_string(var));
-      OAC_THROW_EXCEPTION(client::communication_error()
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(client::communication_error(e));
    }
 }
 
@@ -74,8 +73,7 @@ throw (no_such_subscription_error)
    catch (const client::request_timeout_error& e)
    {
       log_error("Unsubscription request to %d timed out", id);
-      OAC_THROW_EXCEPTION(client::communication_error()
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(client::communication_error(e));
    }
 }
 
@@ -98,8 +96,7 @@ throw (no_such_subscription_error, illegal_value_error)
       log_error(
          "Variable update request for subscription %d timed out",
          subs_id);
-      OAC_THROW_EXCEPTION(client::communication_error()
-            .with_cause(e));
+      OAC_THROW_EXCEPTION(client::communication_error(e));
    }
 }
 

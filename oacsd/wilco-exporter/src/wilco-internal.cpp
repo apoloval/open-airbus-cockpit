@@ -84,8 +84,7 @@ throw (dll_load_error)
    auto dll_filename = dll.name.c_str();
    HINSTANCE lib = LoadLibrary(dll_filename);
    if (lib == NULL)
-      OAC_THROW_EXCEPTION(dll_load_error()
-            .with_dll(dll.name));
+      OAC_THROW_EXCEPTION(dll_load_error(dll.name));
    return lib;
 }
 

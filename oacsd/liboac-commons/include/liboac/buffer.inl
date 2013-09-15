@@ -667,10 +667,8 @@ fixed_buffer::check_bounds(std::uint32_t offset, std::size_t length) const
 throw (buffer::index_out_of_bounds)
 {
    if (offset + length > _capacity)
-      OAC_THROW_EXCEPTION(buffer::index_out_of_bounds()
-               .with_lower_bound(0)
-               .with_upper_bound(_capacity - 1)
-               .with_index(offset + length));
+      OAC_THROW_EXCEPTION(buffer::index_out_of_bounds(
+            offset + length, 0, _capacity - 1));
 }
 
 

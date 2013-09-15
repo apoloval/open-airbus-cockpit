@@ -41,42 +41,40 @@ public:
    typedef std::string data_name;
    typedef std::string data_units;
 
-   OAC_ABSTRACT_EXCEPTION(invalid_operation_exception);
+   OAC_DECL_ABSTRACT_EXCEPTION(invalid_operation_exception);
 
-   OAC_EXCEPTION(
+   OAC_DECL_EXCEPTION(
          server_unavailable_error,
          invalid_operation_exception,
          "SimConnect server is not available");
 
-   OAC_EXCEPTION_BEGIN(unknown_event_name_error, invalid_operation_exception)
-      OAC_EXCEPTION_FIELD(event, event_name)
-      OAC_EXCEPTION_MSG(
-         "no such event name %s available in SimConnect",
-         event)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         unknown_event_name_error,
+         invalid_operation_exception,
+      ("no such event name %s available in SimConnect", event),
+      (event, event_name));
 
-   OAC_EXCEPTION_BEGIN(data_definition_error, invalid_operation_exception)
-      OAC_EXCEPTION_FIELD(name, data_name)
-      OAC_EXCEPTION_FIELD(units, data_units)
-      OAC_EXCEPTION_MSG(
+
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         data_definition_error,
+         invalid_operation_exception,
+      (
          "cannot define data for variable %s in %s in SimConnect",
          name,
-         units)
-   OAC_EXCEPTION_END()
+         units
+      ),
+      (name, data_name),
+      (units, data_units));
 
-   OAC_EXCEPTION_BEGIN(data_request_error, invalid_operation_exception)
-      OAC_EXCEPTION_FIELD(data_def, SIMCONNECT_DATA_DEFINITION_ID)
-      OAC_EXCEPTION_MSG(
-         "data request %d failed in SimConnect",
-         data_def)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(
+         data_request_error,
+         invalid_operation_exception,
+      ("data request %d failed in SimConnect", data_def),
+      (data_def, SIMCONNECT_DATA_DEFINITION_ID));
 
-   OAC_EXCEPTION_BEGIN(event_error, invalid_operation_exception)
-      OAC_EXCEPTION_FIELD(event, SIMCONNECT_CLIENT_EVENT_ID)
-      OAC_EXCEPTION_MSG(
-         "operation for client event %d failed in SimConnect",
-         event)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(event_error, invalid_operation_exception,
+      ("operation for client event %d failed in SimConnect", event),
+      (event, SIMCONNECT_CLIENT_EVENT_ID));
 
    class data_definition
    {

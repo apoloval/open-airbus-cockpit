@@ -137,8 +137,7 @@ throw (communication_error)
             log_warn(
                   "The remote server closed the connection while expecting "
                   "the response to begin session");
-            OAC_THROW_EXCEPTION(communication_error()
-                  .with_cause(e));
+            OAC_THROW_EXCEPTION(communication_error(e));
          }
          // Else: not enough bytes, read again
       }
@@ -147,16 +146,14 @@ throw (communication_error)
          log_error(
                "IO error while reading response from the server:\n%s",
                e.report());
-         OAC_THROW_EXCEPTION(communication_error()
-               .with_cause(e));
+         OAC_THROW_EXCEPTION(communication_error(e));
       }
       catch (const proto::protocol_exception& e)
       {
          log_error(
                "protocol error while reading response from the server:\n%s",
                e.report());
-         OAC_THROW_EXCEPTION(communication_error()
-               .with_cause(e));
+         OAC_THROW_EXCEPTION(communication_error(e));
       }
    }
 }
@@ -295,8 +292,8 @@ connection_manager::on_unsubscription_requested(
             "No such virtual subscription %d was found in subscription DB",
             virt_subs_id);
       req->set_error(
-            OAC_MAKE_EXCEPTION(flight_vars::no_such_subscription_error()
-                  .with_cause(e)));
+            OAC_MAKE_EXCEPTION(
+                  flight_vars::no_such_subscription_error(virt_subs_id, e)));
    }
 }
 
@@ -318,9 +315,8 @@ connection_manager::on_variable_update_requested(
             "Cannot send variable update for unknown virtual subscription %d",
             virt_subs_id);
       req->set_error(
-            OAC_MAKE_EXCEPTION(flight_vars::no_such_subscription_error()
-                  .with_subs_id(virt_subs_id)
-                  .with_cause(e)));
+            OAC_MAKE_EXCEPTION(
+                  flight_vars::no_such_subscription_error(virt_subs_id, e)));
    }
 }
 
@@ -363,12 +359,13 @@ connection_manager::on_message_received(
                      this,
                      std::placeholders::_1));
          if (!match)
-            OAC_THROW_EXCEPTION(proto::unexpected_message_error()
-                  .with_msg_type(proto::get_message_type(msg)));
+            OAC_THROW_EXCEPTION(
+                  proto::unexpected_message_error(
+                        proto::get_message_type(msg)));
       }
       else
       {
-         OAC_THROW_EXCEPTION(boost_asio_error().with_error_code(ec));
+         OAC_THROW_EXCEPTION(boost_asio_error(ec));
       }
    }
    catch (const eof_error&)
@@ -383,8 +380,7 @@ connection_manager::on_message_received(
             "Unexpected error occurred while receiving a message:\n%s",
             e.report());
 
-      auto comm_error = OAC_MAKE_EXCEPTION(communication_error()
-               .with_cause(e));
+      auto comm_error = OAC_MAKE_EXCEPTION(communication_error(e));
 
       _request_pool.propagate_error(comm_error);
       if (_error_handler)
@@ -401,8 +397,9 @@ void connection_manager::on_subscription_reply_received(
    auto var_id = make_var_id(msg.var_grp, msg.var_name);
    auto subs = _request_pool.pop_subscription_requests(var_id);
    if (subs.empty())
-      OAC_THROW_EXCEPTION(proto::unexpected_message_error()
-         .with_msg_type(proto::message_type::SUBSCRIPTION_REP));
+      OAC_THROW_EXCEPTION(
+            proto::unexpected_message_error(
+                  proto::message_type::SUBSCRIPTION_REP));
    switch (msg.st)
    {
       case proto::subscription_status::NO_SUCH_VAR:
@@ -411,9 +408,8 @@ void connection_manager::on_subscription_reply_received(
                var_to_string(var_id));
          for (auto& req : subs)
             req->set_error(
-                  OAC_MAKE_EXCEPTION(flight_vars::no_such_variable_error()
-                        .with_var_group_tag(msg.var_grp)
-                        .with_var_name_tag(msg.var_name)));
+                  OAC_MAKE_EXCEPTION(
+                        flight_vars::no_such_variable_error(var_id)));
          break;
       case proto::subscription_status::SUBSCRIBED:
          log_info(
@@ -432,7 +428,7 @@ void connection_manager::on_subscription_reply_received(
             }
             catch (const subscription_db::already_exists_exception& e)
             {
-               OAC_THROW_EXCEPTION(communication_error().with_cause(e));
+               OAC_THROW_EXCEPTION(communication_error(e));
             }
          }
          break;
@@ -440,8 +436,9 @@ void connection_manager::on_subscription_reply_received(
          log_warn(
                "Unexpected subscription status returned by the server: %s",
                to_string(msg.st));
-         OAC_THROW_EXCEPTION(proto::unexpected_message_error()
-               .with_msg_type(proto::message_type::SUBSCRIPTION_REQ));
+         OAC_THROW_EXCEPTION(
+               proto::unexpected_message_error(
+                     proto::message_type::SUBSCRIPTION_REQ));
    }
 }
 
@@ -459,8 +456,7 @@ connection_manager::on_unsubscription_reply_received(
             for (auto& req : unsubs)
             {
                auto error = OAC_MAKE_EXCEPTION(
-                     flight_vars::no_such_subscription_error()
-                           .with_subs_id(msg.subs_id));
+                     flight_vars::no_such_subscription_error(msg.subs_id));
                req->set_error(error);
             }
             return;
@@ -478,8 +474,9 @@ connection_manager::on_unsubscription_reply_received(
                   to_string(msg.st));
       }
    }
-   OAC_THROW_EXCEPTION(proto::unexpected_message_error()
-         .with_msg_type(proto::message_type::UNSUBSCRIPTION_REP));
+   OAC_THROW_EXCEPTION(
+         proto::unexpected_message_error(
+               proto::message_type::UNSUBSCRIPTION_REP));
 }
 
 void
@@ -492,8 +489,7 @@ connection_manager::on_variable_update_received(
    }
    catch (const subscription_db::no_such_element_exception& e)
    {
-      auto ce = OAC_MAKE_EXCEPTION(communication_error()
-            .with_cause(e));
+      auto ce = OAC_MAKE_EXCEPTION(communication_error(e));
       log_error(
             "Variable update message received for unknown subscription %d\n%s",
             msg.subs_id,
@@ -535,10 +531,8 @@ connection_manager::on_data_sent(
 {
    if (!!ec && _error_handler)
    {
-      auto io_error = OAC_MAKE_EXCEPTION(boost_asio_error()
-            .with_error_code(ec));
-      auto comm_error = OAC_MAKE_EXCEPTION(communication_error()
-            .with_cause(io_error));
+      auto io_error = OAC_MAKE_EXCEPTION(boost_asio_error(ec));
+      auto comm_error = OAC_MAKE_EXCEPTION(communication_error(io_error));
       _error_handler(comm_error);
    }
 }

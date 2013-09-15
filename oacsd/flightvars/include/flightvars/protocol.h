@@ -34,7 +34,7 @@ namespace oac { namespace fv { namespace proto {
 /**
  * An exception indicating a protocol error.
  */
-OAC_ABSTRACT_EXCEPTION(protocol_exception);
+OAC_DECL_ABSTRACT_EXCEPTION(protocol_exception);
 
 /**
  * A 16-bits number indicating the version of the protocol.
@@ -76,12 +76,9 @@ std::string message_type_to_string(
 /**
  * An exception indicating the reception of a unexpected message.
  */
-OAC_EXCEPTION_BEGIN(unexpected_message_error, protocol_exception)
-   OAC_EXCEPTION_FIELD(msg_type, message_type)
-   OAC_EXCEPTION_MSG(
-         "unexpected %s received",
-         message_type_to_string(msg_type))
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(unexpected_message_error, protocol_exception,
+   ("unexpected %s received", message_type_to_string(msg_type)),
+   (msg_type, message_type));
 
 /**
  * This message is sent by the client when initiates the session and the

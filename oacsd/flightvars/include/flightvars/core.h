@@ -40,12 +40,12 @@ public:
     * Thrown in a group master registering attempt when there is already
     * a master registered for that group.
     */
-   OAC_EXCEPTION_BEGIN(master_already_registered, oac::exception)
-      OAC_EXCEPTION_FIELD(var_group_tag, variable_group::tag_type)
-      OAC_EXCEPTION_MSG(
-            "FlightVars Master for group %s already registered",
-            var_group_tag)
-   OAC_EXCEPTION_END()
+   OAC_DECL_EXCEPTION_WITH_PARAMS(master_already_registered, oac::exception,
+      (
+         "FlightVars Master for group %s already registered",
+         var_group.get_tag()
+      ),
+      (var_group, variable_group));
 
    /**
     * Obtain the singleton instance of Flight Vars core object.

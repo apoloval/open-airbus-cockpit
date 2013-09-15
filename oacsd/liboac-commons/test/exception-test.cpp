@@ -25,19 +25,19 @@ using namespace oac;
 
 #define RELATIVE_LINE(n) (__LINE__ + (n))
 
-OAC_ABSTRACT_EXCEPTION(abstract_exception);
+OAC_DECL_ABSTRACT_EXCEPTION(abstract_exception);
 
 BOOST_AUTO_TEST_SUITE(SimpleException)
 
-OAC_EXCEPTION(
+OAC_DECL_EXCEPTION(
       simple_exception,
       abstract_exception,
-      "Simple error occurred");
+      ("Simple error occurred"));
 
-OAC_EXCEPTION(
+OAC_DECL_EXCEPTION(
       other_simple_exception,
       abstract_exception,
-      "Other simple error occurred");
+      ("Other simple error occurred"));
 
 BOOST_AUTO_TEST_CASE(MustHonorErrorMessage)
 {
@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(MustReportWhenItHasCause)
    try { OAC_THROW_EXCEPTION(simple_exception()); }
    catch (simple_exception& e1)
    {
-      try { OAC_THROW_EXCEPTION(other_simple_exception().with_cause(e1)); }
+      try { OAC_THROW_EXCEPTION(other_simple_exception(e1)); }
       catch (other_simple_exception& e2)
       {
          auto msg1 = format(
@@ -96,22 +96,19 @@ BOOST_AUTO_TEST_SUITE_END()
 
 BOOST_AUTO_TEST_SUITE(ComplexException)
 
-OAC_EXCEPTION_BEGIN(complex_exception, abstract_exception)
-   OAC_EXCEPTION_FIELD(number, int)
-   OAC_EXCEPTION_FIELD(name, std::string)
-   OAC_EXCEPTION_MSG("Complex error with number %d and name %s", number, name)
-OAC_EXCEPTION_END()
+OAC_DECL_EXCEPTION_WITH_PARAMS(complex_exception, oac::exception,
+      ("Complex error with number %d and name %s", number, name),
+      (name, std::string),
+      (number, int));
 
 BOOST_AUTO_TEST_CASE(MustHoldParameters)
 {
    try
    {
-      OAC_THROW_EXCEPTION(
-            complex_exception()
-                  .with_name("apv")
-                  .with_number(7));
+      complex_exception e("apv", 7);
+      OAC_THROW_EXCEPTION(e);
    }
-   catch (complex_exception& e)
+   catch (const complex_exception& e)
    {
       BOOST_CHECK_EQUAL("apv", e.get_name());
       BOOST_CHECK_EQUAL(7, e.get_number());
@@ -122,10 +119,7 @@ BOOST_AUTO_TEST_CASE(MustReportExpectedMessage)
 {
    try
    {
-      OAC_THROW_EXCEPTION(
-            complex_exception()
-                  .with_name("apv")
-                  .with_number(7));
+      OAC_THROW_EXCEPTION(complex_exception("apv", 7));
    }
    catch (complex_exception& e)
    {

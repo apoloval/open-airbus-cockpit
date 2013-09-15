@@ -43,14 +43,14 @@ namespace oac {
 /**
  * An exception caused by an unexpected FSUIPC error.
  */
-OAC_EXCEPTION_BEGIN(fsuipc_error, io_exception)
-   OAC_EXCEPTION_FIELD(error_code, int)
-   OAC_EXCEPTION_FIELD(error_message, std::string)
-   OAC_EXCEPTION_MSG(
+OAC_DECL_EXCEPTION_WITH_PARAMS(fsuipc_error, io_exception,
+   (
       "FSUIPC library returned an error code %d(%s)",
       error_code,
-      error_message)
-OAC_EXCEPTION_END()
+      error_message
+   ),
+   (error_code, int),
+   (error_message, std::string));
 
 /**
  * FSUIPC class. This class encapsulates the access to FSUIPC module. It 

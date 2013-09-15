@@ -48,7 +48,7 @@ throw (no_such_subscription_error)
 {
    auto entry = _subscriptions.find(id);
    if (entry == _subscriptions.end())
-      OAC_THROW_EXCEPTION(no_such_subscription_error().with_subs_id(id));
+      OAC_THROW_EXCEPTION(no_such_subscription_error(id));
    entry->second->unsubscribe(id);
    _subscriptions.erase(entry);
 }
@@ -71,8 +71,7 @@ throw (master_already_registered)
 {
    auto entry = _group_masters.find(grp);
    if (entry != _group_masters.end())
-      OAC_THROW_EXCEPTION(master_already_registered()
-            .with_var_group_tag(grp.get_tag()));
+      OAC_THROW_EXCEPTION(master_already_registered(grp));
    _group_masters[grp] = master;
 }
 
@@ -84,9 +83,7 @@ throw (no_such_variable_error)
    auto grp = get_var_group(var_id);
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
-      OAC_THROW_EXCEPTION(no_such_variable_error()
-            .with_var_group_tag(get_var_group(var_id))
-            .with_var_name_tag(get_var_name(var_id)));
+      OAC_THROW_EXCEPTION(no_such_variable_error(var_id));
    return entry->second;
 }
 
