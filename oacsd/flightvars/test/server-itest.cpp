@@ -99,7 +99,7 @@ struct let_test
       send_message_as(msg);
 
       // Have to wait a little while to let the server process the message
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+      sleep(100);
 
       BOOST_CHECK(connection_is_closed());
 
@@ -111,7 +111,7 @@ struct let_test
    let_test& check_remote_peer_disconects()
    {
       // Have to wait a little while to let the server process previous message
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+      sleep(100);
 
       BOOST_CHECK(connection_is_reset());
       return *this;
@@ -260,7 +260,7 @@ struct let_test
       send_message_as(req);
 
       // Have to wait a little while to let the server process the message
-      boost::this_thread::sleep_for(boost::chrono::milliseconds(50));
+      sleep(100);
 
       return *this;
    }
@@ -321,6 +321,11 @@ private:
             boost::asio::buffer(&byte, 1),
             ec);
       return ec.value();
+   }
+
+   void sleep(unsigned int millis)
+   {
+      boost::this_thread::sleep_for(boost::chrono::milliseconds(millis));
    }
 
 };
