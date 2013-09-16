@@ -226,6 +226,10 @@ public:
 
    boost::asio::ip::tcp::socket& socket();
 
+   std::string local_to_string() const;
+
+   std::string remote_to_string() const;
+
    /**
     * Read some bytes from this connection. After calling this function,
     * as soon as one or more bytes are available they will be stored in the

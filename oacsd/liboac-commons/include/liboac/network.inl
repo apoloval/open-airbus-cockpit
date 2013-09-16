@@ -214,6 +214,26 @@ inline boost::asio::ip::tcp::socket&
 async_tcp_connection::socket()
 { return *_socket; }
 
+inline std::string
+async_tcp_connection::local_to_string() const
+{
+   auto ep = _socket->remote_endpoint();
+   return format(
+         "%s:%d",
+         ep.address().to_string(),
+         ep.port());
+}
+
+inline std::string
+async_tcp_connection::remote_to_string() const
+{
+   auto ep = _socket->local_endpoint();
+   return format(
+         "%s:%d",
+         ep.address().to_string(),
+         ep.port());
+}
+
 template <typename StreamBuffer, typename ReadHandler>
 void
 async_tcp_connection::read(

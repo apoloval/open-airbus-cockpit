@@ -99,9 +99,9 @@ struct let_test
       send_message_as(msg);
 
       // Have to wait a little while to let the server process the message
-      sleep(100);
+      sleep(50);
 
-      BOOST_CHECK(connection_is_closed());
+      assert_connection_is_closed();
 
       _client.reset();
 
@@ -111,9 +111,9 @@ struct let_test
    let_test& check_remote_peer_disconects()
    {
       // Have to wait a little while to let the server process previous message
-      sleep(100);
+      sleep(50);
 
-      BOOST_CHECK(connection_is_reset());
+      assert_connection_is_reset();
       return *this;
    }
 
@@ -260,7 +260,7 @@ struct let_test
       send_message_as(req);
 
       // Have to wait a little while to let the server process the message
-      sleep(100);
+      sleep(50);
 
       return *this;
    }
@@ -300,26 +300,35 @@ private:
             msg, *_client->output());
    }
 
-   bool connection_is_closed()
+   void assert_connection_is_closed()
    {
-     return one_byte_read_error_code() ==  boost::asio::error::eof;
+      assert_read_error_code(boost::asio::error::eof);
    }
 
-   bool connection_is_reset()
+   void assert_connection_is_reset()
    {
-      return one_byte_read_error_code() ==  boost::asio::error::connection_reset;
+      auto ec = read_error_code();
+      BOOST_CHECK(
+            (ec == boost::asio::error::connection_reset) ||
+            (ec == boost::asio::error::connection_aborted));
    }
 
-   int one_byte_read_error_code()
+   void assert_read_error_code(int code)
+   {
+      BOOST_CHECK_EQUAL(code, read_error_code());
+   }
+
+   int read_error_code()
    {
       auto& socket = _client->connection().socket();
       std::uint8_t byte;
       boost::system::error_code ec;
 
-      boost::asio::read(
+      auto nread = boost::asio::read(
             socket,
             boost::asio::buffer(&byte, 1),
             ec);
+      BOOST_CHECK_EQUAL(0, nread);
       return ec.value();
    }
 

@@ -58,7 +58,7 @@ public:
 
 private:
 
-   struct session
+   struct session : logger_component
    {
       std::shared_ptr<flight_vars_server> server;
       subscription_mapper subscriptions;
@@ -67,7 +67,8 @@ private:
 
       session(const std::shared_ptr<flight_vars_server>& srv,
               const async_tcp_connection_ptr& c)
-         : server(srv),
+         : logger_component("server-session"),
+           server(srv),
            input_buffer(std::make_shared<ring_buffer>(64*1024)),
            conn(c)
       {}
@@ -80,6 +81,7 @@ private:
    friend struct session;
 
    typedef std::shared_ptr<session> session_ptr;
+   typedef std::weak_ptr<session> session_wptr;
 
    typedef std::function<void(void)> after_write_handler;
 
@@ -113,7 +115,7 @@ private:
          const proto::unsubscription_request_message& req);
 
    void handle_var_update(
-         const session_ptr& session,
+         const session_wptr& session,
          const variable_id& var_id,
          const variable_value& var_value);
 

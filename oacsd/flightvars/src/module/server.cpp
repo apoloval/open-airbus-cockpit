@@ -68,6 +68,9 @@ flight_vars_server::~flight_vars_server()
 
 flight_vars_server::session::~session()
 {
+   log_info(
+      "Terminating session from %s",
+      conn->remote_to_string());
    unsubscribe_all();
 }
 
@@ -149,9 +152,7 @@ flight_vars_server::on_read_begin_session(
    }
    catch (oac::exception& e)
    {
-      session->unsubscribe_all();
-      log(
-            log_level::WARN,
+      log_warn(
             "Unexpected exception thrown while "
             "waiting for a begin session message:\n%s",
             e.report());
@@ -175,9 +176,7 @@ flight_vars_server::read_request(
    }
    catch (io_exception& e)
    {
-      session->unsubscribe_all();
-      log(
-            log_level::WARN,
+      log_warn(
             "Unexpected IO exception thrown while reading from connection:\n%s",
             e.report());
    }
@@ -196,11 +195,7 @@ flight_vars_server::on_read_request(
       auto msg = unmarshall(*session->input_buffer);
       if (auto es_msg = boost::get<proto::end_session_message>(&msg))
       {
-         session->unsubscribe_all();
-         log(
-               log_level::INFO,
-               "Session closed by peer (%s)",
-               es_msg->cause);
+         log_info("Session closed by peer (%s)", es_msg->cause);
          return;
       }
       else if (auto s_req = boost::get<subscription_request_message>(&msg))
@@ -239,7 +234,6 @@ flight_vars_server::on_read_request(
       }
       else
       {
-         session->unsubscribe_all();
          log_warn(
              "Protocol error: unexpected message while expecting "
              "an end session, supscription request or variable update message");
@@ -253,9 +247,7 @@ flight_vars_server::on_read_request(
    }
    catch (oac::exception& e)
    {
-      session->unsubscribe_all();
-      log(
-            log_level::WARN,
+      log_warn(
             "Unexpected exception thrown while processing a request:\n%s",
             e.report());
    }
@@ -270,12 +262,13 @@ flight_vars_server::handle_subscription_request(
    auto var_str = var_to_string(var_id);
    try
    {
+      session_wptr weak_session(session);
       auto subs_id = _delegate->subscribe(
                var_id,
                std::bind(
                   &flight_vars_server::handle_var_update,
                   shared_from_this(),
-                  session,
+                  weak_session,
                   std::placeholders::_1,
                   std::placeholders::_2));
       log(
@@ -350,7 +343,7 @@ flight_vars_server::handle_unsubscription_request(
 
 void
 flight_vars_server::handle_var_update(
-      const session_ptr& session,
+      const session_wptr& session,
       const variable_id& var_id,
       const variable_value& var_value)
 {
@@ -359,13 +352,22 @@ flight_vars_server::handle_var_update(
    // the delegate notification thread to handle the session at the same
    // time the TCP server thread does. In other words, it guarantees only
    // one thread accessing the internal state of the server.
-   _tcp_server.io_service().post(
-         std::bind(
-               &flight_vars_server::send_var_update,
-               shared_from_this(),
-               session,
-               var_id,
-               var_value));
+   auto s = session.lock();
+   if (s)
+   {
+      _tcp_server.io_service().post(
+            std::bind(
+                  &flight_vars_server::send_var_update,
+                  shared_from_this(),
+                  s,
+                  var_id,
+                  var_value));
+   }
+   else
+      log_warn(
+         "Inconsistency found while sending variable update to remote peer: "
+         "the session object has been destroyed but the subscription still "
+         "persists");
 }
 
 void
@@ -394,9 +396,7 @@ flight_vars_server::send_var_update(
    }
    catch (io_exception& e)
    {
-      session->unsubscribe_all();
-      log(
-            log_level::ERROR,
+      log_error(
             "Unexpected IO exception thrown while "
             "sending a var update to the client:\n%s",
             e.report());
