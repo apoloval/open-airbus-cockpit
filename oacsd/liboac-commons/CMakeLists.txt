@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 2.8)
 project(liboac-commons)
 
 set(liboac-commons_HEADERS
+   include/liboac/attempt.h
    include/liboac/buffer.h
    include/liboac/buffer.inl
    include/liboac/cockpit.h
@@ -60,6 +61,7 @@ test_link_libraries(
       ${Boost_LIBRARIES}
 )
 
+add_unit_test(attempt-test liboac)
 add_unit_test(buffer-test liboac)
 add_unit_test(concurrency-test liboac)
 add_unit_test(exception-test liboac)
