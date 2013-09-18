@@ -105,22 +105,31 @@ namespace oac {
  * void reset();
  *
  * template <typename AsyncReadStream,
- *           typename ReadHandler>
+ *           typename AsyncReadHandler>
  * void async_write_some_from(AsyncReadStream& stream, ReadHandler handler);
  *
  * template <typename AsyncWriteStream,
- *           typename WriteHandler>
+ *           typename AsyncWriteHandler>
  * void async_read_some_to(AsyncWriteStream& stream, WriteHandler handler);
  *
  */
 
+/**
+ * @concept AsyncReadHandler
+ *
+ * An object able to be invoked with an `attempt<std::size_t>` object
+ * indicating the resulting bytes read.
+ */
+
+/**
+ * @concept AsyncWriteHandler
+ *
+ * An object able to be invoked with an `attempt<std::size_t>` object
+ * indicating the resulting bytes written.
+ */
+
 namespace buffer
 {
-
-   typedef std::function<void(
-         const boost::system::error_code&,
-         std::size_t)> async_io_handler;
-
    /**
     * An exception indicating a invalid index provided in a buffer operation.
     */
@@ -216,16 +225,6 @@ protected:
    std::list<boost::asio::const_buffer> asio_const_buffers(
          std::size_t nbytes);
 
-   void on_async_read(
-         buffer::async_io_handler handler,
-         const boost::system::error_code& ec,
-         std::size_t nbytes);
-
-   void on_async_write(
-         buffer::async_io_handler handler,
-         const boost::system::error_code& ec,
-         std::size_t nbytes);
-
 private:
 
    Buffer* _self;
@@ -287,16 +286,6 @@ private:
    std::list<boost::asio::const_buffer> asio_const_buffers();
 
    std::list<boost::asio::const_buffer> asio_const_buffers(
-         std::size_t nbytes);
-
-   void on_async_read(
-         buffer::async_io_handler handler,
-         const boost::system::error_code& ec,
-         std::size_t nbytes);
-
-   void on_async_write(
-         buffer::async_io_handler handler,
-         const boost::system::error_code& ec,
          std::size_t nbytes);
 
    Buffer* _self;

@@ -213,11 +213,9 @@ struct let_test
       linear_buffer output_buffer(4096);
 
       auto on_write = [](
-            const boost::system::error_code& ec,
-            std::size_t nbytes)
+            const attempt<std::size_t>& nbytes)
       {
-         BOOST_CHECK(!ec);
-         BOOST_CHECK_EQUAL(15+21+27+1, nbytes);
+         BOOST_CHECK_EQUAL(15+21+27+1, nbytes.get_value());
       };
 
 
@@ -255,11 +253,7 @@ struct let_test
    {
       linear_buffer input_buffer(4096);
 
-      auto on_read = [](
-            const boost::system::error_code& ec,
-            std::size_t nbytes)
-      {
-      };
+      auto on_read = [](const attempt<std::size_t>& nbytes) {};
 
       _client->connection().read(input_buffer, on_read);
       _io_srv->reset();
@@ -366,12 +360,7 @@ void write_msg(
 {
    auto buff = std::make_shared<ring_buffer>(512);
    stream::write_as_string(*buff, "Hello World!");
-   conn->write(*buff, [buff](
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
-   {
-
-   });
+   conn->write(*buff, [buff](const attempt<std::size_t>& nbytes) {});
 }
 
 template <typename OnReceivedHandler,
@@ -383,8 +372,7 @@ void receive_msg(
       OnReceivedHandler handler)
 {
    conn->read(*buff, [conn, buff, expected_msg, handler](
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
+      const attempt<std::size_t>& nbytes)
   {
       auto expected_len = sizeof(char) * expected_msg.length();
       if (buff->available_for_read() < expected_len)
@@ -409,8 +397,7 @@ void receive_dwords(
 {
    auto to_read = expected_dwords_count * sizeof(std::uint32_t);
    conn->read(*buff, [conn, buff, handler, to_read, expected_dwords_count](
-         const boost::system::error_code& ec,
-         std::size_t nbytes)
+         const attempt<std::size_t>& nbytes)
    {
       if (buff->available_for_read() < to_read)
          receive_dwords(conn, buff, expected_dwords_count, handler);

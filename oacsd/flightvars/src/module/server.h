@@ -95,16 +95,14 @@ private:
 
    void on_read_begin_session(
          const session_ptr& session,
-         const boost::system::error_code& ec,
-         std::size_t bytes_transferred);
+         const attempt<std::size_t>& bytes_transferred);
 
    void read_request(
          const session_ptr& session);
 
    void on_read_request(
          const session_ptr& session,
-         const boost::system::error_code& ec,
-         std::size_t bytes_transferred);
+         const attempt<std::size_t>& bytes_transferred);
 
    proto::subscription_reply_message handle_subscription_request(
          const session_ptr& session,
@@ -132,8 +130,7 @@ private:
    void on_write_message(
          const linear_buffer_ptr& buffer,
          const after_write_handler& after_write,
-         const boost::system::error_code& ec,
-         std::size_t bytes_transferred);
+         const attempt<std::size_t>& bytes_transferred);
 
    void handle_var_update_request(
          const proto::var_update_message& req);

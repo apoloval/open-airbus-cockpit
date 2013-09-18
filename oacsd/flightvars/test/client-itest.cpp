@@ -326,14 +326,12 @@ private:
                   &let_test::on_server_message_read,
                   this,
                   conn,
-                  std::placeholders::_1,
-                  std::placeholders::_2));
+                  std::placeholders::_1));
    }
 
    void on_server_message_read(
          const async_tcp_connection_ptr& conn,
-         const boost::system::error_code& ec,
-         std::size_t bytes_read)
+         const attempt<std::size_t>& bytes_read)
    {
       if (_current_srv_action)
          _current_srv_action(conn);
@@ -469,7 +467,7 @@ private:
       else
          conn->write(
                *_srv_output_buff,
-               [](const boost::system::error_code&, std::size_t){});
+               [](const attempt<std::size_t>&){});
    }
 
    void client_receive_var_update(

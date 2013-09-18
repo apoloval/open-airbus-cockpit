@@ -22,6 +22,7 @@
 #include <boost/asio/read.hpp>
 
 #include "buffer.h"
+#include "buffer/asio_handler.h"
 
 namespace oac {
 
@@ -53,24 +54,24 @@ throw (io_exception)
 
 template <typename AsyncReadStream,
           typename StreamedBuffer,
-          typename ReadHandler>
+          typename AsyncReadHandler>
 void
 async_read_some(
       AsyncReadStream& stream,
       StreamedBuffer& buffer,
-      ReadHandler handler)
+      AsyncReadHandler handler)
 {
    buffer.async_write_some_from(stream, handler);
 }
 
 template <typename AsyncWriteStream,
           typename StreamBuffer,
-          typename WriteHandler>
+          typename AsyncWriteHandler>
 void
 async_write_some(
       AsyncWriteStream& stream,
       StreamBuffer& buffer,
-      WriteHandler handler)
+      AsyncWriteHandler handler)
 {
    buffer.async_read_some_to(stream, handler);
 }
@@ -152,37 +153,36 @@ linear_stream_buffer_base<Buffer>::reset()
 
 template <typename Buffer>
 template <typename AsyncReadStream,
-          typename ReadHandler>
+          typename AsyncReadHandler>
 void
 linear_stream_buffer_base<Buffer>::async_write_some_from(
       AsyncReadStream& stream,
-      ReadHandler handler)
+      AsyncReadHandler handler)
 {
-   buffer::async_io_handler on_read(
-            std::bind(
-               &linear_stream_buffer_base<Buffer>::on_async_read,
-               this,
-               buffer::async_io_handler(handler),
-               std::placeholders::_1,
-               std::placeholders::_2));
+   auto on_read = buffer::make_io_handler(
+         handler,
+         [this](std::size_t bytes_read)
+         {
+            _write_index += bytes_read;
+         });
+
    stream.async_read_some(asio_mutable_buffers(), on_read);
 }
 
 template <typename Buffer>
 template <typename AsyncWriteStream,
-          typename WriteHandler>
+          typename AsyncWriteHandler>
 void
 linear_stream_buffer_base<Buffer>::async_read_some_to(
       AsyncWriteStream& stream,
-      WriteHandler handler)
+      AsyncWriteHandler handler)
 {
-   buffer::async_io_handler on_write(
-            std::bind(
-               &linear_stream_buffer_base<Buffer>::on_async_write,
-               this,
-               buffer::async_io_handler(handler),
-               std::placeholders::_1,
-               std::placeholders::_2));
+   auto on_write = buffer::make_io_handler(
+         handler,
+         [this](std::size_t bytes_written)
+         {
+            _read_index += bytes_written;
+         });
    stream.async_write_some(asio_const_buffers(), on_write);
 }
 
@@ -247,28 +247,6 @@ linear_stream_buffer_base<Buffer>::asio_const_buffers(std::size_t nbytes)
    auto data = ((std::uint8_t*) _self->data()) + _read_index;
    result.push_back(boost::asio::buffer(data, nbytes));
    return result;
-}
-
-template <typename Buffer>
-void
-linear_stream_buffer_base<Buffer>::on_async_read(
-      buffer::async_io_handler handler,
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
-{
-   _write_index += nbytes;
-   handler(ec, nbytes);
-}
-
-template <typename Buffer>
-void
-linear_stream_buffer_base<Buffer>::on_async_write(
-      buffer::async_io_handler handler,
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
-{
-   _read_index += nbytes;
-   handler(ec, nbytes);
 }
 
 
@@ -396,42 +374,39 @@ ring_stream_buffer_base<Buffer>::reset()
 
 template <typename Buffer>
 template <typename AsyncReadStream,
-          typename ReadHandler>
+          typename AsyncReadHandler>
 void
 ring_stream_buffer_base<Buffer>::async_write_some_from(
       AsyncReadStream& stream,
-      ReadHandler handler)
+      AsyncReadHandler handler)
 {
-   buffer::async_io_handler on_read(
-         std::bind(
-               &ring_stream_buffer_base<Buffer>::on_async_read,
-               this,
-               buffer::async_io_handler(handler),
-               std::placeholders::_1,
-               std::placeholders::_2));
-   stream.async_read_some(
-         asio_mutable_buffers(),
-         on_read);
+   auto on_read = buffer::make_io_handler(
+         handler,
+         [this](std::size_t bytes_read)
+         {
+            _write_index = (_write_index + bytes_read) % _self->capacity();
+            _bytes_written += bytes_read;
+         });
+   stream.async_read_some(asio_mutable_buffers(), on_read);
 }
 
 template <typename Buffer>
 template <typename AsyncWriteStream,
-          typename WriteHandler>
+          typename AsyncWriteHandler>
 void
 ring_stream_buffer_base<Buffer>::async_read_some_to(
       AsyncWriteStream& stream,
-      WriteHandler handler)
+      AsyncWriteHandler handler)
 {
-   buffer::async_io_handler on_write(
-         std::bind(
-            &ring_stream_buffer_base<Buffer>::on_async_write,
-            this,
-            buffer::async_io_handler(handler),
-            std::placeholders::_1,
-            std::placeholders::_2));
-   stream.async_write_some(
-         asio_const_buffers(),
-         on_write);
+   auto on_write = buffer::make_io_handler(
+         handler,
+         [this](std::size_t bytes_read)
+         {
+            _read_index = (_read_index + bytes_read) % _self->capacity();
+            inc_dist_from_mark(bytes_read);
+            _bytes_written -= bytes_read;
+         });
+   stream.async_write_some(asio_const_buffers(), on_write);
 }
 
 template <typename Buffer>
@@ -526,32 +501,6 @@ ring_stream_buffer_base<Buffer>::asio_const_buffers(std::size_t nbytes)
    }
    return result;
 }
-
-template <typename Buffer>
-void
-ring_stream_buffer_base<Buffer>::on_async_read(
-      buffer::async_io_handler handler,
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
-{
-   _write_index = (_write_index + nbytes) % _self->capacity();
-   _bytes_written += nbytes;
-   handler(ec, nbytes);
-}
-
-template <typename Buffer>
-void
-ring_stream_buffer_base<Buffer>::on_async_write(
-      buffer::async_io_handler handler,
-      const boost::system::error_code& ec,
-      std::size_t nbytes)
-{
-   _read_index = (_read_index + nbytes) % _self->capacity();
-   inc_dist_from_mark(nbytes);
-   _bytes_written -= nbytes;
-   handler(ec, nbytes);
-}
-
 
 
 

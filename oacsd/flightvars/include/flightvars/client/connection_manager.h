@@ -94,8 +94,7 @@ private:
          const variable_update_request_ptr& req);
 
    void on_message_received(
-         const boost::system::error_code& ec,
-         std::size_t bytes_read);
+         const attempt<std::size_t>& bytes_read);
 
    void on_subscription_reply_received(
          const proto::subscription_reply_message& msg);
@@ -114,8 +113,7 @@ private:
 
    void on_data_sent(
          const std::shared_ptr<linear_buffer>& output_buff,
-         const boost::system::error_code& ec,
-         std::size_t bytes_read);
+         const attempt<std::size_t>& bytes_written);
 };
 
 }}} // namespace oac::fv::client

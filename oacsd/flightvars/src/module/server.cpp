@@ -102,22 +102,19 @@ flight_vars_server::read_begin_session(
                &flight_vars_server::on_read_begin_session,
                shared_from_this(),
                session,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
 }
 
 void
 flight_vars_server::on_read_begin_session(
       const session_ptr& session,
-      const boost::system::error_code& ec,
-      std::size_t bytes_transferred)
+      const attempt<std::size_t>& bytes_transferred)
 {
    using namespace proto;
 
    try
    {
-      if (!!ec)
-         OAC_THROW_EXCEPTION(boost_asio_error(ec));
+      bytes_transferred.get_value();
 
       auto msg = unmarshall(*session->input_buffer);
       if (auto* bs_msg = boost::get<begin_session_message>(&msg))
@@ -144,7 +141,7 @@ flight_vars_server::on_read_begin_session(
                "while expecting begin session");
       }
    }
-   catch (eof_error&)
+   catch (io::eof_error&)
    {
       // message partially received, try to obtain more bytes
       session->input_buffer->reset();
@@ -171,8 +168,7 @@ flight_vars_server::read_request(
                   &flight_vars_server::on_read_request,
                   shared_from_this(),
                   session,
-                  std::placeholders::_1,
-                  std::placeholders::_2));
+                  std::placeholders::_1));
    }
    catch (io_exception& e)
    {
@@ -185,8 +181,7 @@ flight_vars_server::read_request(
 void
 flight_vars_server::on_read_request(
       const session_ptr& session,
-      const boost::system::error_code& ec,
-      std::size_t bytes_transferred)
+      const attempt<std::size_t>& bytes_transferred)
 {
    using namespace proto;
 
@@ -239,7 +234,7 @@ flight_vars_server::on_read_request(
              "an end session, supscription request or variable update message");
       }
    }
-   catch (eof_error&)
+   catch (io::eof_error&)
    {
       // message partially received, try to obtain more bytes
       session->input_buffer->reset();
@@ -418,29 +413,25 @@ flight_vars_server::write_message(
                shared_from_this(),
                buff,
                after_write,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
 }
 
 void
 flight_vars_server::on_write_message(
       const linear_buffer_ptr& buffer,
       const after_write_handler& after_write,
-      const boost::system::error_code& ec,
-      std::size_t bytes_transferred)
+      const attempt<std::size_t>& bytes_transferred)
 {
-   if (ec)
+   try
    {
-      log(
-            log_level::ERROR,
-            "An error was returned while writing message:\n%s", ec.message());
-   }
-   else if (bytes_transferred == 0)
-   {
-      log_warn("Peer disconnected while trying to write a message");
-   }
-   else
+      bytes_transferred.get_value();
       after_write();
+   }
+   catch (const oac::exception& e)
+   {
+      log_error(
+            "An error was returned while writing message:\n%s", e.report());
+   }
 }
 
 void

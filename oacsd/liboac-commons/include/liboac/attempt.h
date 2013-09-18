@@ -70,6 +70,18 @@ public:
    }
 
    /**
+    * Check whether the attempt has succeeded.
+    */
+   bool is_success() const
+   { return _value; }
+
+   /**
+    * Check whether the attempt has failed.
+    */
+   bool is_failure() const
+   { return !is_success(); }
+
+   /**
     * Get the value of the attempt. If the attempt is successful, it returns
     * the value provided in the constructor. Otherwise, the exception that was
     * injected in construction is thrown.

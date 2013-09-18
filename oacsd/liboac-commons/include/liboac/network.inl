@@ -29,7 +29,7 @@ inline void
 bind_port(
       boost::asio::ip::tcp::acceptor& acceptor,
       network::tcp_port port)
-throw (boost_asio_error)
+throw (io::boost_asio_error)
 {
    using namespace boost::asio;
    try
@@ -40,7 +40,7 @@ throw (boost_asio_error)
       acceptor.listen();
    } catch (const boost::system::system_error& e)
    {
-      OAC_THROW_EXCEPTION(boost_asio_error(e.code(), e));
+      OAC_THROW_EXCEPTION(io::boost_asio_error(e.code(), e));
    }
 }
 
@@ -50,7 +50,7 @@ connect(
       network::tcp_port remote_port,
       boost::asio::io_service& io_srv,
       boost::asio::ip::tcp::socket& socket)
-throw (boost_asio_error)
+throw (io::boost_asio_error)
 {
    using namespace boost::asio;
    try
@@ -63,7 +63,7 @@ throw (boost_asio_error)
    }
    catch (const boost::system::system_error& e)
    {
-      OAC_THROW_EXCEPTION(boost_asio_error(e.code(), e));
+      OAC_THROW_EXCEPTION(io::boost_asio_error(e.code(), e));
    }
 }
 
@@ -105,7 +105,7 @@ throw (network::bind_error)
    {
       bind_port(_acceptor, port);
    }
-   catch (const boost_asio_error& e)
+   catch (const io::boost_asio_error& e)
    {
       OAC_THROW_EXCEPTION(network::bind_error(port, e));
    }
@@ -177,7 +177,7 @@ throw (network::connection_refused)
             _connection->io_service(),
             _connection->socket());
    }
-   catch (boost_asio_error& e)
+   catch (io::boost_asio_error& e)
    {
       OAC_THROW_EXCEPTION(network::connection_refused(hostname, port, e));
    }
@@ -234,11 +234,11 @@ async_tcp_connection::remote_to_string() const
          ep.port());
 }
 
-template <typename StreamBuffer, typename ReadHandler>
+template <typename StreamBuffer, typename AsyncReadHandler>
 void
 async_tcp_connection::read(
       StreamBuffer& buff,
-      ReadHandler handler)
+      AsyncReadHandler handler)
 {
    buffer::async_read_some(*_socket, buff, handler);
 }
@@ -255,16 +255,15 @@ async_tcp_connection::read(StreamBuffer& buff)
          std::bind(
                &async_tcp_connection::on_io_completed_with_promise,
                promise,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
    return fut;
 }
 
-template <typename StreamBuffer, typename WriteHandler>
+template <typename StreamBuffer, typename AsyncWriteHandler>
 void
 async_tcp_connection::write(
       StreamBuffer& buff,
-      WriteHandler handler)
+      AsyncWriteHandler handler)
 {
    buffer::async_write_some(*_socket, buff, handler);
 }
@@ -281,8 +280,7 @@ async_tcp_connection::write(StreamBuffer& buff)
          std::bind(
                &async_tcp_connection::on_io_completed_with_promise,
                promise,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
    return fut;
 }
 
@@ -290,32 +288,15 @@ inline
 void
 async_tcp_connection::on_io_completed_with_promise(
       const std::shared_ptr<std::promise<std::size_t>>& promise,
-      const boost::system::error_code& ec,
-      std::size_t bytes_read)
+      const attempt<std::size_t>& nbytes)
 {
    try
    {
-      if (!ec)
-         promise->set_value(bytes_read);
-      else
-         OAC_THROW_EXCEPTION(boost_asio_error(ec));
+      promise->set_value(nbytes.get_value());
    }   
-   catch (boost_asio_error& e)
+   catch (...)
    {
-      try
-      {
-         switch (e.get_error_code().value())
-         {
-            case boost::asio::error::eof:
-               OAC_THROW_EXCEPTION(eof_error(e));
-            default:
-               throw;
-         }
-      }
-      catch (...)
-      {
-         promise->set_exception(std::current_exception());
-      }
+      promise->set_exception(std::current_exception());
    }
 }
 
@@ -338,7 +319,7 @@ throw (network::bind_error)
    {
       bind_port(_acceptor, port);
    }
-   catch (boost_asio_error& e)
+   catch (io::boost_asio_error& e)
    {
       OAC_THROW_EXCEPTION(network::bind_error(port, e));
    }
@@ -387,7 +368,7 @@ throw (network::connection_refused)
    {
       connect(hostname, port, *_io_service, _connection.socket());
    }
-   catch (boost_asio_error& e)
+   catch (io::boost_asio_error& e)
    {
       OAC_THROW_EXCEPTION(network::connection_refused(hostname, port, e));
    }

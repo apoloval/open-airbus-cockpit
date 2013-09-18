@@ -90,7 +90,7 @@ throw (io_exception)
    {
       auto nread = s.read(p, count);
       if (nread == 0)
-         OAC_THROW_EXCEPTION(eof_error());
+         OAC_THROW_EXCEPTION(io::eof_error());
       p += nread;
       count -= nread;
    }
@@ -160,7 +160,7 @@ throw (io_exception)
    {
       auto nwrite = s.write(p, count);
       if (nwrite == 0)
-         OAC_THROW_EXCEPTION(eof_error());
+         OAC_THROW_EXCEPTION(io::eof_error());
       p += nwrite;
       count -= nwrite;
    }
@@ -214,7 +214,7 @@ public:
          if (ec == boost::asio::error::eof)
             return 0;
          else
-            OAC_THROW_EXCEPTION(boost_asio_error(ec));
+            OAC_THROW_EXCEPTION(io::boost_asio_error(ec));
       }
    }
 
@@ -248,7 +248,7 @@ public:
          if (e.code() == boost::asio::error::eof)
             return 0;
          else
-            OAC_THROW_EXCEPTION(boost_asio_error(ec));
+            OAC_THROW_EXCEPTION(io::boost_asio_error(ec));
       }
    }
 

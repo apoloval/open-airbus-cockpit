@@ -5,6 +5,7 @@ project(liboac-commons)
 set(liboac-commons_HEADERS
    include/liboac/attempt.h
    include/liboac/buffer.h
+   include/liboac/buffer/asio_handler.h
    include/liboac/buffer.inl
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
@@ -18,6 +19,8 @@ set(liboac-commons_HEADERS
    include/liboac/logging.h
    include/liboac/network.h
    include/liboac/network.inl
+   include/liboac/network/errors.h
+   include/liboac/network/types.h
    include/liboac/simconn.h
    include/liboac/stream.h
    include/liboac/timing.h
@@ -63,6 +66,7 @@ test_link_libraries(
 
 add_unit_test(attempt-test liboac)
 add_unit_test(buffer-test liboac)
+add_unit_test(buffer/asio_handler-test liboac)
 add_unit_test(concurrency-test liboac)
 add_unit_test(exception-test liboac)
 add_unit_test(filesystem-test liboac)

@@ -129,7 +129,7 @@ throw (communication_error)
             OAC_THROW_EXCEPTION(communication_error());
          }
       }
-      catch (const eof_error& e)
+      catch (const io::eof_error& e)
       {
          if (_input_buffer.available_for_read() == 0)
          {
@@ -184,8 +184,7 @@ connection_manager::start_receive()
          std::bind(
                &connection_manager::on_message_received,
                this,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
 }
 
 void
@@ -322,8 +321,7 @@ connection_manager::on_variable_update_requested(
 
 void
 connection_manager::on_message_received(
-      const boost::system::error_code& ec,
-      std::size_t bytes_read)
+      const attempt<std::size_t>& bytes_read)
 {
    // This function must only be invoked from the internal client thread.
    // Otherwise means that the client is closing and residual read handlers
@@ -335,40 +333,35 @@ connection_manager::on_message_received(
 
    try
    {
-      if (!ec)
-      {
-         auto msg = proto::deserialize<proto::binary_message_deserializer>(
-               _input_buffer);
-         bool match = false;
-         match |= proto::if_message_type<proto::subscription_reply_message>(
-               msg,
-               std::bind(
-                     &connection_manager::on_subscription_reply_received,
-                     this,
-                     std::placeholders::_1));
-         match |= proto::if_message_type<proto::unsubscription_reply_message>(
-               msg,
-               std::bind(
-                     &connection_manager::on_unsubscription_reply_received,
-                     this,
-                     std::placeholders::_1));
-         match |= proto::if_message_type<proto::var_update_message>(
-               msg,
-               std::bind(
-                     &connection_manager::on_variable_update_received,
-                     this,
-                     std::placeholders::_1));
-         if (!match)
-            OAC_THROW_EXCEPTION(
-                  proto::unexpected_message_error(
-                        proto::get_message_type(msg)));
-      }
-      else
-      {
-         OAC_THROW_EXCEPTION(boost_asio_error(ec));
-      }
+      bytes_read.get_value();
+
+      auto msg = proto::deserialize<proto::binary_message_deserializer>(
+            _input_buffer);
+      bool match = false;
+      match |= proto::if_message_type<proto::subscription_reply_message>(
+            msg,
+            std::bind(
+                  &connection_manager::on_subscription_reply_received,
+                  this,
+                  std::placeholders::_1));
+      match |= proto::if_message_type<proto::unsubscription_reply_message>(
+            msg,
+            std::bind(
+                  &connection_manager::on_unsubscription_reply_received,
+                  this,
+                  std::placeholders::_1));
+      match |= proto::if_message_type<proto::var_update_message>(
+            msg,
+            std::bind(
+                  &connection_manager::on_variable_update_received,
+                  this,
+                  std::placeholders::_1));
+      if (!match)
+         OAC_THROW_EXCEPTION(
+               proto::unexpected_message_error(
+                     proto::get_message_type(msg)));
    }
-   catch (const eof_error&)
+   catch (const io::eof_error&)
    {
       // Not enough bytes while deserialing message
       // Continue to read again
@@ -519,20 +512,20 @@ connection_manager::send_data(
                &connection_manager::on_data_sent,
                this,
                output_buff,
-               std::placeholders::_1,
-               std::placeholders::_2));
+               std::placeholders::_1));
 }
 
 void
 connection_manager::on_data_sent(
       const std::shared_ptr<linear_buffer>& output_buff,
-      const boost::system::error_code& ec,
-      std::size_t bytes_read)
+      const attempt<std::size_t>& bytes_written)
 {
-   if (!!ec && _error_handler)
+   try
    {
-      auto io_error = OAC_MAKE_EXCEPTION(boost_asio_error(ec));
-      auto comm_error = OAC_MAKE_EXCEPTION(communication_error(io_error));
+      bytes_written.get_value();
+   } catch (const oac::exception& e)
+   {
+      auto comm_error = OAC_MAKE_EXCEPTION(communication_error(e));
       _error_handler(comm_error);
    }
 }

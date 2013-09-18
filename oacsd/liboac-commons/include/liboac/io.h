@@ -30,6 +30,10 @@ namespace oac {
  */
 OAC_DECL_ABSTRACT_EXCEPTION(io_exception);
 
+} // namespace oac
+
+namespace oac { namespace io {
+
 /**
  * An exception reporting an unexpected end of file while
  * executing an IO operation.
@@ -47,6 +51,6 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(boost_asio_error, io_exception,
    ),
    (error_code, boost::system::error_code));
 
-} // namespace oac
+}} // namespace oac::io
 
 #endif

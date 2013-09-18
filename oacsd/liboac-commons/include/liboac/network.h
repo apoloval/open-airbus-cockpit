@@ -24,47 +24,15 @@
 #include <boost/asio.hpp>
 #include <boost/lexical_cast.hpp>
 
+#include "attempt.h"
 #include "buffer.h"
 #include "io.h"
+#include "network/errors.h"
+#include "network/types.h"
 #include "stream.h"
 #include "worker.h"
 
 namespace oac {
-
-namespace network {
-
-/**
- * A TCP protocol port.
- */
-typedef std::uint16_t tcp_port;
-
-/**
- * A hostname.
- */
-typedef std::string hostname;
-
-/**
- * An error while binding a socket.
- */
-OAC_DECL_EXCEPTION_WITH_PARAMS(bind_error, io_exception,
-   ("cannot bind on port %d", port),
-   (port, std::uint16_t));
-
-/**
- * An error while connecting to a remote peer.
- */
-OAC_DECL_EXCEPTION_WITH_PARAMS(connection_refused, io_exception,
-   (
-      "connection refused to %s on port %d",
-      remote_host,
-      remote_port
-   ),
-   (remote_host, std::string),
-   (remote_port, std::uint16_t));
-
-typedef std::function<void(const io_exception&)> error_handler;
-
-} // namespace network
 
 /**
  * A synchronous TCP connection. This object is the result of creating a new
@@ -202,6 +170,9 @@ private:
    tcp_connection_ptr _connection;
 };
 
+typedef std::function<attempt<std::size_t>> async_read_handler;
+typedef std::function<attempt<std::size_t>> async_write_handler;
+
 /**
  * An asynchronous TCP connection, which uses handlers to perform read and
  * write operations. The connection object wraps two streams, input_stream
@@ -239,11 +210,10 @@ public:
     *
     * @param buff    The stream-buffer where incoming data will be stored
     * @param handler The handler that will be invoked once incoming data
-    *                is read. It conforms the ReadHandler concept of Boost ASIO
-    *                library.
+    *                is read. It conforms the AsyncReadHandler concept.
     */
-   template <typename StreamBuffer, typename ReadHandler>
-   void read(StreamBuffer& buff, ReadHandler handler);
+   template <typename StreamBuffer, typename AsyncReadHandler>
+   void read(StreamBuffer& buff, AsyncReadHandler handler);
 
    /**
     * Read some bytes from this connection. After calling this function,
@@ -268,11 +238,10 @@ public:
     *
     * @param buff    The stream-buffer where outcoming data will be read
     * @param handler The handler that will be invoked once incoming data
-    *                is written. It conforms the WriteHandler concept of
-    *                Boost ASIO library.
+    *                is written. It conforms the AsyncWriteHandler concept.
     */
-   template <typename StreamBuffer, typename WriteHandler>
-   void write(StreamBuffer& buff, WriteHandler handler);
+   template <typename StreamBuffer, typename AsyncWriteHandler>
+   void write(StreamBuffer& buff, AsyncWriteHandler handler);
 
    /**
     * Write some bytes to this connection. After calling this function,
@@ -294,8 +263,7 @@ private:
 
    static void on_io_completed_with_promise(
          const std::shared_ptr<std::promise<std::size_t>>& promise,
-         const boost::system::error_code& ec,
-         std::size_t bytes_read);
+         const attempt<std::size_t>& nbytes);
 };
 
 typedef std::shared_ptr<async_tcp_connection> async_tcp_connection_ptr;
