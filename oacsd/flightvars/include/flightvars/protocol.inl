@@ -374,6 +374,8 @@ to_string(subscription_status status)
          return "no such var";
       case subscription_status::NO_SUCH_SUBSCRIPTION:
          return "no such subscription";
+      case subscription_status::VAR_ALREADY_SUBSCRIBED:
+         return "var already subscribed";
       case subscription_status::UNKNOWN:
          return "unknown";
       default:

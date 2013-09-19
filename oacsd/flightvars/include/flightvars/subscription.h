@@ -73,6 +73,18 @@ public:
    void clear();
 
    /**
+    * Check whether there is a subscription for given variable.
+    */
+   bool subscription_exists(
+         const variable_id& var_id) const;
+
+   /**
+    * Check whether there is a subscription for given subscription ID.
+    */
+   bool subscription_exists(
+         const subscription_id& subs_id) const;
+
+   /**
     * Register a new subscription.
     */
    void register_subscription(

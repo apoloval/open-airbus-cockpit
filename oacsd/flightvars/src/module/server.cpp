@@ -255,6 +255,21 @@ flight_vars_server::handle_subscription_request(
 {
    auto var_id = make_var_id(req.var_grp, req.var_name);
    auto var_str = var_to_string(var_id);
+
+   if (session->subscriptions.subscription_exists(var_id))
+   {
+      log_error(
+         "Received a subscription request for an "
+         "already subscribed variable %s",
+         var_str);
+      return proto::subscription_reply_message(
+            proto::subscription_status::VAR_ALREADY_SUBSCRIBED,
+            req.var_grp,
+            req.var_name,
+            0,
+            "Variable already subscribed");
+   }
+
    try
    {
       session_wptr weak_session(session);

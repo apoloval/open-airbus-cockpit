@@ -40,15 +40,29 @@ subscription_mapper::clear()
    _map.clear();
 }
 
+bool
+subscription_mapper::subscription_exists(
+      const variable_id& var_id) const
+{
+   return (_map.left.find(var_id) != _map.left.end());
+}
+
+bool
+subscription_mapper::subscription_exists(
+      const subscription_id& subs_id) const
+{
+   return (_map.right.find(subs_id) != _map.right.end());
+}
+
 void
 subscription_mapper::register_subscription(
       const variable_id& var_id,
       const subscription_id& subs_id)
 throw (variable_already_exists_error, subscription_already_exists_error)
 {
-   if (_map.left.find(var_id) != _map.left.end())
+   if (subscription_exists(var_id))
       OAC_THROW_EXCEPTION(variable_already_exists_error(var_id));
-   if (_map.right.find(subs_id) != _map.right.end())
+   if (subscription_exists(subs_id))
       OAC_THROW_EXCEPTION(subscription_already_exists_error(subs_id));
    _map.insert(map_type::value_type(var_id, subs_id));
 }

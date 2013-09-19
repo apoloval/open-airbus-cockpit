@@ -120,7 +120,8 @@ struct let_test
    let_test& subscribe(
          const variable_group::tag_type& var_group_tag,
          const variable_name::tag_type& var_name_tag,
-         bool expect_success = true)
+         proto::subscription_status expected_subs_status =
+               proto::subscription_status::SUBSCRIBED)
    {
       auto var_group = variable_group(var_group_tag);
       auto var_name = variable_name(var_name_tag);
@@ -131,17 +132,10 @@ struct let_test
 
       auto rep = receive_message_as<proto::subscription_reply_message>();
 
-      if (expect_success)
-      {
+      if (expected_subs_status == proto::subscription_status::SUBSCRIBED)
          _subscriptions[var_id] = rep.subs_id;
-         BOOST_CHECK_EQUAL(
-                  proto::subscription_status::SUBSCRIBED,
-                  rep.st);
-      }
-      else
-         BOOST_CHECK_EQUAL(
-               proto::subscription_status::NO_SUCH_VAR,
-               rep.st);
+
+      BOOST_CHECK_EQUAL(expected_subs_status,rep.st);
       BOOST_CHECK_EQUAL(var_group.get_tag(), rep.var_grp.get_tag());
       BOOST_CHECK_EQUAL(var_name.get_tag(), rep.var_name.get_tag());
       return *this;
@@ -385,12 +379,28 @@ BOOST_AUTO_TEST_CASE(MustRespondSuccessToSubscriptionRequest)
          .disconnect();
 }
 
-BOOST_AUTO_TEST_CASE(MustRespondErrorToWrongSubscriptionRequest)
+BOOST_AUTO_TEST_CASE(MustRespondErrorToSubscriptionRequestWithUnknownVar)
 {
    let_test()
          .connect()
          .handshake()
-         .subscribe("unexisting/group", "unexisting/variable", false)
+         .subscribe(
+               "unexisting/group",
+               "unexisting/variable",
+               proto::subscription_status::NO_SUCH_VAR)
+         .disconnect();
+}
+
+BOOST_AUTO_TEST_CASE(MustRespondErrorToSubscriptionRequestWithRepeatedVar)
+{
+   let_test()
+         .connect()
+         .handshake()
+         .subscribe("fsuipc/offset", "0x700:4")
+         .subscribe(
+               "fsuipc/offset",
+               "0x700:4",
+               proto::subscription_status::VAR_ALREADY_SUBSCRIBED)
          .disconnect();
 }
 
@@ -402,7 +412,10 @@ BOOST_AUTO_TEST_CASE(MustRespondSuccessToManySubscriptionRequests)
          .subscribe("fsuipc/offset", "0x700:4")
          .subscribe("fsuipc/offset", "0x704:4")
          .subscribe("fsuipc/offset", "0x708:2")
-         .subscribe("unexisting/group", "unexisting/variable", false)
+         .subscribe(
+               "unexisting/group",
+               "unexisting/variable",
+               proto::subscription_status::NO_SUCH_VAR)
          .subscribe("fsuipc/offset", "0x70a:2")
          .subscribe("fsuipc/offset", "0x70c:4")
          .disconnect();
