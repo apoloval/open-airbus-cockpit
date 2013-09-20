@@ -44,6 +44,8 @@ set(liboac-commons_HEADERS
    include/liboac/network/types.h
    include/liboac/simconn.h
    include/liboac/stream.h
+   include/liboac/stream/adapters.h
+   include/liboac/stream/functions.h
    include/liboac/timing.h
    include/liboac/worker.h
 )

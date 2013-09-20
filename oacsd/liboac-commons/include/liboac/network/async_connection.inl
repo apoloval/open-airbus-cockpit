@@ -19,6 +19,7 @@
 #ifndef OAC_NETWORK_ASYNC_CONNECTION_INL
 #define OAC_NETWORK_ASYNC_CONNECTION_INL
 
+#include <liboac/buffer/functions.h>
 #include <liboac/network/async_connection.h>
 
 namespace oac { namespace network {

@@ -29,79 +29,98 @@ using namespace oac;
 using namespace oac::buffer;
 
 template <typename Buffer>
-void fill_buffer(Buffer& buff, DWORD from_offset)
+void fill_buffer(Buffer& buff, std::size_t from_offset)
 {
-   for (DWORD i = 0; i < buff.capacity(); i += sizeof(DWORD))
+   for (std::size_t i = 0; i < buff.capacity(); i += sizeof(std::size_t))
    {
-      if (i + sizeof(DWORD) <= buff.capacity())
-         buffer::write_as<DWORD>(buff, from_offset + i, i / sizeof(DWORD));
+      if (i + sizeof(std::size_t) <= buff.capacity())
+         buffer::write_as<std::size_t>(
+               buff,
+               from_offset + i,
+               i / sizeof(std::size_t));
    }
 }
 
 template <typename BufferFactory>
-void buffer_write_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_test(
+      const std::shared_ptr<BufferFactory>& fact,
+      std::size_t offset)
 {
-   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
-   DWORD d = 600;
-   buff->write(&d, offset, sizeof(DWORD));
+   std::shared_ptr<typename BufferFactory::value_type> buff(
+         fact->create_buffer());
+   std::size_t d = 600;
+   buff->write(&d, offset, sizeof(std::size_t));
 }
 
 template <typename BufferFactory>
-void buffer_read_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
+void buffer_read_test(
+      const std::shared_ptr<BufferFactory>& fact,
+      std::size_t offset)
 {
-   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
-   DWORD d = 600;
-   buff->read(&d, offset, sizeof(DWORD));
+   std::shared_ptr<typename BufferFactory::value_type> buff(
+         fact->create_buffer());
+   std::size_t d = 600;
+   buff->read(&d, offset, sizeof(std::size_t));
 }
 
 template <typename BufferFactory>
-void buffer_write_read_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_read_test(
+      const std::shared_ptr<BufferFactory>& fact,
+      std::size_t offset)
 {
-   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
-   DWORD d1 = 600, d2;
-   buff->write(&d1, offset, sizeof(DWORD));
-   buff->read(&d2, offset, sizeof(DWORD));
+   std::shared_ptr<typename BufferFactory::value_type> buff(
+         fact->create_buffer());
+   std::size_t d1 = 600, d2;
+   buff->write(&d1, offset, sizeof(std::size_t));
+   buff->read(&d2, offset, sizeof(std::size_t));
    BOOST_CHECK_EQUAL(d1, d2);
 }
 
 template <typename BufferFactory>
-void buffer_write_as_read_as_test(const std::shared_ptr<BufferFactory>& fact, DWORD offset)
+void buffer_write_as_read_as_test(
+      const std::shared_ptr<BufferFactory>& fact,
+      std::size_t offset)
 {
-   std::shared_ptr<typename BufferFactory::value_type> buff(fact->create_buffer());
-   buffer::write_as<DWORD>(*buff, offset, 600);
-   BOOST_CHECK_EQUAL(600, buffer::read_as<DWORD>(*buff, offset));
+   std::shared_ptr<typename BufferFactory::value_type> buff(
+         fact->create_buffer());
+   buffer::write_as<std::size_t>(*buff, offset, 600);
+   BOOST_CHECK_EQUAL(600, buffer::read_as<std::size_t>(*buff, offset));
 }
 
 template <typename BufferFactory1, typename BufferFactory2>
 void buffer_copy_test(
       const std::shared_ptr<BufferFactory1>& fact0,
       const std::shared_ptr<BufferFactory2>& fact1,
-      DWORD fill_from_offset,
-      DWORD offset0,
-      DWORD offset1,
-      DWORD length)
+      std::size_t fill_from_offset,
+      std::size_t offset0,
+      std::size_t offset1,
+      std::size_t length)
 throw (buffer::index_out_of_bounds)
 {
-   std::shared_ptr<typename BufferFactory1::value_type> buff0(fact0->create_buffer());
-   std::shared_ptr<typename BufferFactory2::value_type> buff1(fact1->create_buffer());
+   std::shared_ptr<typename BufferFactory1::value_type> buff0(
+         fact0->create_buffer());
+   std::shared_ptr<typename BufferFactory2::value_type> buff1(
+         fact1->create_buffer());
 
    fill_buffer(*buff0, fill_from_offset);
    buff1->copy(*buff0, offset0, offset1, length);
-   for (DWORD i = 0; i < length; i += sizeof(DWORD))
-      BOOST_CHECK_EQUAL(i / 4, buffer::read_as<DWORD>(*buff1, offset1 + i));
+   for (std::size_t i = 0; i < length; i += sizeof(std::size_t))
+      BOOST_CHECK_EQUAL(
+            i / 4,
+            buffer::read_as<std::size_t>(*buff1, offset1 + i));
 }
 
-void double_buffer_test(DWORD* seq, unsigned int seql, bool expect_mod)
+void double_buffer_test(std::size_t* seq, unsigned int seql, bool expect_mod)
 {
    double_buffer<> buff(
          std::make_shared<linear_buffer>(12),
          std::make_shared<linear_buffer>(12));
    for (unsigned int i = 0; i < seql; i++)
    {
-      buffer::write_as<DWORD>(buff, 0, seq[i]);
+      buffer::write_as<std::size_t>(buff, 0, seq[i]);
       buff.swap();
    }
-   BOOST_CHECK(expect_mod == buff.is_modified<sizeof(DWORD)>(0));
+   BOOST_CHECK(expect_mod == buff.is_modified<sizeof(std::size_t)>(0));
 }
 
 linear_buffer_ptr prepare_buffer(std::size_t length)
@@ -143,7 +162,8 @@ BOOST_AUTO_TEST_CASE(ShouldWriteAndReadOnLastPosition)
 
 BOOST_AUTO_TEST_CASE(ShouldWriteAndread_as)
 {
-   buffer_write_as_read_as_test(std::make_shared<linear_buffer::factory>(12), 4);
+   buffer_write_as_read_as_test(
+         std::make_shared<linear_buffer::factory>(12), 4);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldFailOnWriteAfterLastPosition)
@@ -785,25 +805,25 @@ BOOST_AUTO_TEST_CASE(ShouldFailOnCopyTodouble_bufferWithWrongLength)
 
 BOOST_AUTO_TEST_CASE(ShouldDetectModificationOnChange)
 {
-   DWORD data[] = { 600, 601 };
+   std::size_t data[] = { 600, 601 };
    double_buffer_test(data, 2, true);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldNotDetectModificationOnSameValueTwice)
 {
-   DWORD data[] = { 600, 600 };
+   std::size_t data[] = { 600, 600 };
    double_buffer_test(data, 2, false);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldDetectModificationOnSameFirstAndLastValue)
 {
-   DWORD data[] = { 600, 601, 602, 601, 600 };
+   std::size_t data[] = { 600, 601, 602, 601, 600 };
    double_buffer_test(data, 5, true);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldNotDetectModificationOnSameLastTwoValues)
 {
-   DWORD data[] = { 600, 601, 602, 601, 601 };
+   std::size_t data[] = { 600, 601, 602, 601, 601 };
    double_buffer_test(data, 5, false);
 }
 

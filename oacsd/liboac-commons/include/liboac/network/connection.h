@@ -21,7 +21,7 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include <liboac/stream.h>
+#include <liboac/stream/adapters.h>
 
 namespace oac { namespace network {
 
@@ -37,7 +37,7 @@ public:
    /**
     * The type of input stream used by TCP connections.
     */
-   typedef sync_read_stream_adapter<
+   typedef stream::sync_read_stream_adapter<
          boost::asio::ip::tcp::socket> input_stream;
 
    typedef std::shared_ptr<input_stream> input_stream_ptr;
@@ -45,7 +45,7 @@ public:
    /**
     * The type of output stream used by TCP connections.
     */
-   typedef sync_write_stream_adapter<
+   typedef stream::sync_write_stream_adapter<
          boost::asio::ip::tcp::socket> output_stream;
 
    typedef std::shared_ptr<output_stream> output_stream_ptr;
