@@ -16,16 +16,34 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_NETWORK_H
-#define OAC_NETWORK_H
+#ifndef OAC_NETWORK_CONNECTION_INL
+#define OAC_NETWORK_CONNECTION_INL
 
-#include <liboac/network/async_client.h>
-#include <liboac/network/async_connection.h>
-#include <liboac/network/async_server.h>
-#include <liboac/network/client.h>
 #include <liboac/network/connection.h>
-#include <liboac/network/errors.h>
-#include <liboac/network/server.h>
-#include <liboac/network/types.h>
+
+namespace oac { namespace network {
+
+inline
+tcp_connection::tcp_connection()
+   : _socket(new boost::asio::ip::tcp::socket(_io_service))
+{}
+
+inline boost::asio::io_service&
+tcp_connection::io_service()
+{ return _io_service; }
+
+inline boost::asio::ip::tcp::socket&
+tcp_connection::socket()
+{ return *_socket; }
+
+inline tcp_connection::input_stream_ptr
+tcp_connection::input()
+{ return std::make_shared<input_stream>(_socket); }
+
+inline tcp_connection::output_stream_ptr
+tcp_connection::output()
+{ return std::make_shared<output_stream>(_socket); }
+
+}} // namespace oac::network
 
 #endif

@@ -68,7 +68,7 @@ struct let_test
 
    let_test& connect()
    {
-      _client = std::make_shared<tcp_client>(
+      _client = std::make_shared<network::tcp_client>(
             "localhost", _port);
       return *this;
    }
@@ -266,7 +266,7 @@ private:
    std::shared_ptr<dummy_fsuipc_flight_vars> _fsuipc;
    flight_vars_server_ptr _server;
    boost::thread _server_thread;
-   std::shared_ptr<tcp_client> _client;
+   std::shared_ptr<network::tcp_client> _client;
    std::unordered_map<
          variable_id,
          subscription_id,

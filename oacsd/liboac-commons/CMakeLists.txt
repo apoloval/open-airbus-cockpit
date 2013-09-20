@@ -27,8 +27,20 @@ set(liboac-commons_HEADERS
    include/liboac/io.h
    include/liboac/logging.h
    include/liboac/network.h
-   include/liboac/network.inl
+   include/liboac/network/asio_utils.h
+   include/liboac/network/async_client.h
+   include/liboac/network/async_client.inl
+   include/liboac/network/async_connection.h
+   include/liboac/network/async_connection.inl
+   include/liboac/network/async_server.h
+   include/liboac/network/async_server.inl
+   include/liboac/network/client.h
+   include/liboac/network/client.inl
+   include/liboac/network/connection.h
+   include/liboac/network/connection.inl
    include/liboac/network/errors.h
+   include/liboac/network/server.h
+   include/liboac/network/server.inl
    include/liboac/network/types.h
    include/liboac/simconn.h
    include/liboac/stream.h

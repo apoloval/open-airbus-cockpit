@@ -22,10 +22,12 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "network.h"
+#include <liboac/buffer.h>
+#include <liboac/network.h>
 
 using namespace oac;
 using namespace oac::buffer;
+using namespace oac::network;
 
 BOOST_AUTO_TEST_SUITE(TcpClientTest)
 

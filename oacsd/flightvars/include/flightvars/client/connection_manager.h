@@ -70,7 +70,7 @@ private:
 
    error_handler _error_handler;
    std::shared_ptr<boost::asio::io_service> _io_service;
-   async_tcp_client _client;
+   network::async_tcp_client _client;
    input_buffer_type _input_buffer;
    std::thread _client_thread;
    subscription_db _db;

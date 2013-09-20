@@ -145,7 +145,7 @@ struct let_test
    let_test& connect()
    {
       auto port = rand() * 8000 + 1025;
-      _server.reset(new async_tcp_server(
+      _server.reset(new network::async_tcp_server(
             port,
             std::bind(
                   &let_test::server_read_message,
@@ -280,7 +280,7 @@ struct let_test
 private:
 
    typedef std::function<
-         void(const async_tcp_connection_ptr&)> server_action;
+         void(const network::async_tcp_connection_ptr&)> server_action;
 
    struct var_update_reception
    {
@@ -297,8 +297,8 @@ private:
 
    std::shared_ptr<boost::asio::io_service> _io_srv;
    std::unique_ptr<flight_vars_client> _client;
-   std::unique_ptr<async_tcp_server> _server;
-   std::weak_ptr<async_tcp_connection> _server_conn;
+   std::unique_ptr<network::async_tcp_server> _server;
+   std::weak_ptr<network::async_tcp_connection> _server_conn;
    boost::thread _server_thread;
    buffer::ring_buffer _srv_input_buff;
    std::unique_ptr<buffer::linear_buffer> _srv_output_buff;
@@ -317,7 +317,7 @@ private:
 
    }
 
-   void server_read_message(const async_tcp_connection_ptr& conn)
+   void server_read_message(const network::async_tcp_connection_ptr& conn)
    {
       _server_conn = conn;
       conn->read(
@@ -330,7 +330,7 @@ private:
    }
 
    void on_server_message_read(
-         const async_tcp_connection_ptr& conn,
+         const network::async_tcp_connection_ptr& conn,
          const attempt<std::size_t>& bytes_read)
    {
       if (_current_srv_action)
@@ -338,7 +338,7 @@ private:
    }
 
    void server_handshake(
-         const async_tcp_connection_ptr& conn)
+         const network::async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<proto::begin_session_message>();
       BOOST_CHECK_EQUAL("it-client", req.pname);
@@ -348,7 +348,7 @@ private:
       server_write_message(conn, rep);
    }
 
-   void server_receive_close(const async_tcp_connection_ptr& conn)
+   void server_receive_close(const network::async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<proto::end_session_message>();
       BOOST_CHECK_EQUAL("Client disconnected", req.cause);
@@ -357,7 +357,7 @@ private:
    void server_subscribe(
          const variable_id& var_id,
          subscription_id subs_id,
-         const async_tcp_connection_ptr& conn)
+         const network::async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::subscription_request_message>();
@@ -387,7 +387,7 @@ private:
    void server_unsubscribe(
          subscription_id expected_subs_id,
          subscription_id reply_subs_id,
-         const async_tcp_connection_ptr& conn)
+         const network::async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::unsubscription_request_message>();
@@ -410,7 +410,7 @@ private:
    void server_receive_var_update(
          subscription_id expected_subs_id,
          const variable_value& expected_var_value,
-         const async_tcp_connection_ptr& conn)
+         const network::async_tcp_connection_ptr& conn)
    {
       auto req = server_receive_message_as<
             proto::var_update_message>();
@@ -419,7 +419,7 @@ private:
    }
 
    void server_send_garbage(
-         const async_tcp_connection_ptr& conn)
+         const network::async_tcp_connection_ptr& conn)
    {
       _srv_output_buff.reset(new buffer::linear_buffer(1024));
       for (int i = 0; i < 8; i++)
@@ -449,7 +449,7 @@ private:
 
    template <typename MessageType>
    void server_write_message(
-         const async_tcp_connection_ptr& conn,
+         const network::async_tcp_connection_ptr& conn,
          const MessageType& msg,
          bool request_read = true)
    {

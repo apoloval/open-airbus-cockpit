@@ -86,7 +86,7 @@ flight_vars_server::session::unsubscribe_all()
 
 void
 flight_vars_server::accept_connection(
-      const async_tcp_connection_ptr& conn)
+      const network::async_tcp_connection_ptr& conn)
 {
    auto s = std::make_shared<session>(shared_from_this(), conn);
    read_begin_session(s);
@@ -415,7 +415,7 @@ flight_vars_server::send_var_update(
 
 void
 flight_vars_server::write_message(
-      const async_tcp_connection_ptr& conn,
+      const network::async_tcp_connection_ptr& conn,
       const proto::message& msg,
       const after_write_handler& after_write)
 {

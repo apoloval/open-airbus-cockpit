@@ -66,10 +66,10 @@ private:
       std::shared_ptr<flight_vars_server> server;
       subscription_mapper subscriptions;
       input_buffer_ptr input_buffer;
-      async_tcp_connection_ptr conn;
+      network::async_tcp_connection_ptr conn;
 
       session(const std::shared_ptr<flight_vars_server>& srv,
-              const async_tcp_connection_ptr& c)
+              const network::async_tcp_connection_ptr& c)
          : logger_component("server-session"),
            server(srv),
            input_buffer(std::make_shared<input_buffer_type>(64*1024)),
@@ -92,9 +92,9 @@ private:
    typedef std::function<void(void)> after_write_handler;
 
    std::shared_ptr<flight_vars> _delegate;
-   async_tcp_server _tcp_server;
+   network::async_tcp_server _tcp_server;
 
-   void accept_connection(const async_tcp_connection_ptr& conn);
+   void accept_connection(const network::async_tcp_connection_ptr& conn);
 
    void read_begin_session(
          const session_ptr& session);
@@ -129,7 +129,7 @@ private:
          const variable_value& var_value);
 
    void write_message(
-         const async_tcp_connection_ptr& conn,
+         const network::async_tcp_connection_ptr& conn,
          const proto::message& msg,
          const after_write_handler& after_write);
 
