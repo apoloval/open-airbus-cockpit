@@ -24,9 +24,9 @@
 #include <boost/asio/error.hpp>
 #include <boost/system/error_code.hpp>
 
-#include "exception.h"
-#include "io.h"
-#include "network/errors.h"
+#include "liboac/exception.h"
+#include "liboac/io.h"
+#include "liboac/network/errors.h"
 
 namespace oac { namespace buffer {
 

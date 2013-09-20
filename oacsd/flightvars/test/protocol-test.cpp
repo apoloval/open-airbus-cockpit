@@ -31,7 +31,7 @@ using namespace oac::fv::proto;
 template <typename Serializer, typename Deserializer>
 struct protocol_test
 {
-   linear_buffer buffer;
+   buffer::linear_buffer buffer;
 
    inline protocol_test() : buffer(1024)
    {

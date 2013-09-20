@@ -19,8 +19,8 @@
 #ifndef OAC_NETWORK_ERRORS_H
 #define OAC_NETWORK_ERRORS_H
 
-#include "exception.h"
-#include "network/types.h"
+#include "liboac/exception.h"
+#include "liboac/network/types.h"
 
 namespace oac { namespace network {
 

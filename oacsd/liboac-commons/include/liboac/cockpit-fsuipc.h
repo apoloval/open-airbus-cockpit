@@ -41,7 +41,9 @@ public:
 
 private:
 
-   double_buffer<shifted_buffer<linear_buffer>>::ptr_type _buffer;
+   buffer::double_buffer<
+         buffer::shifted_buffer<
+               buffer::linear_buffer>>::ptr_type _buffer;
    local_fsuipc::factory_ptr _fsuipc_fact;
    local_fsuipc_ptr _fsuipc;
    flight_control_unit_ptr _fcu;

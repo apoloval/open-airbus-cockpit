@@ -64,10 +64,14 @@ public:
 
 private:
 
+   typedef buffer::ring_buffer input_buffer_type;
+   typedef buffer::linear_buffer output_buffer_type;
+   typedef output_buffer_type::ptr_type output_buffer_ptr;
+
    error_handler _error_handler;
    std::shared_ptr<boost::asio::io_service> _io_service;
    async_tcp_client _client;
-   ring_buffer _input_buffer;
+   input_buffer_type _input_buffer;
    std::thread _client_thread;
    subscription_db _db;
    request_pool _request_pool;
@@ -109,10 +113,10 @@ private:
    void send_message(const Message& msg);
 
    void send_data(
-         const std::shared_ptr<linear_buffer>& output_buff);                  
+         const output_buffer_ptr& output_buff);
 
    void on_data_sent(
-         const std::shared_ptr<linear_buffer>& output_buff,
+         const output_buffer_ptr& output_buff,
          const attempt<std::size_t>& bytes_written);
 };
 

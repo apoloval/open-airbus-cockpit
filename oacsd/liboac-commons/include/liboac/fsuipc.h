@@ -30,8 +30,8 @@
 #include <Boost/format.hpp>
 #include <fsuipc/fsuipc_user.h>
 
-#include "buffer.h"
-#include "exception.h"
+#include "buffer/linear.h"
+#include "io.h"
 #include "logging.h"
 
 #ifndef LOCAL_FSUIPC_BUFFER_SIZE
@@ -57,7 +57,7 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(fsuipc_error, io_exception,
  * implements convenient wrappers to read from and write to FSUIPC offsets.
  */
 class local_fsuipc :
-      public linear_stream_buffer_base<local_fsuipc>
+      public buffer::linear_stream_buffer_base<local_fsuipc>
 {
 public:
 

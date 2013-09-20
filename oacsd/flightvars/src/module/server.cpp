@@ -419,7 +419,7 @@ flight_vars_server::write_message(
       const proto::message& msg,
       const after_write_handler& after_write)
 {
-   auto buff = std::make_shared<linear_buffer>(1024);
+   auto buff = std::make_shared<output_buffer_type>(1024);
    proto::serialize<proto::binary_message_serializer>(msg, *buff);
    conn->write(
             *buff,
@@ -433,7 +433,7 @@ flight_vars_server::write_message(
 
 void
 flight_vars_server::on_write_message(
-      const linear_buffer_ptr& buffer,
+      const output_buffer_ptr& buffer,
       const after_write_handler& after_write,
       const attempt<std::size_t>& bytes_transferred)
 {

@@ -17,6 +17,7 @@
  */
 
 #include <boost/math/special_functions/round.hpp>
+#include <liboac/buffer/functions.h>
 
 #include "wilco-fcu.h"
 

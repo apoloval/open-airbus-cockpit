@@ -90,7 +90,7 @@ connection_manager::handshake(
 throw (communication_error)
 {
    using namespace proto;
-   linear_buffer output_buff(128);
+   output_buffer_type output_buff(128);
 
    log_info("Sending begin session message to the server");
    auto begin_session_msg = proto::begin_session_message(client_name);
@@ -163,7 +163,7 @@ connection_manager::close()
 throw (communication_error)
 {
    using namespace proto;
-   linear_buffer output_buff(128);
+   output_buffer_type output_buff(128);
 
    log_info("Sending end session message to the server");
    auto end_session_msg = proto::end_session_message("Client disconnected");
@@ -497,14 +497,14 @@ void
 connection_manager::send_message(
       const Message& msg)
 {
-   auto buff = std::make_shared<linear_buffer>(1024);
+   auto buff = std::make_shared<output_buffer_type>(1024);
    proto::serialize<proto::binary_message_serializer>(msg, *buff);
    send_data(buff);
 }
 
 void
 connection_manager::send_data(
-      const std::shared_ptr<linear_buffer>& output_buff)
+      const output_buffer_ptr& output_buff)
 {
    _client.connection().write(
          *output_buff,
@@ -517,7 +517,7 @@ connection_manager::send_data(
 
 void
 connection_manager::on_data_sent(
-      const std::shared_ptr<linear_buffer>& output_buff,
+      const output_buffer_ptr& output_buff,
       const attempt<std::size_t>& bytes_written)
 {
    try

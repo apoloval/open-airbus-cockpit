@@ -60,16 +60,19 @@ private:
 
    struct session : logger_component
    {
+      typedef buffer::ring_buffer input_buffer_type;
+      typedef input_buffer_type::ptr_type input_buffer_ptr;
+
       std::shared_ptr<flight_vars_server> server;
       subscription_mapper subscriptions;
-      ring_buffer_ptr input_buffer;
+      input_buffer_ptr input_buffer;
       async_tcp_connection_ptr conn;
 
       session(const std::shared_ptr<flight_vars_server>& srv,
               const async_tcp_connection_ptr& c)
          : logger_component("server-session"),
            server(srv),
-           input_buffer(std::make_shared<ring_buffer>(64*1024)),
+           input_buffer(std::make_shared<input_buffer_type>(64*1024)),
            conn(c)
       {}
 
@@ -82,6 +85,9 @@ private:
 
    typedef std::shared_ptr<session> session_ptr;
    typedef std::weak_ptr<session> session_wptr;
+
+   typedef buffer::linear_buffer output_buffer_type;
+   typedef output_buffer_type::ptr_type output_buffer_ptr;
 
    typedef std::function<void(void)> after_write_handler;
 
@@ -128,7 +134,7 @@ private:
          const after_write_handler& after_write);
 
    void on_write_message(
-         const linear_buffer_ptr& buffer,
+         const output_buffer_ptr& buffer,
          const after_write_handler& after_write,
          const attempt<std::size_t>& bytes_transferred);
 

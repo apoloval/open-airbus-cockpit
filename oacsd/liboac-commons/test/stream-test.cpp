@@ -25,6 +25,7 @@
 #include "stream.h"
 
 using namespace oac;
+using namespace oac::buffer;
 
 BOOST_AUTO_TEST_SUITE(readerTest)
 

@@ -26,6 +26,7 @@
 #include "stream.h"
 
 using namespace oac;
+using namespace oac::buffer;
 
 template <typename Buffer>
 void fill_buffer(Buffer& buff, DWORD from_offset)

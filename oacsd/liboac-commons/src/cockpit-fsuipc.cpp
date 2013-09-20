@@ -29,6 +29,8 @@ namespace oac {
 
 namespace {
 
+using namespace oac::buffer;
+
 typedef double_buffer<shifted_buffer<linear_buffer>> buffer_type;
 
 typedef std::shared_ptr<buffer_type> buffer_ptr;

@@ -300,8 +300,8 @@ private:
    std::unique_ptr<async_tcp_server> _server;
    std::weak_ptr<async_tcp_connection> _server_conn;
    boost::thread _server_thread;
-   ring_buffer _srv_input_buff;
-   std::unique_ptr<linear_buffer> _srv_output_buff;
+   buffer::ring_buffer _srv_input_buff;
+   std::unique_ptr<buffer::linear_buffer> _srv_output_buff;
    server_action _current_srv_action;
    std::unordered_map<
          variable_id,
@@ -421,7 +421,7 @@ private:
    void server_send_garbage(
          const async_tcp_connection_ptr& conn)
    {
-      _srv_output_buff.reset(new linear_buffer(1024));
+      _srv_output_buff.reset(new buffer::linear_buffer(1024));
       for (int i = 0; i < 8; i++)
          stream::write_as<std::uint32_t>(*_srv_output_buff, rand());
       conn->write(
@@ -453,7 +453,7 @@ private:
          const MessageType& msg,
          bool request_read = true)
    {
-      _srv_output_buff.reset(new linear_buffer(1024));
+      _srv_output_buff.reset(new buffer::linear_buffer(1024));
       proto::serialize<proto::binary_message_serializer>(
             msg,
             *_srv_output_buff);

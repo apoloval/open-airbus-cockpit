@@ -26,9 +26,12 @@
 
 using namespace oac;
 
-std::pair<std::shared_ptr<linear_buffer>, std::shared_ptr<logger>> init_logger()
+typedef buffer::linear_buffer buffer_type;
+typedef buffer_type::ptr_type buffer_ptr;
+
+std::pair<buffer_ptr, logger_ptr> init_logger()
 {
-   auto buff = std::make_shared<linear_buffer>(1024);
+   auto buff = std::make_shared<buffer_type>(1024);
    auto log = make_logger(log_level::INFO, buff);
    return std::make_pair(buff, log);
 }

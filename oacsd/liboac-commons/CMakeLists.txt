@@ -6,7 +6,16 @@ set(liboac-commons_HEADERS
    include/liboac/attempt.h
    include/liboac/buffer.h
    include/liboac/buffer/asio_handler.h
-   include/liboac/buffer.inl
+   include/liboac/buffer/double.h
+   include/liboac/buffer/errors.h
+   include/liboac/buffer/fixed.h
+   include/liboac/buffer/fixed.inl
+   include/liboac/buffer/functions.h
+   include/liboac/buffer/linear.h
+   include/liboac/buffer/linear.inl
+   include/liboac/buffer/ring.h
+   include/liboac/buffer/ring.inl
+   include/liboac/buffer/shifted.h
    include/liboac/cockpit.h
    include/liboac/cockpit-fsuipc.h
    include/liboac/concurrency.h

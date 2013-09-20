@@ -16,6 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <liboac/buffer/functions.h>
+
 #include "wilco-efis.h"
 
 namespace oac { namespace we {

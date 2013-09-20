@@ -23,9 +23,9 @@ namespace oac { namespace fv {
 namespace {
 
 template <typename T>
-linear_buffer_ptr make_buffer_of(const T& value)
+buffer::linear_buffer_ptr make_buffer_of(const T& value)
 {
-   auto buff = std::make_shared<linear_buffer>(sizeof(T));
+   auto buff = std::make_shared<buffer::linear_buffer>(sizeof(T));
    buffer::write_as(*buff, 0, value);
    return buff;
 }
