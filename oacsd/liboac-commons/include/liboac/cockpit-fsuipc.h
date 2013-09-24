@@ -19,9 +19,9 @@
 #ifndef OAC_COCKPIT_FSUIPC_H
 #define OAC_COCKPIT_FSUIPC_H
 
-#include "buffer.h"
-#include "cockpit.h"
-#include "fsuipc.h"
+#include <liboac/buffer.h>
+#include <liboac/cockpit.h>
+#include <liboac/fsuipc/local.h>
 
 namespace oac {
 
@@ -30,7 +30,7 @@ class fsuipc_cockpit_back : public cockpit_back
 public:
 
    inline fsuipc_cockpit_back(
-         const local_fsuipc::factory_ptr& fsuipc_fact) :
+         const fsuipc::local_fsuipc::factory_ptr& fsuipc_fact) :
       _fsuipc_fact(fsuipc_fact)
    {}
 
@@ -44,8 +44,8 @@ private:
    buffer::double_buffer<
          buffer::shifted_buffer<
                buffer::linear_buffer>>::ptr_type _buffer;
-   local_fsuipc::factory_ptr _fsuipc_fact;
-   local_fsuipc_ptr _fsuipc;
+   fsuipc::local_fsuipc::factory_ptr _fsuipc_fact;
+   fsuipc::local_fsuipc_ptr _fsuipc;
    flight_control_unit_ptr _fcu;
    efis_control_panel_ptr _efis_ctrl_panel;
 

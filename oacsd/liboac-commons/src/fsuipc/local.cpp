@@ -2,27 +2,30 @@
  * This file is part of Open Airbus Cockpit
  * Copyright (C) 2012, 2013 Alvaro Polo
  *
- * Open Airbus Cockpit is free software: you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as published 
+ * Open Airbus Cockpit is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published
  * by the Free Software Foundation, either version 3 of the License, or
  * (at your option) any later version.
- * 
+ *
  * Open Airbus Cockpit is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- * 
+ *
  * You should have received a copy of the GNU General Public License
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <sstream>
 
-#include <Boost/format.hpp>
+#include <Windows.h>
 
-#include "FSUIPC.h"
+#include <boost/format.hpp>
+#include <fsuipc/fsuipc_user.h>
 
-namespace oac {
+#include <liboac/fsuipc/local.h>
+
+namespace oac { namespace fsuipc {
 
 namespace {
 
@@ -134,13 +137,13 @@ throw (buffer::index_out_of_bounds, io_exception)
 
 
 
-std::uint32_t local_fsuipc_user_adapter::_instance_count(0);
+std::uint32_t local_user_adapter::_instance_count(0);
 
-std::uint8_t local_fsuipc_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
+std::uint8_t local_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
-local_fsuipc_user_adapter::local_fsuipc_user_adapter()
+local_user_adapter::local_user_adapter()
 throw (fsuipc_error)
- : logger_component("local_fsuipc_user_adapter")
+ : logger_component("local_user_adapter")
 {
    if (_instance_count == 0)
    {
@@ -160,14 +163,14 @@ throw (fsuipc_error)
    _instance_count++;
 }
 
-local_fsuipc_user_adapter::local_fsuipc_user_adapter(
-      const local_fsuipc_user_adapter& adapter)
- : logger_component("local_fsuipc_user_adapter")
+local_user_adapter::local_user_adapter(
+      const local_user_adapter& adapter)
+ : logger_component("local_user_adapter")
 {
    _instance_count++;
 }
 
-local_fsuipc_user_adapter::~local_fsuipc_user_adapter()
+local_user_adapter::~local_user_adapter()
 {
    _instance_count--;
    if (_instance_count == 0)
@@ -182,8 +185,8 @@ local_fsuipc_user_adapter::~local_fsuipc_user_adapter()
 }
 
 void
-local_fsuipc_user_adapter::read(
-      fsuipc_valued_offset& valued_offset)
+local_user_adapter::read(
+      valued_offset& valued_offset)
 throw (fsuipc_error)
 {
    DWORD error;
@@ -198,8 +201,8 @@ throw (fsuipc_error)
 }
 
 void
-local_fsuipc_user_adapter::write(
-      const fsuipc_valued_offset& valued_offset)
+local_user_adapter::write(
+      const valued_offset& valued_offset)
 throw (fsuipc_error)
 {
    DWORD error;
@@ -214,7 +217,7 @@ throw (fsuipc_error)
 }
 
 void
-local_fsuipc_user_adapter::process()
+local_user_adapter::process()
 throw (fsuipc_error)
 {
    DWORD error;
@@ -224,67 +227,4 @@ throw (fsuipc_error)
    }
 }
 
-
-
-void
-dummy_fsuipc_user_adapter::process_read_requests()
-{
-   for (auto& req : _read_requests)
-   {
-      *req.value = read_value_from_buffer(
-               req.offset.address, req.offset.length);
-   }
-   _read_requests.clear();
-}
-
-void
-dummy_fsuipc_user_adapter::process_write_requests()
-{
-   for (auto& req : _write_requests)
-   {
-      write_value_to_buffer(
-               req.offset.address,
-               req.offset.length,
-               req.offset.value);
-   }
-   _write_requests.clear();
-}
-
-fsuipc_offset_value
-dummy_fsuipc_user_adapter::read_value_from_buffer(
-      fsuipc_offset_address addr,
-      fsuipc_offset_length len)
-{
-   fsuipc_offset_value value = 0;
-   switch (len)
-   {
-      case OFFSET_LEN_DWORD:
-         value += _buffer[addr+3] << 24;
-         value += _buffer[addr+2] << 16;
-      case OFFSET_LEN_WORD:
-         value += _buffer[addr+1] << 8;
-      case OFFSET_LEN_BYTE:
-         value += _buffer[addr];
-   }
-   return value;
-}
-
-void
-dummy_fsuipc_user_adapter::write_value_to_buffer(
-      fsuipc_offset_address addr,
-      fsuipc_offset_length len,
-      fsuipc_offset_value val)
-{
-   switch (len)
-   {
-      case OFFSET_LEN_DWORD:
-         _buffer[addr+3] = val >> 24;
-         _buffer[addr+2] = val >> 16;
-      case OFFSET_LEN_WORD:
-         _buffer[addr+1] = val >> 8;
-      case OFFSET_LEN_BYTE:
-         _buffer[addr] = val;
-   }
-}
-
-} // namespace oac
+}} // namespace oac::fsuipc

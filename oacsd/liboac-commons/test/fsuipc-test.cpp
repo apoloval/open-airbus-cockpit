@@ -26,6 +26,7 @@
 #include "fsuipc.h"
 
 using namespace oac;
+using namespace oac::fsuipc;
 
 BOOST_AUTO_TEST_SUITE(FsuipcClient)
 
@@ -35,27 +36,27 @@ BOOST_AUTO_TEST_SUITE(FsuipcClient)
 struct let_test
 {
    std::uint8_t _buffer[0xffff];
-   fsuipc_client<dummy_fsuipc_user_adapter> _cli;
-   std::list<fsuipc_valued_offset> _update_inputs;
-   std::list<fsuipc_offset> _query_inputs;
-   std::list<fsuipc_valued_offset> _query_results;
+   fsuipc_client<dummy_user_adapter> _cli;
+   std::list<valued_offset> _update_inputs;
+   std::list<offset> _query_inputs;
+   std::list<valued_offset> _query_results;
 
    let_test& with_offset(
-         fsuipc_offset_address addr,
-         fsuipc_offset_length len,
-         fsuipc_offset_value val)
+         offset_address addr,
+         offset_length len,
+         offset_value val)
    {
       _cli.user_adapter().write_value_to_buffer(addr, len, val);
       return *this;
    }
 
    let_test& with_update_input(
-         fsuipc_offset_address addr,
-         fsuipc_offset_length len,
-         fsuipc_offset_value val)
+         offset_address addr,
+         offset_length len,
+         offset_value val)
    {
       _update_inputs.push_back(
-               fsuipc_valued_offset(fsuipc_offset(addr, len), val));
+               valued_offset(offset(addr, len), val));
       return *this;
    }
 
@@ -66,9 +67,9 @@ struct let_test
    }
 
    let_test& must_have_offset(
-         fsuipc_offset_address addr,
-         fsuipc_offset_length len,
-         fsuipc_offset_value val)
+         offset_address addr,
+         offset_length len,
+         offset_value val)
    {
       BOOST_CHECK_EQUAL(
                val,
@@ -77,16 +78,16 @@ struct let_test
    }
 
    let_test& with_query_input(
-         fsuipc_offset_address addr,
-         fsuipc_offset_length len)
+         offset_address addr,
+         offset_length len)
    {
-      _query_inputs.push_back(fsuipc_offset(addr, len));
+      _query_inputs.push_back(offset(addr, len));
       return *this;
    }
 
    let_test& query()
    {
-      _cli.query(_query_inputs, [this](const fsuipc_valued_offset& value)
+      _cli.query(_query_inputs, [this](const valued_offset& value)
       {
          _query_results.push_back(value);
       });
@@ -100,15 +101,15 @@ struct let_test
    }
 
    let_test& must_return(
-         fsuipc_offset_address addr,
-         fsuipc_offset_length len,
-         fsuipc_offset_value val)
+         offset_address addr,
+         offset_length len,
+         offset_value val)
    {
       BOOST_CHECK(
                std::any_of(
                   _query_results.begin(),
                   _query_results.end(),
-                  [addr, len, val](const fsuipc_valued_offset& item)
+                  [addr, len, val](const valued_offset& item)
       {
          return item.address == addr &&
                item.length == len &&
@@ -201,9 +202,9 @@ struct let_test
    {}
 
    let_test& then_offset_changes(
-            fsuipc_offset_address addr,
-            fsuipc_offset_length len,
-            fsuipc_offset_value val)
+            offset_address addr,
+            offset_length len,
+            offset_value val)
    {
       _observer.get_client().user_adapter().write_value_to_buffer(
                addr, len, val);
@@ -211,18 +212,18 @@ struct let_test
    }
 
    let_test& observe(
-            fsuipc_offset_address addr,
-            fsuipc_offset_length len)
+            offset_address addr,
+            offset_length len)
    {
-      _observer.start_observing(fsuipc_offset(addr, len));
+      _observer.start_observing(offset(addr, len));
       return *this;
    }
 
    let_test& unobserve(
-            fsuipc_offset_address addr,
-            fsuipc_offset_length len)
+            offset_address addr,
+            offset_length len)
    {
-      _observer.stop_observing(fsuipc_offset(addr, len));
+      _observer.stop_observing(offset(addr, len));
       return *this;
    }
 
@@ -239,15 +240,15 @@ struct let_test
    }
 
    let_test& assert_update(
-            fsuipc_offset_address addr,
-            fsuipc_offset_length len,
-            fsuipc_offset_value val)
+            offset_address addr,
+            offset_length len,
+            offset_value val)
    {
       BOOST_CHECK(
                std::any_of(
                   _updates.begin(),
                   _updates.end(),
-                  [addr, len, val](const fsuipc_valued_offset& vo)
+                  [addr, len, val](const valued_offset& vo)
       {
          return vo.address == addr && vo.length == len && vo.value == val;
       }));
@@ -262,10 +263,10 @@ struct let_test
 
 private:
 
-   fsuipc_update_observer<dummy_fsuipc_user_adapter> _observer;
-   std::list<fsuipc_valued_offset> _updates;
+   update_observer<dummy_user_adapter> _observer;
+   std::list<valued_offset> _updates;
 
-   void on_offset_update(const fsuipc_valued_offset& update)
+   void on_offset_update(const valued_offset& update)
    {
       _updates.push_back(update);
    }

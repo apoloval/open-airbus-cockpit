@@ -210,18 +210,18 @@ struct let_test
    }
 
    let_test& on_offset_change(
-         const fsuipc_offset_address& address,
-         const fsuipc_offset_length& length,
-         const fsuipc_offset_value& value)
+         const oac::fsuipc::offset_address& address,
+         const oac::fsuipc::offset_length& length,
+         const oac::fsuipc::offset_value& value)
    {
       _fsuipc->user_adapter().write_value_to_buffer(address, length, value);
       return *this;
    }
 
    let_test& assert_offset_value(
-         const fsuipc_offset_address& address,
-         const fsuipc_offset_length& length,
-         const fsuipc_offset_value& value)
+         const oac::fsuipc::offset_address& address,
+         const oac::fsuipc::offset_length& length,
+         const oac::fsuipc::offset_value& value)
    {
       auto val = _fsuipc->user_adapter()
             .read_value_from_buffer(address, length);
@@ -449,16 +449,16 @@ BOOST_AUTO_TEST_CASE(MustNotifyVarUpdates)
          .handshake()
          .subscribe("fsuipc/offset", "0x700:4")
          .subscribe("fsuipc/offset", "0x800:1")
-         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x0a0b0c0d)
          .fsuipc_polls_for_changes()
          .receive_var_update(
                "fsuipc/offset",
                "0x700:4",
                variable_value::from_dword(0x0a0b0c0d))
-         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x01020304)
-         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x05060708)
+         .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x01020304)
+         .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x05060708)
          .fsuipc_polls_for_changes()
-         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0xab)
+         .on_offset_change(0x800, oac::fsuipc::OFFSET_LEN_BYTE, 0xab)
          .fsuipc_polls_for_changes()
          .receive_var_update(
                "fsuipc/offset",
@@ -476,13 +476,13 @@ BOOST_AUTO_TEST_CASE(MustAcceptVarUpdatesFromClient)
    let_test()
          .connect()
          .handshake()
-         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x0a0b0c0d)
          .subscribe("fsuipc/offset", "0x700:4")
          .send_var_update(
                "fsuipc/offset",
                "0x700:4",
                variable_value::from_dword(0x01020304))
-         .assert_offset_value(0x700, OFFSET_LEN_DWORD, 0x01020304)
+         .assert_offset_value(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x01020304)
          .fsuipc_polls_for_changes()
          .receive_var_update(
                "fsuipc/offset",
@@ -490,7 +490,7 @@ BOOST_AUTO_TEST_CASE(MustAcceptVarUpdatesFromClient)
                variable_value::from_dword(0x01020304))
           // check server still responds
          .subscribe("fsuipc/offset", "0x800:1")
-         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0x4a)
+         .on_offset_change(0x800, oac::fsuipc::OFFSET_LEN_BYTE, 0x4a)
          .fsuipc_polls_for_changes()
          .receive_var_update(
                "fsuipc/offset",
@@ -504,15 +504,15 @@ BOOST_AUTO_TEST_CASE(MustIgnoreVarUpdatesWithUnknownSubscriptionId)
    let_test()
          .connect()
          .handshake()
-         .on_offset_change(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x0a0b0c0d)
          .subscribe("fsuipc/offset", "0x700:4")
          .send_var_update(
                1234567,
                variable_value::from_dword(0x01020304)) // ignored by server
-         .assert_offset_value(0x700, OFFSET_LEN_DWORD, 0x0a0b0c0d)
+         .assert_offset_value(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x0a0b0c0d)
           // check server still responds
          .subscribe("fsuipc/offset", "0x800:1")
-         .on_offset_change(0x800, OFFSET_LEN_BYTE, 0x4a)
+         .on_offset_change(0x800, oac::fsuipc::OFFSET_LEN_BYTE, 0x4a)
          .fsuipc_polls_for_changes()
          .receive_var_update(
                "fsuipc/offset",

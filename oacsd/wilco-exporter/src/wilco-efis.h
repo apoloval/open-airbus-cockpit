@@ -75,7 +75,7 @@ private:
    inline binary_switch invert(binary_switch value)
    { return value == SWITCHED_ON ? SWITCHED_OFF : SWITCHED_ON; }
 
-   local_fsuipc_ptr _fsuipc;
+   fsuipc::local_fsuipc_ptr _fsuipc;
 };
 
 

@@ -24,7 +24,7 @@ namespace oac { namespace we {
 
 efis_control_panel_impl::efis_control_panel_impl(
       const dll_info& dll_info, HINSTANCE dll_instance) :
-   dll_inspector(dll_info, dll_instance), _fsuipc(new local_fsuipc())
+   dll_inspector(dll_info, dll_instance), _fsuipc(new fsuipc::local_fsuipc())
 {}
 
 barometric_mode

@@ -349,9 +349,9 @@ throw (sync_error)
 {
    try 
    {
-      _fsuipc = local_fsuipc_ptr(_fsuipc_fact->create_fsuipc());
+      _fsuipc = fsuipc::local_fsuipc_ptr(_fsuipc_fact->create_fsuipc());
    }
-   catch (const fsuipc_error& e)
+   catch (const fsuipc::fsuipc_error& e)
    {
       OAC_THROW_EXCEPTION(sync_error(e));
    }

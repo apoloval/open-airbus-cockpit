@@ -187,7 +187,7 @@ plugin::reset_cockpit(const aircraft& aircraft)
             aircraft.title);
       _wilco = wilco_cockpit::new_cockpit(aircraft);
       _fsuipc = std::make_shared<fsuipc_cockpit_back>(
-            std::make_shared<local_fsuipc::factory>());
+            std::make_shared<fsuipc::local_fsuipc::factory>());
       log(log_level::INFO, "Wilco Cockpit successfully initialized");
    } catch (std::exception& ex) {
       log(log_level::WARN, ex.what());

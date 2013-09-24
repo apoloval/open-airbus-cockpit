@@ -96,12 +96,12 @@ parse_textual_length(
 
 
 
-fsuipc_offset
+oac::fsuipc::offset
 to_fsuipc_offset(
       const variable_id& var_id)
 throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
 {
-   fsuipc_offset_address addr;
+   oac::fsuipc::offset_address addr;
    unsigned int len;
    auto var_group = get_var_group(var_id);
    auto var_name = get_var_name(var_id);
@@ -130,7 +130,7 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
       if (len != 1 && len != 2 && len != 4)
          goto syntax_error;
 
-      return fsuipc_offset(addr, fsuipc_offset_length(len));
+      return oac::fsuipc::offset(addr, oac::fsuipc::offset_length(len));
    }
 syntax_error:
    OAC_THROW_EXCEPTION(fsuipc::var_name_syntax_error(var_name));
@@ -138,25 +138,25 @@ syntax_error:
 
 variable_value
 to_variable_value(
-      const fsuipc_valued_offset& valued_offset)
+      const oac::fsuipc::valued_offset& valued_offset)
 {
    switch (valued_offset.length)
    {
-      case OFFSET_LEN_BYTE:
+      case oac::fsuipc::OFFSET_LEN_BYTE:
          return variable_value::from_byte(valued_offset.value);
-      case OFFSET_LEN_WORD:
+      case oac::fsuipc::OFFSET_LEN_WORD:
          return variable_value::from_word(valued_offset.value);
-      case OFFSET_LEN_DWORD:
+      case oac::fsuipc::OFFSET_LEN_DWORD:
          return variable_value::from_dword(valued_offset.value);
       default:
          // never reached
          OAC_THROW_EXCEPTION(
-               enum_out_of_range_error<fsuipc_offset_length>(
+               enum_out_of_range_error<oac::fsuipc::offset_length>(
                      valued_offset.length));
    }
 }
 
-fsuipc_offset_value
+oac::fsuipc::offset_value
 to_fsuipc_offset_value(
       const variable_value& var_value)
 {
@@ -173,7 +173,7 @@ to_fsuipc_offset_value(
       case variable_type::DWORD:
          return var_value.as_dword();
       case variable_type::FLOAT:
-         return fsuipc_offset_value(var_value.as_float());
+         return oac::fsuipc::offset_value(var_value.as_float());
       default:
          // never reached
          OAC_THROW_EXCEPTION(
@@ -215,7 +215,7 @@ fsuipc_offset_db::remove_subscription(
 
 const fsuipc_offset_db::subscription_list&
 fsuipc_offset_db::get_subscriptions_for_offset(
-      const fsuipc_offset& offset) const
+      const oac::fsuipc::offset& offset) const
 throw (no_such_offset_error)
 {
    auto match = _offset_handlers.find(offset);
@@ -224,7 +224,7 @@ throw (no_such_offset_error)
    return match->second;
 }
 
-fsuipc_offset
+oac::fsuipc::offset
 fsuipc_offset_db::get_offset_for_subscription(
       const subscription_id& subs_id)
 throw (no_such_subscription_error)
@@ -242,12 +242,13 @@ throw (no_such_subscription_error)
 
 void
 fsuipc_offset_db::insert_known_offset(
-      const fsuipc_offset& offset)
+      const oac::fsuipc::offset& offset)
 {
    if (std::none_of(
           _known_offsets.begin(),
           _known_offsets.end(),
-          [&offset](const fsuipc_offset& elem) { return elem == offset; }))
+          [&offset](const oac::fsuipc::offset& elem)
+          { return elem == offset; }))
    {
       _known_offsets.push_back(offset);
    }
@@ -255,14 +256,14 @@ fsuipc_offset_db::insert_known_offset(
 
 void
 fsuipc_offset_db::remove_known_offset(
-      const fsuipc_offset& offset)
+      const oac::fsuipc::offset& offset)
 {
    _known_offsets.remove(offset);
 }
 
 subscription_meta
 fsuipc_offset_db::insert_subscription(
-      const fsuipc_offset& offset,
+      const oac::fsuipc::offset& offset,
       const variable_id& var_id,
       const flight_vars::var_update_handler& callback)
 {
@@ -273,7 +274,7 @@ fsuipc_offset_db::insert_subscription(
 
 std::size_t
 fsuipc_offset_db::remove_subscription(
-      const fsuipc_offset& offset,
+      const oac::fsuipc::offset& offset,
       const subscription_id& subs_id)
 {
    auto& list = _offset_handlers[offset];

@@ -25,7 +25,7 @@ namespace oac { namespace we {
 
 flight_control_unit_impl::flight_control_unit_impl(
       const dll_info& dll_info, HINSTANCE dll_instance) :
-   dll_inspector(dll_info, dll_instance), _fsuipc(new local_fsuipc())
+   dll_inspector(dll_info, dll_instance), _fsuipc(new fsuipc::local_fsuipc())
 {}
 
 speed_units

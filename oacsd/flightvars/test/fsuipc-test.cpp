@@ -111,35 +111,35 @@ BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingFromNoFsuipcVarGroup)
 {
    BOOST_CHECK_THROW(
             to_fsuipc_offset(make_var_id("simconnect/var", "0x200:2")),
-            fsuipc::invalid_var_group_error);
+            fv::fsuipc::invalid_var_group_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithTextualNameWithHexPrefix)
 {
    BOOST_CHECK_THROW(
             to_fsuipc_offset(make_var_id("fsuipc/offset", "foobar")),
-            fsuipc::var_name_syntax_error);
+            fv::fsuipc::var_name_syntax_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithTextualNameNonHexPrefix)
 {
    BOOST_CHECK_THROW(
             to_fsuipc_offset(make_var_id("fsuipc/offset", "zulu")),
-            fsuipc::var_name_syntax_error);
+            fv::fsuipc::var_name_syntax_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithHexAddressWithWrongSizeNumber)
 {
    BOOST_CHECK_THROW(
             to_fsuipc_offset(make_var_id("fsuipc/offset", "0x200:3")),
-            fsuipc::var_name_syntax_error);
+            fv::fsuipc::var_name_syntax_error);
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowWhenConvertingVarNameWithHexAddressWithWrongTextualSize)
 {
    BOOST_CHECK_THROW(
             to_fsuipc_offset(make_var_id("fsuipc/offset", "0x200:foobar")),
-            fsuipc::var_name_syntax_error);
+            fv::fsuipc::var_name_syntax_error);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
@@ -151,8 +151,8 @@ BOOST_AUTO_TEST_SUITE(FsuipcValuedOffsetToVariableValueConversion)
 BOOST_AUTO_TEST_CASE(MustConvertByteOffset)
 {
    auto var_value = to_variable_value(
-            fsuipc_valued_offset(
-               fsuipc_offset(0x700, OFFSET_LEN_BYTE),
+            oac::fsuipc::valued_offset(
+               oac::fsuipc::offset(0x700, oac::fsuipc::OFFSET_LEN_BYTE),
                0x0a));
    BOOST_CHECK_EQUAL(variable_type::BYTE, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a, var_value.as_byte());
@@ -161,8 +161,8 @@ BOOST_AUTO_TEST_CASE(MustConvertByteOffset)
 BOOST_AUTO_TEST_CASE(MustConvertWordOffset)
 {
    auto var_value = to_variable_value(
-            fsuipc_valued_offset(
-               fsuipc_offset(0x700, OFFSET_LEN_WORD),
+            oac::fsuipc::valued_offset(
+               oac::fsuipc::offset(0x700, oac::fsuipc::OFFSET_LEN_WORD),
                0x0a0b));
    BOOST_CHECK_EQUAL(variable_type::WORD, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a0b, var_value.as_word());
@@ -171,8 +171,8 @@ BOOST_AUTO_TEST_CASE(MustConvertWordOffset)
 BOOST_AUTO_TEST_CASE(MustConvertDoubleWordOffset)
 {
    auto var_value = to_variable_value(
-            fsuipc_valued_offset(
-               fsuipc_offset(0x700, OFFSET_LEN_DWORD),
+            oac::fsuipc::valued_offset(
+               oac::fsuipc::offset(0x700, oac::fsuipc::OFFSET_LEN_DWORD),
                0x0a0b0c0d));
    BOOST_CHECK_EQUAL(variable_type::DWORD, var_value.get_type());
    BOOST_CHECK_EQUAL(0x0a0b0c0d, var_value.as_dword());

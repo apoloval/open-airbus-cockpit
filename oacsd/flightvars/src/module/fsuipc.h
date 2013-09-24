@@ -69,10 +69,10 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(var_name_syntax_error, invalid_var_exception,
  * Convert a variable ID to a FSUIPC offset.
  *
  * @param var_id The variable ID to be converted into FSUIPC offset
- * @throws fsuipc::invalid_var_group_error if var group is not fsuipc/offset
- * @throws fsuipc::var_name_syntax_error if the variable ID has a syntax error
+ * @throws oac::fsuipc::invalid_var_group_error if var group is not fsuipc/offset
+ * @throws oac::fsuipc::var_name_syntax_error if the variable ID has a syntax error
  */
-fsuipc_offset to_fsuipc_offset(
+oac::fsuipc::offset to_fsuipc_offset(
       const variable_id& var_id)
 throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error);
 
@@ -80,12 +80,12 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error);
  * Convert a FSUIPC valued offset into a variable value object.
  */
 variable_value to_variable_value(
-      const fsuipc_valued_offset& valued_offset);
+      const oac::fsuipc::valued_offset& valued_offset);
 
 /**
  * Convert a variable value into a FSUIPC offset value.
  */
-fsuipc_offset_value to_fsuipc_offset_value(
+oac::fsuipc::offset_value to_fsuipc_offset_value(
       const variable_value& var_value);
 
 /**
@@ -140,8 +140,8 @@ public:
          offset_addr,
          offset_len
       ),
-      (offset_addr, fsuipc_offset_address),
-      (offset_len, fsuipc_offset_length));
+      (offset_addr, oac::fsuipc::offset_address),
+      (offset_len, oac::fsuipc::offset_length));
 
    /**
     * An unknown subscription was specified.
@@ -150,7 +150,7 @@ public:
       ("no such subscription %d in FSUIPC offset database", subscription),
       (subscription, subscription_id));
 
-   typedef std::list<fsuipc_offset> offset_list;
+   typedef std::list<oac::fsuipc::offset> offset_list;
    typedef std::list<subscription_meta> subscription_list;   
 
    subscription_meta create_subscription(
@@ -165,36 +165,36 @@ public:
    { return _known_offsets; }
 
    const subscription_list& get_subscriptions_for_offset(
-         const fsuipc_offset& offset) const
+         const oac::fsuipc::offset& offset) const
    throw (no_such_offset_error);
 
-   fsuipc_offset get_offset_for_subscription(
+   oac::fsuipc::offset get_offset_for_subscription(
          const subscription_id& subs_id)
    throw (no_such_subscription_error);
 
 private:
 
    typedef std::unordered_map<
-         fsuipc_offset,
+         oac::fsuipc::offset,
          subscription_list,
-         fsuipc_offset::hash> offset_handler_map;
+         oac::fsuipc::offset::hash> offset_handler_map;
 
    offset_list _known_offsets;
    offset_handler_map _offset_handlers;
 
    void insert_known_offset(
-         const fsuipc_offset& offset);
+         const oac::fsuipc::offset& offset);
 
    void remove_known_offset(
-         const fsuipc_offset& offset);
+         const oac::fsuipc::offset& offset);
 
    subscription_meta insert_subscription(
-         const fsuipc_offset& offset,
+         const oac::fsuipc::offset& offset,
          const variable_id& var_id,
          const flight_vars::var_update_handler& callback);
 
    std::size_t remove_subscription(
-         const fsuipc_offset& offset,
+         const oac::fsuipc::offset& offset,
          const subscription_id& subs_id);
 };
 
@@ -302,10 +302,10 @@ public:
 private:
 
    fsuipc_offset_db _db;
-   fsuipc_update_observer<FsuipcUserAdapter> _update_observer;
+   oac::fsuipc::update_observer<FsuipcUserAdapter> _update_observer;
 
    void on_offset_update(
-         const fsuipc_valued_offset valued_offset)
+         const oac::fsuipc::valued_offset valued_offset)
    {
       for (auto& subs : _db.get_subscriptions_for_offset(valued_offset))
       {
@@ -316,12 +316,12 @@ private:
    }
 
    void update_offset(
-         const fsuipc_offset& offset,
+         const oac::fsuipc::offset& offset,
          const variable_value& value)
    {
-      std::list<fsuipc_valued_offset> updates(
+      std::list<oac::fsuipc::valued_offset> updates(
                1,
-               fsuipc_valued_offset(
+               oac::fsuipc::valued_offset(
                   offset,
                   to_fsuipc_offset_value(value)));
       _update_observer.get_client().update(updates);
@@ -329,14 +329,15 @@ private:
 };
 
 class local_fsuipc_flight_vars :
-      public fsuipc_flight_vars<local_fsuipc_user_adapter>
+      public fsuipc_flight_vars<oac::fsuipc::local_user_adapter>
 {
 public:
 
    static const variable_group VAR_GROUP;
 };
 
-typedef fsuipc_flight_vars<dummy_fsuipc_user_adapter> dummy_fsuipc_flight_vars;
+typedef fsuipc_flight_vars<
+      oac::fsuipc::dummy_user_adapter> dummy_fsuipc_flight_vars;
 
 }} // namespace oac::fv
 

@@ -24,6 +24,11 @@ set(liboac-commons_HEADERS
    include/liboac/filesystem.h
    include/liboac/format.h
    include/liboac/fsuipc.h
+   include/liboac/fsuipc/client.h
+   include/liboac/fsuipc/errors.h
+   include/liboac/fsuipc/local.h
+   include/liboac/fsuipc/offset.h
+   include/liboac/fsuipc/update_observer.h
    include/liboac/io.h
    include/liboac/logging.h
    include/liboac/network.h
@@ -54,7 +59,8 @@ set(liboac-commons_SOURCES
    src/cockpit.cpp
    src/cockpit-fsuipc.cpp
    src/filesystem.cpp
-   src/fsuipc.cpp
+   src/fsuipc/client.cpp
+   src/fsuipc/local.cpp
    src/logging.cpp
    src/simconn.cpp
    src/stream.cpp
