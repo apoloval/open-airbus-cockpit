@@ -62,7 +62,7 @@ set(CPACK_NSIS_MENU_LINKS
 
 # Add the subdirs
 add_subdirectory(fsuipc)
-add_subdirectory(liboac-commons)
+add_subdirectory(liboac)
 add_subdirectory(wilco-exporter)
 add_subdirectory(flightvars)
 

@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 2.8)
 
-project(liboac-commons)
+project(liboac)
 
-set(liboac-commons_HEADERS
+set(liboac_HEADERS
    include/liboac/attempt.h
    include/liboac/buffer.h
    include/liboac/buffer/asio_handler.h
@@ -55,7 +55,7 @@ set(liboac-commons_HEADERS
    include/liboac/worker.h
 )
 
-set(liboac-commons_SOURCES
+set(liboac_SOURCES
    src/cockpit.cpp
    src/cockpit-fsuipc.cpp
    src/filesystem.cpp
@@ -67,7 +67,7 @@ set(liboac-commons_SOURCES
    src/timing.cpp
 )
 
-set(liboac-commons_INCLUDE_DIR
+set(liboac_INCLUDE_DIR
    ${CMAKE_CURRENT_SOURCE_DIR}/include
    PARENT_SCOPE)
 
@@ -76,18 +76,18 @@ include_directories(
    ${fsuipc_user_INCLUDE_DIR}
 )
 
-add_library(liboac-commons STATIC 
-   ${liboac-commons_SOURCES} 
-   ${liboac-commons_HEADERS})
+add_library(liboac STATIC
+   ${liboac_SOURCES}
+   ${liboac_HEADERS})
 
-target_link_libraries(liboac-commons
+target_link_libraries(liboac
    ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
    fsuipc_user_internal
 )
 
 test_link_libraries(
-      liboac-commons
+      liboac
       fsuipc_user_internal
       ${SIM_CONNECT_LIBRARY}
       ${Boost_LIBRARIES}
