@@ -19,7 +19,7 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "api.h"
+#include <flightvars/var.h>
 
 using namespace oac;
 using namespace oac::fv;

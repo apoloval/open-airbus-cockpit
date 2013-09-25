@@ -18,7 +18,7 @@
 
 #include <boost/thread/future.hpp>
 
-#include "client/subscription_db.h"
+#include <flightvars/client/subscription_db.h>
 
 namespace oac { namespace fv { namespace client {
 

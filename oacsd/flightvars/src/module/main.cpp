@@ -21,11 +21,11 @@
 
 #include <Windows.h>
 
+#include <flightvars/core.h>
 #include <liboac/filesystem.h>
 #include <liboac/logging.h>
 #include <liboac/timing.h>
 
-#include "core.h"
 #include "fsuipc.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\FlightVars.log"

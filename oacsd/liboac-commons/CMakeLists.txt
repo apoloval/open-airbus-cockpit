@@ -72,7 +72,7 @@ set(liboac-commons_INCLUDE_DIR
    PARENT_SCOPE)
 
 include_directories(
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/liboac
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
    ${fsuipc_user_INCLUDE_DIR}
 )
 

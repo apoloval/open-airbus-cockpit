@@ -21,7 +21,7 @@
 
 #include <boost/system/error_code.hpp>
 
-#include "exception.h"
+#include <liboac/exception.h>
 
 namespace oac {
 

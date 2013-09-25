@@ -19,8 +19,8 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "logging.h"
-#include "simconn.h"
+#include <liboac/logging.h>
+#include <liboac/simconn.h>
 
 using namespace oac;
 

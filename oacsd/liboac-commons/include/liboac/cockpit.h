@@ -24,7 +24,7 @@
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
-#include "exception.h"
+#include <liboac/exception.h>
 
 namespace oac {
 

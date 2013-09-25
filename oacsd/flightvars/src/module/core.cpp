@@ -16,7 +16,7 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "core.h"
+#include <flightvars/core.h>
 
 namespace oac { namespace fv {
 

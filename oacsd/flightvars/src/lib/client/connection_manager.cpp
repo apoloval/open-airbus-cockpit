@@ -16,7 +16,7 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "client/connection_manager.h"
+#include <flightvars/client/connection_manager.h>
 
 namespace oac { namespace fv { namespace client {
 

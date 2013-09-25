@@ -21,7 +21,7 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "subscription.h"
+#include <flightvars/subscription.h>
 
 using namespace oac;
 using namespace oac::fv;

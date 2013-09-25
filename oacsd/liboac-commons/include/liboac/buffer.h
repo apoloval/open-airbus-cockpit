@@ -19,12 +19,12 @@
 #ifndef OAC_BUFFER_H
 #define OAC_BUFFER_H
 
-#include "buffer/double.h"
-#include "buffer/errors.h"
-#include "buffer/functions.h"
-#include "buffer/linear.h"
-#include "buffer/ring.h"
-#include "buffer/shifted.h"
+#include <liboac/buffer/double.h>
+#include <liboac/buffer/errors.h>
+#include <liboac/buffer/functions.h>
+#include <liboac/buffer/linear.h>
+#include <liboac/buffer/ring.h>
+#include <liboac/buffer/shifted.h>
 
 namespace oac {
 

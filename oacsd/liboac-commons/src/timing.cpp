@@ -16,7 +16,7 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "timing.h"
+#include <liboac/timing.h>
 
 namespace oac {
 

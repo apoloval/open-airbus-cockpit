@@ -16,9 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "buffer.h"
-
-#include "stream.h"
+#include <liboac/buffer.h>
+#include <liboac/stream.h>
 
 namespace oac {
 

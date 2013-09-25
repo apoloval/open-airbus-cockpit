@@ -161,6 +161,6 @@ typedef std::shared_ptr<ring_buffer> ring_buffer_ptr;
 
 }} // namespace oac::buffer
 
-#include "buffer/ring.inl"
+#include <liboac/buffer/ring.inl>
 
 #endif

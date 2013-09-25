@@ -24,7 +24,7 @@
 
 #include <boost/preprocessor.hpp>
 
-#include "format.h"
+#include <liboac/format.h>
 
 #pragma warning( disable : 4290 )
 

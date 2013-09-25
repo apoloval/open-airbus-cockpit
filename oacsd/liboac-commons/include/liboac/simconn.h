@@ -28,8 +28,8 @@
 
 #include <SimConnect.h>
 
-#include "exception.h"
-#include "logging.h"
+#include <liboac/exception.h>
+#include <liboac/logging.h>
 
 namespace oac {
 

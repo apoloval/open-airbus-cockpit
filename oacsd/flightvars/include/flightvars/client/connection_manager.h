@@ -22,12 +22,12 @@
 #include <liboac/logging.h>
 #include <liboac/network.h>
 
-#include "api.h"
-#include "client/errors.h"
-#include "client/requests.h"
-#include "client/subscription_db.h"
-#include "protocol.h"
-#include "subscription.h"
+#include <flightvars/api.h>
+#include <flightvars/client/errors.h>
+#include <flightvars/client/requests.h>
+#include <flightvars/client/subscription_db.h>
+#include <flightvars/protocol.h>
+#include <flightvars/subscription.h>
 
 namespace oac { namespace fv { namespace client {
 

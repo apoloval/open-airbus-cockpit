@@ -16,11 +16,10 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "server.h"
-
+#include <flightvars/core.h>
 #include <liboac/logging.h>
 
-#include "core.h"
+#include "server.h"
 
 namespace oac { namespace fv {
 

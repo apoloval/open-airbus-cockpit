@@ -16,7 +16,7 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "filesystem.h"
+#include <liboac/filesystem.h>
 
 namespace oac {
 

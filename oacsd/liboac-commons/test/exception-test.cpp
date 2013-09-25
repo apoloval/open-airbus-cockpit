@@ -19,7 +19,7 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "exception.h"
+#include <liboac/exception.h>
 
 using namespace oac;
 

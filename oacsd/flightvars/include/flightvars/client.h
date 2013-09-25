@@ -19,7 +19,7 @@
 #ifndef OAC_FV_CLIENT_H
 #define OAC_FV_CLIENT_H
 
-#include "client/connection_manager.h"
+#include <flightvars/client/connection_manager.h>
 
 namespace oac { namespace fv {
 

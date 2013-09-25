@@ -24,9 +24,9 @@
 
 #include <liboac/filesystem.h>
 
-#include "client.h"
-#include "protocol.h"
-#include "subscription.h"
+#include <flightvars/client.h>
+#include <flightvars/protocol.h>
+#include <flightvars/subscription.h>
 
 using namespace oac;
 using namespace oac::fv;

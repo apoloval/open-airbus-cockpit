@@ -24,13 +24,13 @@
 #include <liboac/network.h>
 
 #include <boost/uuid/random_generator.hpp>
+#include <flightvars/core.h>
+#include <flightvars/subscription.h>
 #include <liboac/filesystem.h>
 #include <liboac/logging.h>
 
-#include "server.h"
-#include "core.h"
 #include "fsuipc.h"
-#include "subscription.h"
+#include "server.h"
 
 using namespace oac;
 using namespace oac::fv;

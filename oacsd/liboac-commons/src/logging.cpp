@@ -19,7 +19,7 @@
 #include <cstdio>
 #include <ctime>
 
-#include "logging.h"
+#include <liboac/logging.h>
 
 namespace oac {
 

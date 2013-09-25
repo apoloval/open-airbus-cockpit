@@ -25,9 +25,9 @@
 #include <liboac/logging.h>
 #include <liboac/network.h>
 
-#include "api.h"
-#include "protocol.h"
-#include "subscription.h"
+#include <flightvars/api.h>
+#include <flightvars/protocol.h>
+#include <flightvars/subscription.h>
 
 namespace oac { namespace fv { namespace client {
 

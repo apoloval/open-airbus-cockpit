@@ -26,8 +26,8 @@
 #include <liboac/exception.h>
 #include <liboac/logging.h>
 
-#include "api.h"
-#include "client/errors.h"
+#include <flightvars/api.h>
+#include <flightvars/client/errors.h>
 
 namespace oac { namespace fv { namespace client {
 

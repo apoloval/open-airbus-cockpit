@@ -22,8 +22,8 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/thread.hpp>
 
-#include "buffer.h"
-#include "fsuipc.h"
+#include <liboac/buffer.h>
+#include <liboac/fsuipc.h>
 
 using namespace oac;
 using namespace oac::fsuipc;

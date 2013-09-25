@@ -19,7 +19,7 @@
 #ifndef OAC_ATTEMPT_H
 #define OAC_ATTEMPT_H
 
-#include "exception.h"
+#include <liboac/exception.h>
 
 namespace oac {
 

@@ -28,12 +28,11 @@
 
 #include <boost/bimap.hpp>
 #include <boost/uuid/uuid_generators.hpp>
+#include <flightvars/api.h>
+#include <flightvars/subscription.h>
 #include <liboac/fsuipc.h>
 #include <liboac/logging.h>
 #include <liboac/simconn.h>
-
-#include "api.h"
-#include "subscription.h"
 
 namespace oac { namespace fv {
 

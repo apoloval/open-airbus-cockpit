@@ -22,8 +22,8 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/thread.hpp>
 
-#include "attempt.h"
-#include "buffer/asio_handler.h"
+#include <liboac/attempt.h>
+#include <liboac/buffer/asio_handler.h>
 
 using namespace oac;
 using namespace oac::buffer;

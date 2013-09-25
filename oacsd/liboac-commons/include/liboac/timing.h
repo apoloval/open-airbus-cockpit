@@ -24,7 +24,7 @@
 
 #include <boost/asio.hpp>
 
-#include "simconn.h"
+#include <liboac/simconn.h>
 
 namespace oac {
 

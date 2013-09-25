@@ -16,9 +16,7 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <boost/format.hpp>
-
-#include "subscription.h"
+#include <flightvars/subscription.h>
 
 namespace oac { namespace fv {
 

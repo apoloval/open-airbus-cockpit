@@ -21,8 +21,8 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "buffer.h"
-#include "stream.h"
+#include <liboac/buffer.h>
+#include <liboac/stream.h>
 
 using namespace oac;
 using namespace oac::buffer;

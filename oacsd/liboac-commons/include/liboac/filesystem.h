@@ -23,8 +23,8 @@
 
 #include <boost/filesystem.hpp>
 
-#include "io.h"
-#include "stream.h"
+#include <liboac/io.h>
+#include <liboac/stream.h>
 
 namespace oac {
 

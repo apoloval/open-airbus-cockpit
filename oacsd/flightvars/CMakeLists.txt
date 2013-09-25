@@ -47,7 +47,6 @@ set(flightvars_INCLUDE_DIR
 
 include_directories(
    ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/flightvars
    ${CMAKE_CURRENT_SOURCE_DIR}/src/module
    ${Boost_INCLUDE_DIR}
    ${SIM_CONNECT_INCLUDE_DIR}

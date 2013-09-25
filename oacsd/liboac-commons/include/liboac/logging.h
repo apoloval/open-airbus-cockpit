@@ -23,8 +23,8 @@
 
 #include <Boost/format.hpp>
 
-#include "exception.h"
-#include "stream.h"
+#include <liboac/exception.h>
+#include <liboac/stream.h>
 
 namespace oac { 
 

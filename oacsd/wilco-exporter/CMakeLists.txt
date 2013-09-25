@@ -14,7 +14,6 @@ set(wilco-exporter_SOURCES
 )
 
 include_directories(
-   include
    ${Boost_INCLUDE_DIR}
    ${SIM_CONNECT_INCLUDE_DIR}
    ${fsuipc_user_INCLUDE_DIR}

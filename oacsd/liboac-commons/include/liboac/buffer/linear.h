@@ -159,6 +159,6 @@ typedef std::shared_ptr<linear_buffer> linear_buffer_ptr;
 
 }} // namespace oac::buffer
 
-#include "buffer/linear.inl"
+#include <liboac/buffer/linear.inl>
 
 #endif

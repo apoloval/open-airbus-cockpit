@@ -24,12 +24,11 @@
 
 #include <boost/asio.hpp>
 #include <boost/bind.hpp>
+#include <flightvars/api.h>
+#include <flightvars/protocol.h>
+#include <flightvars/subscription.h>
 #include <liboac/logging.h>
 #include <liboac/network.h>
-
-#include "api.h"
-#include "protocol.h"
-#include "subscription.h"
 
 namespace oac { namespace fv {
 

@@ -18,7 +18,7 @@
 
 #include <windows.h>
 
-#include "fsuipc_user.h"
+#include <fsuipc/fsuipc_user.h>
 
 #define FS6IPC_MSGNAME1      "FsasmLib:IPC" 
 

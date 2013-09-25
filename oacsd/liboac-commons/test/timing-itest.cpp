@@ -23,9 +23,9 @@
 
 #include <boost/thread.hpp>
 
-#include "filesystem.h"
-#include "logging.h"
-#include "timing.h"
+#include <liboac/filesystem.h>
+#include <liboac/logging.h>
+#include <liboac/timing.h>
 
 using namespace oac;
 

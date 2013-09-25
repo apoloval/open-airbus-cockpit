@@ -20,10 +20,10 @@
 
 #include <Boost/format.hpp>
 
-#include "cockpit.h"
-#include "cockpit-fsuipc.h"
-#include "fsuipc.h"
-#include "logging.h"
+#include <liboac/cockpit.h>
+#include <liboac/cockpit-fsuipc.h>
+#include <liboac/fsuipc.h>
+#include <liboac/logging.h>
 
 namespace oac {
 

@@ -16,7 +16,7 @@ set(fsuipc_user_INCLUDE_DIR
    PARENT_SCOPE)
 
 include_directories(
-   ${CMAKE_CURRENT_SOURCE_DIR}/include/fsuipc
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 add_library(fsuipc_user_internal STATIC

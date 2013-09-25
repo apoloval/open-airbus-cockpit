@@ -21,7 +21,7 @@
 
 #include <map>
 
-#include "api.h"
+#include <flightvars/api.h>
 
 namespace oac { namespace fv {
 

@@ -18,8 +18,8 @@
 
 #include <Boost/format.hpp>
 
-#include "logging.h"
-#include "simconn.h"
+#include <liboac/logging.h>
+#include <liboac/simconn.h>
 
 namespace oac {
 

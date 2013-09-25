@@ -119,6 +119,6 @@ typedef std::shared_ptr<fixed_buffer> fixed_buffer_ptr;
 
 }} // namespace oac::buffer
 
-#include "buffer/fixed.inl"
+#include <liboac/buffer/fixed.inl>
 
 #endif
