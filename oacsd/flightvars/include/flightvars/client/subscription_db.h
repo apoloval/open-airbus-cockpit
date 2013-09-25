@@ -84,7 +84,7 @@ public:
    OAC_DECL_EXCEPTION_WITH_PARAMS(
          variable_already_exists_error,
          already_exists_exception,
-      ("Variable %s already exists in FV client DB", var_to_string(var_id)),
+      ("Variable %s already exists in FV client DB", var_id.to_string()),
       (var_id, variable_id));
 
    /**
@@ -104,7 +104,7 @@ public:
    OAC_DECL_EXCEPTION_WITH_PARAMS(
          no_such_variable_error,
          no_such_element_exception,
-      ("Variable %s was not found in FV client DB", var_to_string(var_id)),
+      ("Variable %s was not found in FV client DB", var_id.to_string()),
       (var_id, variable_id));
 
    OAC_DECL_EXCEPTION_WITH_PARAMS(

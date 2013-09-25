@@ -31,22 +31,22 @@ BOOST_AUTO_TEST_SUITE(SubscriptionMapTest)
 BOOST_AUTO_TEST_CASE(ShouldRegisterSubscription)
 {
    subscription_mapper mapper;
-   auto var_id = make_var_id("fsuipc/offset", "0x4ca1");
+   variable_id var_id("fsuipc/offset", "0x4ca1");
    auto subs_id = make_subscription_id();
    mapper.register_subscription(var_id, subs_id);
    BOOST_CHECK_EQUAL(
             "fsuipc/offset",
-            get_var_group(mapper.get_var_id(subs_id)).get_tag());
+            mapper.get_var_id(subs_id).group);
    BOOST_CHECK_EQUAL(
             "0x4ca1",
-            get_var_name(mapper.get_var_id(subs_id)).get_tag());
+            mapper.get_var_id(subs_id).name);
    BOOST_CHECK_EQUAL(subs_id, mapper.get_subscription_id(var_id));
 }
 
 BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingVarId)
 {
    subscription_mapper mapper;
-   auto var_id = make_var_id("fsuipc/offset", "0x4ca1");
+   variable_id var_id("fsuipc/offset", "0x4ca1");
    auto subs_id1 = make_subscription_id();
    auto subs_id2 = make_subscription_id();
 
@@ -59,8 +59,8 @@ BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingVarId)
 BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingSubscriptionId)
 {
    subscription_mapper mapper;
-   auto var_id1 = make_var_id("fsuipc/offset", "0x4ca1");
-   auto var_id2 = make_var_id("fsuipc/offset", "0x89ab");
+   auto var_id1 = variable_id("fsuipc/offset", "0x4ca1");
+   auto var_id2 = variable_id("fsuipc/offset", "0x89ab");
    auto subs_id = make_subscription_id();
 
    mapper.register_subscription(var_id1, subs_id);
@@ -72,7 +72,7 @@ BOOST_AUTO_TEST_CASE(ShouldThrowOnRegisterOnExistingSubscriptionId)
 BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionByVarId)
 {
    subscription_mapper mapper;
-   auto var_id = make_var_id("fsuipc/offset", "0x4ca1");
+   variable_id var_id("fsuipc/offset", "0x4ca1");
    auto subs_id = make_subscription_id();
    mapper.register_subscription(var_id, subs_id);
    mapper.unregister(var_id);
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionByVarId)
 BOOST_AUTO_TEST_CASE(ShouldUnregisterSubscriptionBySubscriptionId)
 {
    subscription_mapper mapper;
-   auto var_id = make_var_id("fsuipc/offset", "0x4ca1");
+   variable_id var_id("fsuipc/offset", "0x4ca1");
    auto subs_id = make_subscription_id();
    mapper.register_subscription(var_id, subs_id);
    mapper.unregister(subs_id);
@@ -104,9 +104,9 @@ BOOST_AUTO_TEST_CASE(ShouldExecuteActionForEachSubscription)
    subscription_mapper mapper;
    variable_id var_id[3] =
    {
-      make_var_id("fsuipc/offset", "0x4ca1"),
-      make_var_id("fsuipc/offset", "0x4ca2"),
-      make_var_id("fsuipc/offset", "0x4ca3"),
+      variable_id("fsuipc/offset", "0x4ca1"),
+      variable_id("fsuipc/offset", "0x4ca2"),
+      variable_id("fsuipc/offset", "0x4ca3"),
    };
    subscription_id subs_id[3] =
    {

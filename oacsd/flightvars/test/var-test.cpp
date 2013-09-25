@@ -26,13 +26,53 @@ using namespace oac::fv;
 
 BOOST_AUTO_TEST_SUITE(VariableId)
 
-BOOST_AUTO_TEST_CASE(MustMakeVarIdFromObjects)
+BOOST_AUTO_TEST_CASE(MustCaptureLowerCaseGroup)
 {
-   variable_group grp("my_group/foobar");
-   variable_name name("my_var/millibars");
-   variable_id id(grp, name);
+   variable_id id("my_group/FOOBAR", "my_var/millibars");
    BOOST_CHECK_EQUAL("my_group/foobar", id.group);
    BOOST_CHECK_EQUAL("my_var/millibars", id.name);
+}
+
+BOOST_AUTO_TEST_CASE(MustCaptureLowerCaseName)
+{
+   variable_id id("my_group/foobar", "my_var/MILLIBARS");
+   BOOST_CHECK_EQUAL("my_group/foobar", id.group);
+   BOOST_CHECK_EQUAL("my_var/millibars", id.name);
+}
+
+BOOST_AUTO_TEST_CASE(MustBeEqualWhenGroupAndNameMatches)
+{
+   variable_id id1("my_group/foobar", "my_var/millibars");
+   variable_id id2("my_group/foobar", "my_var/millibars");
+   BOOST_CHECK_EQUAL(id1, id2);
+}
+
+BOOST_AUTO_TEST_CASE(MustBeDistinctWhenGroupNotMatches)
+{
+   variable_id id1("my_group/foo", "my_var/millibars");
+   variable_id id2("my_group/bar", "my_var/millibars");
+   BOOST_CHECK_NE(id1, id2);
+}
+
+BOOST_AUTO_TEST_CASE(MustBeDistinctWhenNameNotMatches)
+{
+   variable_id id1("my_group/foobar", "my_var/millibars");
+   variable_id id2("my_group/foobar", "my_var/seconds");
+   BOOST_CHECK_NE(id1, id2);
+}
+
+BOOST_AUTO_TEST_CASE(MustBeLessThanWhenGroupMatches)
+{
+   variable_id id1("my_group/foobar", "my_var/1");
+   variable_id id2("my_group/foobar", "my_var/2");
+   BOOST_CHECK_LT(id1, id2);
+}
+
+BOOST_AUTO_TEST_CASE(MustBeLessThanWhenGroupNotMatches)
+{
+   variable_id id1("my_group/1", "my_var/2");
+   variable_id id2("my_group/2", "my_var/1");
+   BOOST_CHECK_LT(id1, id2);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -43,7 +43,7 @@ public:
    OAC_DECL_EXCEPTION_WITH_PARAMS(master_already_registered, oac::exception,
       (
          "FlightVars Master for group %s already registered",
-         var_group.get_tag()
+         var_group
       ),
       (var_group, variable_group));
 
@@ -78,7 +78,7 @@ public:
 private:
 
    typedef std::map<
-         variable_group::tag_type,
+         variable_group,
          std::shared_ptr<flight_vars>> group_master_dict;
    typedef std::map<
          subscription_id,

@@ -68,14 +68,14 @@ struct let_test
    }
 
    let_test& prepare_server_for_subscription(
-         const variable_group::tag_type& var_group,
-         const variable_name::tag_type& var_name,
+         const variable_group& var_group,
+         const variable_name& var_name,
          subscription_id subs_id = make_subscription_id())
    {
       _current_srv_action = std::bind(
             &let_test::server_subscribe,
             this,
-            make_var_id(var_group, var_name),
+            variable_id(var_group, var_name),
             subs_id,
             std::placeholders::_1);
       return *this;
@@ -181,11 +181,11 @@ struct let_test
    }
 
    let_test& subscribe(
-         const variable_group::tag_type& grp,
-         const variable_name::tag_type& name,
+         const variable_group& grp,
+         const variable_name& name,
          int reception_id = 0)
    {
-      auto var_id = make_var_id(grp, name);
+      variable_id var_id(grp, name);
       auto subs_id = _client->subscribe(
             var_id,
             std::bind(
@@ -199,10 +199,10 @@ struct let_test
    }
 
    let_test& unsubscribe(
-         const variable_group::tag_type& grp,
-         const variable_name::tag_type& name)
+         const variable_group& grp,
+         const variable_name& name)
    {
-      auto var_id = make_var_id(grp, name);
+      variable_id var_id(grp, name);
       auto subs_id = _subscriptions[var_id];
       return unsubscribe(subs_id);
    }
@@ -215,11 +215,11 @@ struct let_test
    }
 
    let_test& update(
-         const variable_group::tag_type& grp,
-         const variable_name::tag_type& name,
+         const variable_group& grp,
+         const variable_name& name,
          const variable_value& value)
    {
-      auto var_id = make_var_id(grp, name);
+      variable_id var_id(grp, name);
       auto subs_id = _subscriptions[var_id];
       return update(subs_id, value);
    }
@@ -254,16 +254,16 @@ struct let_test
 
    let_test& check_var_update_reception(
          int reception_id,
-         const variable_group::tag_type& var_grp,
-         const variable_name::tag_type& var_name,
+         const variable_group& var_grp,
+         const variable_name& var_name,
          const variable_value& var_value)
    {
       sleep(100); // let time for the server to reply
 
       auto& recp = _var_update_receptions[reception_id];
 
-      BOOST_CHECK_EQUAL(var_grp, get_var_group(recp->var_id).get_tag());
-      BOOST_CHECK_EQUAL(var_name, get_var_name(recp->var_id).get_tag());
+      BOOST_CHECK_EQUAL(var_grp, recp->var_id.group);
+      BOOST_CHECK_EQUAL(var_name, recp->var_id.name);
       BOOST_CHECK(var_value == recp->var_value);
       return *this;
    }
@@ -361,10 +361,10 @@ private:
    {
       auto req = server_receive_message_as<
             proto::subscription_request_message>();
-      auto var_grp = get_var_group(var_id);
-      auto var_name = get_var_name(var_id);
+      auto var_grp = var_id.group;
+      auto var_name = var_id.name;
 
-      if (var_grp.get_tag() == "foobar")
+      if (var_grp == "foobar")
          server_write_message(
                conn,
                proto::subscription_reply_message(

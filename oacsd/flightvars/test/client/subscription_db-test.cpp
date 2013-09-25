@@ -37,8 +37,8 @@ auto null_handler = [](const variable_id&, const variable_value&){};
 
 struct var_receptor
 {
-   variable_group::tag_type received_var_group;
-   variable_name::tag_type received_var_name;
+   variable_group received_var_group;
+   variable_name received_var_name;
    std::uint32_t received_value;
 
    var_receptor()
@@ -52,23 +52,23 @@ struct var_receptor
          const variable_value& val)
    {
       BOOST_CHECK_EQUAL(variable_type::DWORD, val.get_type());
-      received_var_group = get_var_group(id).get_tag();
-      received_var_name = get_var_name(id).get_tag();
+      received_var_group = id.group;
+      received_var_name = id.name;
       received_value = val.as_dword();
    }
 };
 
 auto default_handler = [](const variable_id& id, const variable_value& val)
 {
-   BOOST_CHECK_EQUAL("foobar", get_var_group(id).get_tag());
-   BOOST_CHECK_EQUAL("datum", get_var_name(id).get_tag());
+   BOOST_CHECK_EQUAL("foobar", id.group);
+   BOOST_CHECK_EQUAL("datum", id.name);
    BOOST_CHECK_EQUAL(112233, val.as_dword());
 };
 
 BOOST_AUTO_TEST_CASE(MustCreateEntry)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor;
 
@@ -90,7 +90,7 @@ BOOST_AUTO_TEST_CASE(MustCreateEntry)
 BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupVariable)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
 
    auto virtual_subs = db.create_entry(
          var_id,
@@ -110,12 +110,12 @@ BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupMasterSubscription)
    auto master_subs = make_subscription_id();
 
    auto virtual_subs = db.create_entry(
-         make_var_id("foobar", "datum1"),
+         variable_id("foobar", "datum1"),
          master_subs,
          null_handler);
    BOOST_CHECK_THROW(
          db.create_entry(
-               make_var_id("foobar", "datum2"),
+               variable_id("foobar", "datum2"),
                master_subs,
                null_handler),
          subscription_db::master_subscription_already_exists_error);
@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnCreateEntryWithDupMasterSubscription)
 BOOST_AUTO_TEST_CASE(MustAddvirtualSubscriptions)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
@@ -152,7 +152,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnAddvirtualSubscriptionsForUnexistingVar)
 
    BOOST_CHECK_THROW(
          db.add_virtual_subscription(
-               make_var_id("foobar", "datum"),
+               variable_id("foobar", "datum"),
                null_handler),
          subscription_db::no_such_variable_error);
 }
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnAddvirtualSubscriptionsForUnexistingVar)
 BOOST_AUTO_TEST_CASE(MustRemovevirtualSubscription)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
@@ -198,7 +198,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnRemoveUnexistingvirtualSubscription)
 BOOST_AUTO_TEST_CASE(MustRemoveEntry)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 
@@ -218,7 +218,7 @@ BOOST_AUTO_TEST_CASE(MustRemoveEntry)
 BOOST_AUTO_TEST_CASE(MustRemoveEntryOnLastvirtualSubscriptionRemoval)
 {
    subscription_db db;
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    auto master_subs = make_subscription_id();
    var_receptor receptor[10];
 

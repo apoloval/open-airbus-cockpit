@@ -54,7 +54,7 @@ throw (no_such_variable_error)
    {
       log_error(
          "Subscription request to variable %s timed out",
-         var_to_string(var));
+         var.to_string());
       OAC_THROW_EXCEPTION(client::communication_error(e));
    }
 }

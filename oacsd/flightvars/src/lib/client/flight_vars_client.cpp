@@ -294,7 +294,7 @@ flight_vars_client::on_subscription_requested()
                "There is already an active subscription for variable %s; "
                "ommiting request to the server and binding a new slave "
                "subscription with ID %d",
-               var_to_string(var_id),
+               var_id.to_string(),
                slave_subs_id);
          _subscription_request->promise.set_value(slave_subs_id);
          _subscription_request.reset();
@@ -444,7 +444,7 @@ flight_vars_client::on_message_received(
 void flight_vars_client::on_subscription_reply_received(
       const proto::subscription_reply_message& msg)
 {
-   auto var_id = make_var_id(msg.var_grp, msg.var_name);
+   variable_id var_id(msg.var_grp, msg.var_name);
    if (_subscription_request)
    {
       switch (msg.st)

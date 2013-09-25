@@ -53,7 +53,7 @@ connection_manager::submit(
 {
    log_info(
          "Requesting subscription for variable %s",
-         var_to_string(req->var_id()));
+         req->var_id().to_string());
    _io_service->post(std::bind(
          &connection_manager::on_subscription_requested,
          this,
@@ -237,7 +237,7 @@ connection_manager::on_subscription_requested(
          log_info(
                "Master subscription for variable %s found: "
                "binding new virtual subscription with ID %d ",
-               var_to_string(var_id),
+               var_id.to_string(),
                virt_subs_id);
          req->set_result(virt_subs_id);
       }
@@ -251,10 +251,9 @@ connection_manager::on_subscription_requested(
       log_info(
             "No master subscription found for variable %s: "
             "requesting subscription to the server",
-            var_to_string(var_id));
+            var_id.to_string());
       _request_pool.insert(req);
-      auto req = proto::subscription_request_message(
-            get_var_group(var_id), get_var_name(var_id));
+      auto req = proto::subscription_request_message(var_id.group, var_id.name);
       send_message(req);
    }
 }
@@ -387,7 +386,7 @@ connection_manager::on_message_received(
 void connection_manager::on_subscription_reply_received(
       const proto::subscription_reply_message& msg)
 {
-   auto var_id = make_var_id(msg.var_grp, msg.var_name);
+   variable_id var_id(msg.var_grp, msg.var_name);
    auto subs = _request_pool.pop_subscription_requests(var_id);
    if (subs.empty())
       OAC_THROW_EXCEPTION(
@@ -398,7 +397,7 @@ void connection_manager::on_subscription_reply_received(
       case proto::subscription_status::NO_SUCH_VAR:
          log_info(
                "Variable %s was not found in server: subscription rejected",
-               var_to_string(var_id));
+               var_id.to_string());
          for (auto& req : subs)
             req->set_error(
                   OAC_MAKE_EXCEPTION(
@@ -408,7 +407,7 @@ void connection_manager::on_subscription_reply_received(
          log_info(
                "Successful subscription reply message "
                "received for %s with master subscription ID %d",
-               var_to_string(make_var_id(msg.var_grp, msg.var_name)),
+               variable_id(msg.var_grp, msg.var_name).to_string(),
                msg.subs_id);
          for (auto& req : subs)
          {

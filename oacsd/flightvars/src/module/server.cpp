@@ -198,7 +198,7 @@ flight_vars_server::on_read_request(
          log(
                log_level::INFO,
                "Processing subscription request for variable %s",
-               var_to_string(make_var_id(s_req->var_grp, s_req->var_name)));
+               variable_id(s_req->var_grp, s_req->var_name).to_string());
          auto rep = handle_subscription_request(session, *s_req);
          write_message(
                   session->conn,
@@ -253,8 +253,8 @@ flight_vars_server::handle_subscription_request(
       const session_ptr& session,
       const proto::subscription_request_message& req)
 {
-   auto var_id = make_var_id(req.var_grp, req.var_name);
-   auto var_str = var_to_string(var_id);
+   variable_id var_id(req.var_grp, req.var_name);
+   auto var_str = var_id.to_string();
 
    if (session->subscriptions.subscription_exists(var_id))
    {
@@ -401,7 +401,7 @@ flight_vars_server::send_var_update(
             log_level::WARN,
             "Internal state error: a var update was notified for "
             "variable %s, but no associated subscription ID was found:\n%s",
-            var_to_string(var_id),
+            var_id.to_string(),
             e.report());
    }
    catch (io_exception& e)

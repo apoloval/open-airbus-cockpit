@@ -12,6 +12,7 @@ set(libflightvars_HEADERS
    include/flightvars/protocol.h
    include/flightvars/protocol.inl
    include/flightvars/subscription.h
+   include/flightvars/var.h
 )
 
 set(libflightvars_SOURCES
@@ -41,6 +42,7 @@ set(flightvars_INCLUDE_DIR
    PARENT_SCOPE)
 
 include_directories(
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
    ${CMAKE_CURRENT_SOURCE_DIR}/include/flightvars
    ${CMAKE_CURRENT_SOURCE_DIR}/src/module
    ${Boost_INCLUDE_DIR}
@@ -70,12 +72,12 @@ test_link_libraries(
    fsuipc_user_internal
 )
 
-add_unit_test(api-test flightvars)
 add_unit_test(client/requests-test flightvars_client)
 add_unit_test(client/subscription_db-test flightvars_client)
 add_unit_test(fsuipc-test flightvars)
 add_unit_test(protocol-test flightvars)
 add_unit_test(subscription-test flightvars)
+add_unit_test(var-test flightvars)
 
 add_integration_test(client-itest flightvars)
 add_integration_test(server-itest flightvars)

@@ -53,15 +53,15 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_var_group_error, invalid_var_exception,
       actual_var_group_tag,
       expected_var_group_tag
    ),
-   (expected_var_group_tag, variable_group::tag_type),
-   (actual_var_group_tag, variable_group::tag_type));
+   (expected_var_group_tag, variable_group),
+   (actual_var_group_tag, variable_group));
 
 /**
  * A syntax error was found while parsing the variable name.
  */
 OAC_DECL_EXCEPTION_WITH_PARAMS(var_name_syntax_error, invalid_var_exception,
    ("syntax error in variable name '%s': not a FSUIPC offset", var_name_tag),
-   (var_name_tag, variable_name::tag_type));
+   (var_name_tag, variable_name));
 
 }
 
@@ -237,7 +237,7 @@ public:
          log(
             log_level::INFO,
             "Subscribing on %s with ID %d...",
-            var_to_string(var),
+            var.to_string(),
             subs_id);
 
          return subs_id;

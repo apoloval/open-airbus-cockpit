@@ -103,16 +103,15 @@ throw (fsuipc::invalid_var_group_error, fsuipc::var_name_syntax_error)
 {
    oac::fsuipc::offset_address addr;
    unsigned int len;
-   auto var_group = get_var_group(var_id);
-   auto var_name = get_var_name(var_id);
+   auto var_group = var_id.group;
+   auto var_name = var_id.name;
 
-   if (var_group.get_tag() != VAR_GROUP_TAG)
+   if (var_group != VAR_GROUP_TAG)
       OAC_THROW_EXCEPTION(
-            fsuipc::invalid_var_group_error(
-                  VAR_GROUP_TAG, var_group.get_tag()));
+            fsuipc::invalid_var_group_error(VAR_GROUP_TAG, var_group));
 
    std::vector<std::string> parts;
-   boost::split(parts, var_name.get_tag(), boost::is_any_of(":"));
+   boost::split(parts, var_name, boost::is_any_of(":"));
    if (parts.size() <= 2)
    {
       // If no offset size is specified, assume BYTE

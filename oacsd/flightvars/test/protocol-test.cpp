@@ -156,8 +156,8 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionRequest)
    subscription_request_message& sr_msg =
          boost::get<subscription_request_message>(msg);
 
-   BOOST_CHECK_EQUAL("fsuipc/offset", sr_msg.var_grp.get_tag());
-   BOOST_CHECK_EQUAL("0x4ca1", sr_msg.var_name.get_tag());
+   BOOST_CHECK_EQUAL("fsuipc/offset", sr_msg.var_grp);
+   BOOST_CHECK_EQUAL("0x4ca1", sr_msg.var_name);
 }
 
 BOOST_AUTO_TEST_CASE(ShouldSerializeSubscriptionReply)
@@ -215,8 +215,8 @@ BOOST_AUTO_TEST_CASE(ShouldDeserializeSubscriptionReply)
 
    BOOST_CHECK_EQUAL(
             subscription_status::NO_SUCH_VAR, rep_msg.st);
-   BOOST_CHECK_EQUAL("fsuipc/offset", rep_msg.var_grp.get_tag());
-   BOOST_CHECK_EQUAL("0x4ca1", rep_msg.var_name.get_tag());
+   BOOST_CHECK_EQUAL("fsuipc/offset", rep_msg.var_grp);
+   BOOST_CHECK_EQUAL("0x4ca1", rep_msg.var_name);
    BOOST_CHECK_EQUAL(0, rep_msg.subs_id);
    BOOST_CHECK_EQUAL("No such variable!", rep_msg.cause);
 }

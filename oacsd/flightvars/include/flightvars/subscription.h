@@ -19,11 +19,19 @@
 #ifndef OAC_FV_SUBSCRIPTION_H
 #define OAC_FV_SUBSCRIPTION_H
 
+#include <cstdint>
+
 #include <boost/bimap.hpp>
 
-#include "api.h"
+#include <flightvars/var.h>
 
 namespace oac { namespace fv {
+
+/**
+ * An opaque object which identifies a variable subscription. The internal
+ * representation of this type is intended to be opaque to the API consumer.
+ */
+typedef std::uint32_t subscription_id;
 
 subscription_id make_subscription_id();
 
@@ -37,7 +45,7 @@ public:
    OAC_DECL_EXCEPTION_WITH_PARAMS(no_such_variable_error, oac::exception,
       (
          "no such variable %s found in subscription mapper",
-         var_to_string(var_id)
+         var_id.to_string()
       ),
       (var_id, variable_id));
 
@@ -54,7 +62,7 @@ public:
    OAC_DECL_EXCEPTION_WITH_PARAMS(variable_already_exists_error, oac::exception,
       (
          "variable %s already exists in subscription mapper",
-         var_to_string(var_id)
+         var_id.to_string()
       ),
       (var_id, variable_id));
 

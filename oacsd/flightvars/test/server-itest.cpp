@@ -118,14 +118,14 @@ struct let_test
    }
 
    let_test& subscribe(
-         const variable_group::tag_type& var_group_tag,
-         const variable_name::tag_type& var_name_tag,
+         const variable_group& var_group_tag,
+         const variable_name& var_name_tag,
          proto::subscription_status expected_subs_status =
                proto::subscription_status::SUBSCRIBED)
    {
       auto var_group = variable_group(var_group_tag);
       auto var_name = variable_name(var_name_tag);
-      auto var_id = make_var_id(var_group, var_name);
+      variable_id var_id(var_group, var_name);
 
       auto req = proto::subscription_request_message(var_group, var_name);
       send_message_as(req);
@@ -136,8 +136,8 @@ struct let_test
          _subscriptions[var_id] = rep.subs_id;
 
       BOOST_CHECK_EQUAL(expected_subs_status,rep.st);
-      BOOST_CHECK_EQUAL(var_group.get_tag(), rep.var_grp.get_tag());
-      BOOST_CHECK_EQUAL(var_name.get_tag(), rep.var_name.get_tag());
+      BOOST_CHECK_EQUAL(var_group, rep.var_grp);
+      BOOST_CHECK_EQUAL(var_name, rep.var_name);
       return *this;
    }
 
@@ -165,23 +165,23 @@ struct let_test
    }
 
    let_test& unsubscribe(
-         const variable_group::tag_type& var_group_tag,
-         const variable_name::tag_type& var_name_tag,
+         const variable_group& var_group_tag,
+         const variable_name& var_name_tag,
          bool expect_success = true)
    {
       auto var_group = variable_group(var_group_tag);
       auto var_name = variable_name(var_name_tag);
-      auto var_id = make_var_id(var_group, var_name);
+      variable_id var_id(var_group, var_name);
       auto subs_id = _subscriptions[var_id];
       return unsubscribe(subs_id, expect_success);
    }
 
    let_test& receive_var_update(
-         const variable_group::tag_type& var_group_tag,
-         const variable_name::tag_type& var_name_tag,
+         const variable_group& var_group_tag,
+         const variable_name& var_name_tag,
          const variable_value& value)
    {
-      auto var_id = make_var_id(var_group_tag, var_name_tag);
+      variable_id var_id(var_group_tag, var_name_tag);
       auto rep = receive_message_as<proto::var_update_message>();
       auto expected_subs_id = _subscriptions[var_id];
 
@@ -237,11 +237,11 @@ struct let_test
    }
 
    let_test& send_var_update(
-         const variable_group::tag_type& var_group_tag,
-         const variable_name::tag_type& var_name_tag,
+         const variable_group& var_group_tag,
+         const variable_name& var_name_tag,
          const variable_value& value)
    {
-      auto var_id = make_var_id(var_group_tag, var_name_tag);
+      variable_id var_id(var_group_tag, var_name_tag);
       auto subs_id = _subscriptions[var_id];
       return send_var_update(subs_id, value);
    }

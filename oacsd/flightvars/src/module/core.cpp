@@ -80,7 +80,7 @@ flight_vars_core::get_master_by_var_id(
       const variable_id& var_id)
 throw (no_such_variable_error)
 {
-   auto grp = get_var_group(var_id);
+   auto grp = var_id.group;
    auto entry = _group_masters.find(grp);
    if (entry == _group_masters.end())
       OAC_THROW_EXCEPTION(no_such_variable_error(var_id));

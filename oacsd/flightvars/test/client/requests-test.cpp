@@ -34,7 +34,7 @@ BOOST_AUTO_TEST_SUITE(ClientRequestTest)
 
 BOOST_AUTO_TEST_CASE(MustSetAndGetResult)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
@@ -45,7 +45,7 @@ BOOST_AUTO_TEST_CASE(MustSetAndGetResult)
 
 BOOST_AUTO_TEST_CASE(MustThrowOnGetTimeOut)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnGetTimeOut)
 
 BOOST_AUTO_TEST_CASE(MustThrowOnErrorSet)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_SUITE(ClientRequestPoolTest)
 
 BOOST_AUTO_TEST_CASE(MustInsertSubscription)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
@@ -89,7 +89,7 @@ BOOST_AUTO_TEST_CASE(MustInsertSubscription)
 
 BOOST_AUTO_TEST_CASE(MustPopEmptyListOnMissingSubscriptions)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
 
    auto requests = pool.pop_subscription_requests(var_id);
@@ -98,7 +98,7 @@ BOOST_AUTO_TEST_CASE(MustPopEmptyListOnMissingSubscriptions)
 
 BOOST_AUTO_TEST_CASE(MustPopEmptyListAfterPopSubscriptions)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req = std::make_shared<subscription_request>(var_id, null_handler);
 
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(MustPopEmptyListAfterPopUnsubscriptions)
 
 BOOST_AUTO_TEST_CASE(MustPropagateErrors)
 {
-   auto var_id = make_var_id("foobar", "datum");
+   variable_id var_id("foobar", "datum");
    request_pool pool;
    auto req1 = std::make_shared<subscription_request>(var_id, null_handler);
    auto req2 = std::make_shared<subscription_request>(var_id, null_handler);
