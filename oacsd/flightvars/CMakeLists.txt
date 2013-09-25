@@ -10,7 +10,12 @@ set(libflightvars_HEADERS
    include/flightvars/client/requests.h
    include/flightvars/client/subscription_db.h
    include/flightvars/protocol.h
-   include/flightvars/protocol.inl
+   include/flightvars/proto/binary.h
+   include/flightvars/proto/deserial.h
+   include/flightvars/proto/errors.h
+   include/flightvars/proto/messages.h
+   include/flightvars/proto/serial.h
+   include/flightvars/proto/types.h
    include/flightvars/subscription.h
    include/flightvars/var.h
 )
@@ -33,7 +38,6 @@ set(flightvars_SOURCES
    src/module/dllmain.cpp
    src/module/fsuipc.cpp
    src/module/main.cpp
-   src/module/protocol.cpp
    src/module/server.cpp
 )
 

@@ -88,7 +88,7 @@ struct let_test
       auto open_rep = receive_message_as<proto::begin_session_message>();
 
       BOOST_CHECK_EQUAL(flight_vars_server::PEER_NAME, open_rep.pname);
-      BOOST_CHECK_EQUAL(proto::CURRENT_PROTOCOL_VERSION, open_rep.proto_ver);
+      BOOST_CHECK_EQUAL(FLIGHTVARS_PROTOCOL_VERSION, open_rep.proto_ver);
 
       return *this;
    }

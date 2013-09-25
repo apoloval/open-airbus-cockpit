@@ -21,8 +21,9 @@
 
 #include <liboac/buffer.h>
 #include <liboac/endian.h>
+#include <liboac/stream.h>
 
-#include "protocol.h"
+#include <flightvars/protocol.h>
 
 using namespace oac;
 using namespace oac::fv;

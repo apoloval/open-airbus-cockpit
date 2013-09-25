@@ -342,7 +342,7 @@ private:
    {
       auto req = server_receive_message_as<proto::begin_session_message>();
       BOOST_CHECK_EQUAL("it-client", req.pname);
-      BOOST_CHECK_EQUAL(proto::CURRENT_PROTOCOL_VERSION, req.proto_ver);
+      BOOST_CHECK_EQUAL(FLIGHTVARS_PROTOCOL_VERSION, req.proto_ver);
 
       auto rep = proto::begin_session_message("it-server");
       server_write_message(conn, rep);
