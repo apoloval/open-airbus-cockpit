@@ -20,6 +20,8 @@
 #define OAC_NETWORK_CLIENT_H
 
 #include <liboac/network/connection.h>
+#include <liboac/network/errors.h>
+#include <liboac/network/types.h>
 
 namespace oac { namespace network {
 

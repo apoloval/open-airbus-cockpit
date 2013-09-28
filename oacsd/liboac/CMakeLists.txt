@@ -63,7 +63,6 @@ set(liboac_SOURCES
    src/fsuipc/local.cpp
    src/logging.cpp
    src/simconn.cpp
-   src/stream.cpp
    src/timing.cpp
 )
 
@@ -105,5 +104,8 @@ add_unit_test(timing-test liboac)
 
 add_integration_test(simconn-itest liboac)
 add_integration_test(logging-itest liboac)
-add_integration_test(network-itest liboac)
+add_integration_test(network/async_client-itest liboac_network)
+add_integration_test(network/async_server-itest liboac_network)
+add_integration_test(network/client-itest liboac_network)
+add_integration_test(network/server-itest liboac_network)
 add_integration_test(timing-itest liboac)

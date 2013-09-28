@@ -19,7 +19,8 @@
 #ifndef OAC_BUFFER_LINEAR_INL
 #define OAC_BUFFER_LINEAR_INL
 
-#include "liboac/buffer/linear.h"
+#include <liboac/buffer/asio_handler.h>
+#include <liboac/buffer/linear.h>
 
 namespace oac { namespace buffer {
 

@@ -19,7 +19,7 @@
 #ifndef OAC_BUFFER_FIXED_INL
 #define OAC_BUFFER_FIXED_INL
 
-#include "liboac/buffer/fixed.h"
+#include <liboac/buffer/fixed.h>
 
 namespace oac { namespace buffer {
 

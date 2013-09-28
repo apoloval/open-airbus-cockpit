@@ -23,7 +23,8 @@
 
 #include <boost/asio/buffer.hpp>
 
-#include "liboac/buffer/errors.h"
+#include <liboac/buffer/errors.h>
+#include <liboac/buffer/fixed.h>
 
 namespace oac { namespace buffer {
 

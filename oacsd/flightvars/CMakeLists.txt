@@ -78,7 +78,7 @@ test_link_libraries(
 add_unit_test(client/requests-test flightvars_client)
 add_unit_test(client/subscription_db-test flightvars_client)
 add_unit_test(fsuipc-test flightvars)
-add_unit_test(protocol-test flightvars)
+add_unit_test(proto/binary-test flightvars_proto)
 add_unit_test(subscription-test flightvars)
 add_unit_test(var-test flightvars)
 

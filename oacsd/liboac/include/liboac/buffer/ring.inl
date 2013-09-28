@@ -19,8 +19,8 @@
 #ifndef OAC_BUFFER_RING_INL
 #define OAC_BUFFER_RING_INL
 
-#include "liboac/buffer/asio_handler.h"
-#include "liboac/buffer/ring.h"
+#include <liboac/buffer/asio_handler.h>
+#include <liboac/buffer/ring.h>
 
 namespace oac { namespace buffer {
 
