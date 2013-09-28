@@ -16,11 +16,24 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FV_SUBSCRIPTION_H
-#define OAC_FV_SUBSCRIPTION_H
+#ifndef OAC_FV_SUBSCRIPTION_TYPES_H
+#define OAC_FV_SUBSCRIPTION_TYPES_H
 
-#include <flightvars/subscription/errors.h>
-#include <flightvars/subscription/mapper.h>
-#include <flightvars/subscription/types.h>
+#include <cstdint>
+
+namespace oac { namespace fv {
+
+/**
+ * An opaque object which identifies a variable subscription. The internal
+ * representation of this type is intended to be opaque to the API consumer.
+ */
+typedef std::uint32_t subscription_id;
+
+/**
+ * Make a new random subscription ID.
+ */
+subscription_id make_subscription_id();
+
+}} // namespace oac::fv
 
 #endif

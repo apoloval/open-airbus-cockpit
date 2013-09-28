@@ -335,7 +335,7 @@ flight_vars_server::handle_unsubscription_request(
             subs_id,
             format("No such subscription with ID %d", subs_id));
    }
-   catch (const subscription_mapper::no_such_subscription_error& e)
+   catch (const subs::no_such_subscription_error& e)
    {
       log_warn(
             "internal inconsistency detected; delegate succeed to "
@@ -394,7 +394,7 @@ flight_vars_server::send_var_update(
       proto::var_update_message msg(subs_id, var_value);
       write_message(session->conn, msg, [](){});
    }
-   catch (subscription_mapper::no_such_variable_error& e)
+   catch (subs::no_such_variable_error& e)
    {
       log(
             log_level::WARN,

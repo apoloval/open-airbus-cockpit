@@ -17,6 +17,9 @@ set(libflightvars_HEADERS
    include/flightvars/proto/serial.h
    include/flightvars/proto/types.h
    include/flightvars/subscription.h
+   include/flightvars/subscription/errors.h
+   include/flightvars/subscription/mapper.h
+   include/flightvars/subscription/types.h
    include/flightvars/var.h
 )
 
@@ -25,7 +28,8 @@ set(libflightvars_SOURCES
    src/lib/client.cpp
    src/lib/client/connection_manager.cpp
    src/lib/client/subscription_db.cpp
-   src/lib/subscription.cpp
+   src/lib/subscription/mapper.cpp
+   src/lib/subscription/types.cpp
 )
 
 set(flightvars_HEADERS

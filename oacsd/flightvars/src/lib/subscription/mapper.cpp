@@ -16,21 +16,9 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <flightvars/subscription.h>
+#include <flightvars/subscription/mapper.h>
 
-namespace oac { namespace fv {
-
-namespace {
-
-subscription_id next_id = 1;
-
-} // anonymous namespace
-
-subscription_id
-make_subscription_id()
-{
-   return next_id++;
-}
+namespace oac { namespace fv { namespace subs {
 
 void
 subscription_mapper::clear()
@@ -115,4 +103,4 @@ throw (no_such_subscription_error)
       OAC_THROW_EXCEPTION(no_such_subscription_error(subs_id));
 }
 
-}} // namespace oac::fv
+}}} // namespace oac::fv::subs

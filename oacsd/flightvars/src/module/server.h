@@ -63,7 +63,7 @@ private:
       typedef input_buffer_type::ptr_type input_buffer_ptr;
 
       std::shared_ptr<flight_vars_server> server;
-      subscription_mapper subscriptions;
+      subs::subscription_mapper subscriptions;
       input_buffer_ptr input_buffer;
       network::async_tcp_connection_ptr conn;
 

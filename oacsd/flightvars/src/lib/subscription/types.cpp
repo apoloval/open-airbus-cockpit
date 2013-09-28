@@ -16,11 +16,20 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FV_SUBSCRIPTION_H
-#define OAC_FV_SUBSCRIPTION_H
-
-#include <flightvars/subscription/errors.h>
-#include <flightvars/subscription/mapper.h>
 #include <flightvars/subscription/types.h>
 
-#endif
+namespace oac { namespace fv {
+
+namespace {
+
+subscription_id next_id = 1;
+
+} // anonymous namespace
+
+subscription_id
+make_subscription_id()
+{
+   return next_id++;
+}
+
+}} // namespace oac::fv
