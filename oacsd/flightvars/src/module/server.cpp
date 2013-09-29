@@ -184,6 +184,20 @@ flight_vars_server::on_read_request(
 {
    using namespace proto;
 
+   try { bytes_transferred.get_value(); }
+   catch (const io::eof_error&)
+   {
+      log_warn(
+            "Connection unexpectedly closed by remote peer: session discarded");
+      return;
+   }
+   catch (const network::connection_reset&)
+   {
+      log_warn(
+            "Connection unexpectedly reset by remote peer: session discarded");
+      return;
+   }
+
    try
    {
       auto msg = unmarshall(*session->input_buffer);
