@@ -209,7 +209,7 @@ throw (fsuipc_error)
    if (!FSUIPC_Write(
             valued_offset.address,
             valued_offset.length,
-            (void*) valued_offset.value,
+            (void*) &(valued_offset.value),
             &error))
    {
       OAC_THROW_EXCEPTION(fsuipc_error(error, get_result_message(error)));
