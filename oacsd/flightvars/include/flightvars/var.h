@@ -33,6 +33,21 @@ typedef std::string variable_name;
 struct variable_id
 {
 
+   OAC_DECL_EXCEPTION_WITH_PARAMS(parse_error, oac::exception,
+      ("not a valid format for a variable ID in '%s'", token),
+      (token, std::string)
+   );
+
+   static variable_id
+   parse(const std::string& var)
+   {
+      std::vector<std::string> tokens;
+      boost::iter_split(tokens, var, boost::algorithm::first_finder("->"));
+      if (tokens.size() != 2 || tokens[0].empty() || tokens[1].empty())
+         OAC_THROW_EXCEPTION(parse_error(var));
+      return variable_id(tokens[0], tokens[1]);
+   }
+
    const variable_group group;
    const variable_name name;
 

@@ -75,6 +75,41 @@ BOOST_AUTO_TEST_CASE(MustBeLessThanWhenGroupNotMatches)
    BOOST_CHECK_LT(id1, id2);
 }
 
+BOOST_AUTO_TEST_CASE(MustParseFromValidExpression)
+{
+   auto id = variable_id::parse("my_group/1->my_var/2");
+   BOOST_CHECK_EQUAL("my_group/1", id.group);
+   BOOST_CHECK_EQUAL("my_var/2", id.name);
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnParsingFromMissingSeparator)
+{
+   BOOST_CHECK_THROW(
+         variable_id::parse("my_group/1my_var/2"),
+         variable_id::parse_error);
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnParsingFromMissingGroup)
+{
+   BOOST_CHECK_THROW(
+         variable_id::parse("->my_var/2"),
+         variable_id::parse_error);
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnParsingFromMissingName)
+{
+   BOOST_CHECK_THROW(
+         variable_id::parse("my_group/1->"),
+         variable_id::parse_error);
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnParsingFromMoreThanThreeTokens)
+{
+   BOOST_CHECK_THROW(
+         variable_id::parse("my_group/1->my_var/2->my_var/3"),
+         variable_id::parse_error);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
