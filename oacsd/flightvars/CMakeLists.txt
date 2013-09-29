@@ -45,6 +45,12 @@ set(flightvars_SOURCES
    src/module/server.cpp
 )
 
+set(flightvars_explorer_SOURCES
+   src/explorer/observer.h
+   src/explorer/observer.cpp
+   src/explorer/main.cpp
+)
+
 set(flightvars_INCLUDE_DIR
    ${CMAKE_CURRENT_SOURCE_DIR}/include
    PARENT_SCOPE)
@@ -61,11 +67,19 @@ include_directories(
 add_library(libflightvars STATIC ${libflightvars_SOURCES} ${libflightvars_HEADERS})
 add_library(FlightVars SHARED ${flightvars_SOURCES} ${flightvars_HEADERS})
 add_library(FlightVars_Static STATIC ${flightvars_SOURCES} ${flightvars_HEADERS})
+add_executable(FlightVarsExplorer ${flightvars_explorer_SOURCES})
 
 target_link_libraries(FlightVars
    libflightvars
    ${Boost_LIBRARIES}
    ${SIM_CONNECT_LIBRARY}
+   fsuipc_user_internal
+   liboac
+)
+
+target_link_libraries(FlightVarsExplorer
+   libflightvars
+   ${Boost_LIBRARIES}
    fsuipc_user_internal
    liboac
 )
