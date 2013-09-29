@@ -235,11 +235,11 @@ private:
       {}                                                                   \
    }
 
-#define OAC_MAKE_EXCEPTION(...)                                \
-   (__VA_ARGS__)                                               \
-         .set_source(format("%s:%d", __FILE__, __LINE__))
+#define OAC_MAKE_EXCEPTION(...)                                            \
+   (__VA_ARGS__)                                                           \
+         .set_source(::oac::format("%s:%d", __FILE__, __LINE__))
 
-#define OAC_THROW_EXCEPTION(...)                               \
+#define OAC_THROW_EXCEPTION(...)                                           \
    throw OAC_MAKE_EXCEPTION(__VA_ARGS__)
 
 
