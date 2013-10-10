@@ -88,11 +88,13 @@ public:
    template <typename FsuipcOffsetCollection>
    void start_observing(const FsuipcOffsetCollection& offsets)
    {
-      for (auto& offset : offsets)
-         _offsets.insert(offset);
-      _client.query(offsets, [this](const valued_offset& vo)
+      for (auto& offset : offsets) {
+         _offsets.insert(offset);      
+         _pending_welcomes.insert(offset);
+      }
+      _client.query(offsets, [this](const valued_offset& val)
       {
-         _values[vo] = vo.value;
+         _values[val] = val.value;
       });
    }
 
@@ -126,22 +128,28 @@ public:
       _client.query(_offsets, [this](const valued_offset& val)
       {
          auto cached_val = _values.find(val);
-         if ((cached_val != _values.end()) && (cached_val->second != val.value))
+         auto pending_welcome = _pending_welcomes.find(val);
+
+         if ((pending_welcome != _pending_welcomes.end()) ||
+             (cached_val->second != val.value))
          {
             _values[val] = val.value;
             _update_eval(val);
          }
       });
+      _pending_welcomes.clear();
    }
 
 private:
 
+   typedef std::unordered_set<offset, offset::hash> offset_set;
+   typedef std::unordered_map<
+         offset, offset_value, offset::hash> offset_value_map;
+
    client_type _client;
-   std::unordered_set<offset, offset::hash> _offsets;
-   std::unordered_map<
-         offset,
-         offset_value,
-         offset::hash> _values;
+   offset_set _offsets;
+   offset_set _pending_welcomes;
+   offset_value_map _values;
    update_evaluator_type _update_eval;
 };
 

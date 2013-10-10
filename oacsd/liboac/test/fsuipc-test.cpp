@@ -278,7 +278,7 @@ BOOST_AUTO_TEST_CASE(MustObserveNoChangeIfOffsetIsNotUpdated)
          .observe(0x700, OFFSET_LEN_DWORD)
          .observe(0x704, OFFSET_LEN_WORD)
          .check_for_updates()
-         .assert_updates_count(0);
+         .assert_updates_count(2);
 }
 
 
@@ -288,7 +288,7 @@ BOOST_AUTO_TEST_CASE(MustObserveOffsetUpdateAfterOffsetIsChanged)
          .observe(0x700, OFFSET_LEN_DWORD)
          .observe(0x704, OFFSET_LEN_WORD)
          .check_for_updates()
-         .assert_updates_count(0)
+         .and_then()
          .then_offset_changes(0x700, OFFSET_LEN_DWORD, 0x01020304)
          .check_for_updates()
          .assert_updates_count(1)
@@ -335,7 +335,7 @@ BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterReobserving)
          .observe(0x700, OFFSET_LEN_DWORD)
          .then_offset_changes(0x700, OFFSET_LEN_DWORD, 0x05060708)
          .check_for_updates()
-         .assert_updates_count(0);
+         .assert_updates_count(1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

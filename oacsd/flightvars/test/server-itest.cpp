@@ -506,6 +506,11 @@ BOOST_AUTO_TEST_CASE(MustIgnoreVarUpdatesWithUnknownSubscriptionId)
          .handshake()
          .on_offset_change(0x700, oac::fsuipc::OFFSET_LEN_DWORD, 0x0a0b0c0d)
          .subscribe("fsuipc/offset", "0x700:4")
+         .fsuipc_polls_for_changes() // receive initial value for 0x700:4
+         .receive_var_update(
+               "fsuipc/offset",
+               "0x700:4",
+               variable_value::from_dword(0x0a0b0c0d))
          .send_var_update(
                1234567,
                variable_value::from_dword(0x01020304)) // ignored by server
