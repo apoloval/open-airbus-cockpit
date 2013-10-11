@@ -69,7 +69,7 @@ add_subdirectory(flightvars)
 # Packaging with NSIS
 include(NSIS)
 add_installer("oacsd-${OACSD_VERSION}" ${CMAKE_SOURCE_DIR}/NSIS/oacsd.nsh
-   DEPENDS WilcoExporter
+   DEPENDS ${CMAKE_SOURCE_DIR}/NSIS/fs-plugins.nsh WilcoExporter
    VERSION ${OACSD_VERSION}
 )
 
