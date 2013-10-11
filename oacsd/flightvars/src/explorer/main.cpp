@@ -55,8 +55,8 @@ print_help()
          "              <type> is one of 'bool', 'byte', 'word' or 'dword', and <value>" << std::endl <<
          "              is '1'', 'true'' or 'yes' for boolean, or a number otherwise" <<
          std::endl << std::endl <<
-         oac::format("Examples: %s watch \"fsuipc/offset->0x0330:2\"", PROGRAM_NAME) << std::endl <<
-         oac::format("          %s set \"fsuipc/offset->0x0330:2\" word:16250", PROGRAM_NAME) << std::endl;
+         oac::format("Examples: %s watch \"fsuipc/offset->0x3324:4\" \"fsuipc/offset->0x0930:2\"", PROGRAM_NAME) << std::endl <<
+         oac::format("          %s set \"fsuipc/offset->0x3324:4\" dword:16250", PROGRAM_NAME) << std::endl;
 }
 
 void print_error_and_exit(const std::string& error)
@@ -149,10 +149,8 @@ main(int argc, char* argv[])
          {
             auto vars = parse_variable_ids(argc, argv);
             fv::var_observer obs(vars);
-            while (true)
-            {
-               std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
+            auto disconnection = obs.disconnection();
+            disconnection.get();
             return 0;
          }
          case action::SET:
@@ -173,17 +171,28 @@ main(int argc, char* argv[])
          }
       }
    }
-   catch (fv::variable_id::parse_error& e)
+   catch (const fv::variable_id::parse_error& e)
    {
       std::cerr <<
             "Error while parsing program arguments: " <<
             e.message() <<
             std::endl;
    }
-   catch (oac::exception& e)
+   catch (const fv::client::communication_error& comm_error)
+   {
+      std::cerr << "Communication error: " << std::endl;
+      std::cerr << comm_error.report() << std::endl << std::endl;
+   }
+   catch (const oac::exception& e)
    {
       std::cerr << "Unexpected exception thrown" << std::endl;
       std::cerr << e.report() << std::endl << std::endl;
+   }
+   catch (...)
+   {
+      std::cerr <<
+            "Unexpected exception thrown: no further details available" <<
+            std::endl;
    }
 
    print_help();

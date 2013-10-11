@@ -62,6 +62,9 @@ public:
          const variable_value& var_value)
    throw (no_such_subscription_error, illegal_value_error);
 
+   std::future<void> disconnection()
+   { return _conn_mngr.disconnection(); }
+
 private:
 
    client::connection_manager _conn_mngr;

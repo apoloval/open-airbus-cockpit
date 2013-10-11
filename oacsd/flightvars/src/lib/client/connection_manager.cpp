@@ -32,11 +32,19 @@ throw (communication_error)
      _client(server_host, server_port, _io_service),
      _input_buffer(1024)
 {
-   log_info("Starting FlightVars client initialization");
-   handshake(client_name);
-   start_receive();
-   run_io_service_thread();
-   log_info("FlightVars client initialization completed");
+   try
+   {
+      log_info("Starting FlightVars client initialization");
+      handshake(client_name);
+      start_receive();
+      run_io_service_thread();
+      log_info("FlightVars client initialization completed");
+   }
+   catch (const std::exception& e)
+   {
+      on_error(e, true);
+      throw;
+   }
 }
 
 connection_manager::~connection_manager()
@@ -162,18 +170,22 @@ void
 connection_manager::close()
 throw (communication_error)
 {
-   using namespace proto;
-   output_buffer_type output_buff(128);
+   if (_state.is_connected())
+   {
+      using namespace proto;
+      output_buffer_type output_buff(128);
 
-   log_info("Sending end session message to the server");
-   auto end_session_msg = proto::end_session_message("Client disconnected");
-   serialize<binary_message_serializer>(end_session_msg, output_buff);
-   auto write_result = _client.connection().write(output_buff);
+      log_info("Sending end session message to the server");
+      auto end_session_msg = proto::end_session_message("Client disconnected");
+      serialize<binary_message_serializer>(end_session_msg, output_buff);
+      auto write_result = _client.connection().write(output_buff);
 
-   _io_service->reset();
-   _io_service->run();
+      _io_service->reset();
+      _io_service->run();
 
-   write_result.get();
+      write_result.get();
+      _state.disconnect();
+   }
 }
 
 void
@@ -330,10 +342,25 @@ connection_manager::on_message_received(
    if (_client_thread.get_id() == std::thread::id())
       return;
 
+   try { bytes_read.get_value(); }
+   catch (const io::eof_error&)
+   {
+      log_warn(
+            "Connection unexpectedly closed by server");
+      _state.disconnect();
+      return;
+   }
+   catch (const network::connection_reset& e)
+   {
+      log_warn(
+            "Connection unexpectedly reset by server");
+      auto comm_error = OAC_MAKE_EXCEPTION(communication_error(e));
+      on_error(comm_error, true);
+      return;
+   }
+
    try
    {
-      bytes_read.get_value();
-
       auto msg = proto::deserialize<proto::binary_message_deserializer>(
             _input_buffer);
       bool match = false;
@@ -373,11 +400,7 @@ connection_manager::on_message_received(
             e.report());
 
       auto comm_error = OAC_MAKE_EXCEPTION(communication_error(e));
-
-      _request_pool.propagate_error(comm_error);
-      if (_error_handler)
-         _error_handler(comm_error);
-
+      on_error(comm_error, true);
       return;
    }
    start_receive();
@@ -486,8 +509,7 @@ connection_manager::on_variable_update_received(
             "Variable update message received for unknown subscription %d\n%s",
             msg.subs_id,
             e.report());
-      if (_error_handler)
-         _error_handler(ce);
+      on_error(e, false);
    }
 }
 
@@ -525,7 +547,20 @@ connection_manager::on_data_sent(
    } catch (const oac::exception& e)
    {
       auto comm_error = OAC_MAKE_EXCEPTION(communication_error(e));
-      _error_handler(comm_error);
+      on_error(comm_error, false);
+   }
+}
+
+template <typename Exception>
+void
+connection_manager::on_error(const Exception& e, bool disconnects)
+{
+   if (_error_handler)
+      _error_handler(e);
+   if (disconnects)
+   {
+      _request_pool.propagate_error(e);
+      _state.disconnect_with_error(e);
    }
 }
 

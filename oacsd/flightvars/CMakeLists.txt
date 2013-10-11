@@ -6,6 +6,7 @@ set(libflightvars_HEADERS
    include/flightvars/api.h
    include/flightvars/client.h
    include/flightvars/client/connection_manager.h
+   include/flightvars/client/connection_state.h
    include/flightvars/client/errors.h
    include/flightvars/client/requests.h
    include/flightvars/client/subscription_db.h

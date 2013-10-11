@@ -38,6 +38,9 @@ public:
          const variable_id& var_id,
          const variable_value& var_value);
 
+   std::future<void> disconnection()
+   { return _client.disconnection(); }
+
 private:
 
    flight_vars_client _client;

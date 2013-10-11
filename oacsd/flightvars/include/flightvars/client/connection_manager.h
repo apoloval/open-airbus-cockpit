@@ -23,6 +23,7 @@
 #include <liboac/network.h>
 
 #include <flightvars/api.h>
+#include <flightvars/client/connection_state.h>
 #include <flightvars/client/errors.h>
 #include <flightvars/client/requests.h>
 #include <flightvars/client/subscription_db.h>
@@ -48,6 +49,12 @@ public:
    virtual ~connection_manager();
 
    /**
+    * Obtain a future representing the disconnection from the server.
+    */
+   std::future<void> disconnection()
+   { return _state.disconnection(); }
+
+   /**
     * Submit a subscription request to this manager.
     */
    void submit(const subscription_request_ptr& req);
@@ -68,6 +75,7 @@ private:
    typedef buffer::linear_buffer output_buffer_type;
    typedef output_buffer_type::ptr_type output_buffer_ptr;
 
+   connection_state _state;
    error_handler _error_handler;
    std::shared_ptr<boost::asio::io_service> _io_service;
    network::async_tcp_client _client;
@@ -118,6 +126,9 @@ private:
    void on_data_sent(
          const output_buffer_ptr& output_buff,
          const attempt<std::size_t>& bytes_written);
+
+   template <typename Exception>
+   void on_error(const Exception& e, bool disconnects);
 };
 
 }}} // namespace oac::fv::client
