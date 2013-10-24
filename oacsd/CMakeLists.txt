@@ -4,20 +4,30 @@ project(oacsd)
 
 set(OACSD_VERSION_MAJOR 0)
 set(OACSD_VERSION_MINOR 3)
-set(OACSD_VERSION_PATH SNAPSHOT)
+set(OACSD_VERSION_PATH 0-SNAPSHOT)
 set(OACSD_VERSION
    "${OACSD_VERSION_MAJOR}.${OACSD_VERSION_MINOR}.${OACSD_VERSION_PATH}")
 
-# Prepare Qt modules and other stuff
-# find_package(Qt4 REQUIRED)
-# include(${QT_USE_FILE})
-# add_definitions(${QT_DEFINITIONS})
-
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake/modules/" ${CMAKE_MODULE_PATH})
 
-set(Boost_USE_STATIC_LIBS ON)
-
+include(ConfigVisualC++Runtime)
 include(Testing)
+include(NSIS)
+
+# Configure MSVC runtime to be statically linked unless otherwise is
+# indicated.
+if("${MSVC_RUNTIME_LINK}" STREQUAL "")
+   set(MSVC_RUNTIME_LINK "static")
+endif()
+configure_msvc_runtime()
+
+set(Boost_USE_STATIC_LIBS ON)
+# If MSVC runtime static linking is used, we must use the appropriate Boost
+# version of the library.
+if("${MSVC_RUNTIME_LINK}" STREQUAL "static")
+   set(Boost_USE_STATIC_RUNTIME ON)
+endif()
+
 find_package(Boost COMPONENTS
    chrono
    date_time
@@ -67,7 +77,6 @@ add_subdirectory(wilco-exporter)
 add_subdirectory(flightvars)
 
 # Packaging with NSIS
-include(NSIS)
 add_installer("oacsd-${OACSD_VERSION}" ${CMAKE_SOURCE_DIR}/NSIS/oacsd.nsh
    DEPENDS ${CMAKE_SOURCE_DIR}/NSIS/fs-plugins.nsh WilcoExporter
    VERSION ${OACSD_VERSION}
