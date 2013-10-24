@@ -77,8 +77,8 @@ mkdir <build_root>
 cd <build_root>
 cmake 
    -DBOOST_ROOT=<boost_root>
-   -DBoost_USE_STATIC_LIBS=ON
    -DBoost_COMPILER=-vc120
+   -DCMAKE_BUILD_TYPE=Debug
    -G "NMake Makefiles"
    <oacsd_root>
 ```
