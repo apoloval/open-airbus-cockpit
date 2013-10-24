@@ -1,3 +1,8 @@
+v0.2.0: Initial version of FlightVars
+ + Several improvements in logging facilities
+ + First version of FlightVars, supporting FSUIPC offsets group.
+ + First version of FlightVars Explorer, as a CLI tool with a very simple
+   inteface.
 
 v0.1.beta-1: First version of ACSD
  + First version of Wilco Exporter.
