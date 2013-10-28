@@ -1,0 +1,9 @@
+{% for node in site.JB.pages_list.nodes %}
+    {% if page.url == node.url %}
+    <li class="active">
+    {% else %}
+    <li>
+    {% endif %}
+      <a href="{{ BASE_PATH }}{{ node.url }}" class="active">{{ node.title }}</a>
+    </li>
+{% endfor %}
