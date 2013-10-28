@@ -1,5 +1,5 @@
 {% for node in site.JB.pages_list.nodes %}
-    {% if page.url == node.url %}
+    {% if page.url == node.url or page.url contains node.matcher %}
     <li class="active">
     {% else %}
     <li>

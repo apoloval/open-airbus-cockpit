@@ -1,6 +1,6 @@
 # This is the default format.
 # For more see: http://jekyllrb.com/docs/permalinks/
-permalink: /:categories/:year/:month/:day/:title
+permalink: /news/:year/:month/:day/:title
 
 exclude: [".rvmrc", ".rbenv-version", "README.md", "Rakefile", "changelog.md"]
 auto: true
@@ -133,7 +133,7 @@ JB :
     nodes:
       - { title: "What's OAC?", url: "/index.html" }
       - { title: "Contact", url: "/contact.html" }
-      - { title: "News", url: "/news.html" }
+      - { title: "News", url: "/news.html", matcher: "/news/" }
       - { title: "Software", url: "/software.html" }
       - { title: "Hardware", url: "/hardware.html" }
       - { title: "Archive", url: "/archive.html" }
