@@ -1,0 +1,32 @@
+---
+layout: page
+title: News
+group: navigation
+permalink: news.html
+---
+
+{% include JB/setup %}
+
+{% assign posts_collate = site.posts %}
+{% for post in posts_collate  %}
+  <div class="unit-inner unit-article-inner">
+    <div class="content">
+      <div class="bd">
+        <div class="entry-title">
+          <h2>{{ post.title }}</h2>
+        </div>
+        <div class="entry-content">
+          {% if post.content contains '<!--more-->' %}
+            {{ post.content | split:'<!--more-->' | first }}
+            <div class="readmore">
+              <a class="button" href="{{ BASE_PATH }}{{post.url}}">Read more</a>
+            </div>
+          {% else %}
+            {{ post.content }}
+          {% endif %}
+          <hr>
+        </div>
+      </div>
+    </div>
+  </div>
+{% endfor %}

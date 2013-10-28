@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>{{ page.title }}</title>
+    {% if page.description %}<meta name="description" content="{{ page.description }}">{% endif %}
+    <meta name="author" content="{{ site.author.name }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{{ ASSET_PATH }}/css/style.css" rel="stylesheet" type="text/css" media="all">
+    <link href="{{ BASE_PATH }}{{ site.JB.atom_path }}" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="{{ BASE_PATH }}{{ site.JB.rss_path }}" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+  </head>
+
+  <body>
+    <div id="page">
+      <div id="page-header">
+        <a id="brand" href="{{ HOME_PATH }}">{{ site.title }}</a>
+      </div>
+      <div id="page-content">
+        <div id="navbar">
+          <ul class="nav">
+            {% assign pages_list = site.pages %}
+            {% assign group = 'navigation' %}
+            {% include JB/pages_list %}
+          </ul>
+        </div>
+
+        <div id="content">
+          {{ content }}
+        </div>
+        <footer>
+          <p>Copyright &copy; {{ site.time | date: '%Y' }} {{ site.author.name }}
+          </p>
+        </footer>
+      {% include JB/analytics %}
+      </div>
+    </div>
+  </body>
+</html>
