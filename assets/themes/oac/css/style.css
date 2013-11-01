@@ -1,9 +1,33 @@
+@font-face {
+    font-family: 'Vegur';
+    src: url('fonts/vegur-light.eot');
+    src: url('fonts/vegur-light.eot?#iefix') format('embedded-opentype'),
+         url('fonts/vegur-light.woff') format('woff'),
+         url('fonts/vegur-light.ttf') format('truetype'),
+         url('fonts/vegur-light.otf') format('opentype'),
+         url('fonts/vegur-light.svg#VegurLight') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: 'Vegur';
+    src: url('fonts/vegur-bold.eot');
+    src: url('fonts/vegur-bold.eot?#iefix') format('embedded-opentype'),
+         url('fonts/vegur-bold.woff') format('woff'),
+         url('fonts/vegur-bold.ttf') format('truetype'),
+         url('fonts/vegur-bold.otf') format('opentype'),
+         url('fonts/vegur-bold.svg#VegurBold') format('svg');
+    font-weight: bold;
+    font-style: normal;
+}
+
 body {
   background-color: #e6e6e6;
-  color: #777777;
-  font-family: 'Helvetica Neue', Helvetica;
-  font-weight: 200;
-  font-size: 12pt;
+  color: #4c4c4c;
+  font-family: Vegur, 'Helvetica Neue', Helvetica;
+  font-size: 16px;
+  line-height: 24px;
 }
 
 footer {
@@ -28,8 +52,10 @@ hr {
 
 #brand {
   color: white;
+  font-family: 'Helvetica Neue', Helvetica;
   font-size: 32px;
   font-weight: 100;
+  line-height: 100%;
   text-decoration: none;
 }
 
@@ -37,7 +63,7 @@ hr {
   background-color: white;
   margin-left: 151px;
   min-height: 500px;
-  padding: 50px;
+  padding: 20px 50px;
   position: relative;
   text-align: justify;
   width: 773px;
@@ -108,7 +134,7 @@ hr {
   background: -webkit-linear-gradient(bottom, #697a81 32%, #719a9b 66%);
   background: linear-gradient(bottom, #697a81 32%, #719a9b 66%);
   border-bottom: 1px solid #aaa;
-  height: 50px;
+  height: 40px;
   padding: 0.5em 1em;
   width: 100% - 1em;
 }
@@ -210,4 +236,8 @@ a.button {
   background: #57A957;
   border: 1px solid #4c964d;
   color: #FFF;
+}
+
+.title {
+  border-top: 1px solid #eee;
 }

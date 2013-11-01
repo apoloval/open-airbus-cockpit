@@ -1,3 +1,10 @@
+{% if page.section != nil %}
+  {% for s in page.section %}
+		<a href="{{ s.url }}">{{ s.title}}</a> >>
+	{% endfor %}
+{% endif %}
+<a href="{{ page.url }}">{{ page.title}}</a>
+
 <div class="title">
   <h1>{{ page.title }} {% if page.tagline %} <small>{{ page.tagline }}</small>{% endif %}</h1>
 </div>

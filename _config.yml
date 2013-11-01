@@ -135,6 +135,6 @@ JB :
       - { title: "Contact", url: "/contact.html" }
       - { title: "News", url: "/news.html", matcher: "/news/" }
       - { title: "Software", url: "/software.html" }
-      - { title: "Hardware", url: "/hardware.html" }
+      - { title: "Hardware", url: "/hardware.html", matcher: "/hardware/" }
       - { title: "Archive", url: "/archive.html" }
 
