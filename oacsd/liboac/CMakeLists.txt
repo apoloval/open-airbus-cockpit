@@ -52,6 +52,7 @@ set(liboac_HEADERS
    include/liboac/stream/adapters.h
    include/liboac/stream/functions.h
    include/liboac/timing.h
+   include/liboac/util/enum.h
    include/liboac/worker.h
 )
 

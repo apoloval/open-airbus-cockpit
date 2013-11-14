@@ -242,16 +242,6 @@ private:
 #define OAC_THROW_EXCEPTION(...)                                           \
    throw OAC_MAKE_EXCEPTION(__VA_ARGS__)
 
-
-
-/**
- * An exception caused by a enum value out of its range.
- */
-template <typename Enum>
-OAC_DECL_EXCEPTION_WITH_PARAMS(enum_out_of_range_error, oac::exception,
-   ("invalid value %d out of range of enumeration", int(value)),
-   (value, Enum));
-
 } // namespace oac
 
 #endif
