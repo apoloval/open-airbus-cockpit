@@ -95,7 +95,8 @@ private:
       if (_settings.logging.enabled)
       {
          file log_file(_settings.logging.file);
-         set_main_logger(make_logger(log_level::INFO, log_file.append()));
+         auto logger = make_logger(_settings.logging.level, log_file.append());
+         set_main_logger(logger);
       }
    }
 

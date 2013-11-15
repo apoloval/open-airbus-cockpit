@@ -27,7 +27,12 @@ flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER(
    mqtt_broker_runner_id::MOSQUITTO_PROCESS
 );
 
-std::string
+const log_level
+flightvars_settings::DEFAULT_LOG_LEVEL(
+   log_level::WARN
+);
+
+boost::filesystem::path
 flightvars_settings::default_log_file()
 {
     return "C:\\ProgramData\\OACSD\\FlightVars.log";

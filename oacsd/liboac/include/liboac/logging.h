@@ -25,6 +25,7 @@
 
 #include <liboac/exception.h>
 #include <liboac/stream.h>
+#include <liboac/util/enum.h>
 
 namespace oac { 
 
@@ -45,6 +46,14 @@ enum class log_level
    ERROR,
    FATAL
 };
+
+OAC_DECL_ENUM_CONVERSIONS(log_level,
+   log_level::TRACE, "trace",
+   log_level::INFO, "info",
+   log_level::WARN, "warn",
+   log_level::ERROR, "error",
+   log_level::FATAL, "fatal"
+);
 
 /**
  * The author of each log entry.

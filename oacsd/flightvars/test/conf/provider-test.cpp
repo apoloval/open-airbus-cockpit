@@ -115,11 +115,37 @@ BOOST_AUTO_TEST_CASE(MustReadLoggingFile)
 BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingFile)
 {
    let_test()
-      .with_input("logging.path", "C:\\Path\\To\\Log\\File.log")
       .load_settings()
       .assert_equal(
             flightvars_settings::default_log_file(),
             [](const flightvars_settings& s) { return s.logging.file; });
+}
+
+BOOST_AUTO_TEST_CASE(MustReadLoggingLevel)
+{
+   let_test()
+      .with_input("logging.level", "error")
+      .load_settings()
+      .assert_equal(
+            log_level::ERROR,
+            [](const flightvars_settings& s) { return s.logging.level; });
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnInvalidLoggingLevel)
+{
+   let_test()
+      .with_input("logging.level", "that-unexisting-level")
+      .load_settings()
+      .assert_error<invalid_config_error>();
+}
+
+BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingLevel)
+{
+   let_test()
+      .load_settings()
+      .assert_equal(
+            log_level::WARN,
+            [](const flightvars_settings& s) { return s.logging.level; });
 }
 
 BOOST_AUTO_TEST_CASE(MustReadMqttBrokerRunner)
@@ -143,7 +169,6 @@ BOOST_AUTO_TEST_CASE(MustThrowOnInvalidMqttBrokerRunner)
 BOOST_AUTO_TEST_CASE(MustReadDefaulMqttBrokerRunner)
 {
    let_test()
-      .with_input("mqtt.broker.runner", "mosquitto-process")
       .load_settings()
       .assert_equal(
             flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER,

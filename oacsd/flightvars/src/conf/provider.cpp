@@ -46,6 +46,16 @@ bpt_load_enum_setting(
 }
 
 void
+bpt_load_path(
+      const boost::property_tree::ptree& props,
+      const std::string& prop,
+      const boost::filesystem::path& default_value,
+      boost::filesystem::path& value)
+{
+   value = props.get(prop, default_value.string());
+}
+
+void
 bpt_load_settings(
       const boost::property_tree::ptree& props,
       flightvars_settings& settings)
@@ -54,9 +64,17 @@ throw (invalid_config_error)
    settings.logging.enabled = props.get(
          "logging.enabled",
          true);
-   settings.logging.file = props.get(
+   bpt_load_path(
+         props,
          "logging.file",
-         flightvars_settings::default_log_file());
+         flightvars_settings::default_log_file(),
+         settings.logging.file);
+   bpt_load_enum_setting<
+         log_level, log_level_conversions>(
+         props,
+         "logging.level",
+         flightvars_settings::DEFAULT_LOG_LEVEL,
+         settings.logging.level);
    bpt_load_enum_setting<
          mqtt_broker_runner_id, mqtt_broker_runner_id_conversions>(
          props,

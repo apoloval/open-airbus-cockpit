@@ -21,6 +21,8 @@
 
 #include <string>
 
+#include <boost/filesystem/path.hpp>
+#include <liboac/logging.h>
 #include <liboac/util/enum.h>
 
 namespace oac { namespace fv { namespace conf {
@@ -39,12 +41,14 @@ OAC_DECL_ENUM_CONVERSIONS(mqtt_broker_runner_id,
 struct flightvars_settings
 {
    static const mqtt_broker_runner_id DEFAULT_MQTT_BROKER_RUNNER;
+   static const log_level DEFAULT_LOG_LEVEL;
 
-   static std::string default_log_file();      
+   static boost::filesystem::path default_log_file();
 
    struct {
       bool enabled;
-      std::string file;
+      boost::filesystem::path file;
+      log_level level;
    } logging;
    struct {
       struct
