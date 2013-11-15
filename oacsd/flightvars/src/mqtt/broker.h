@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FLIGHTVARS_BROKER
-#define OAC_FLIGHTVARS_BROKER
+#ifndef OAC_FV_BROKER
+#define OAC_FV_BROKER
 
 #include <cstdint>
 #include <string>

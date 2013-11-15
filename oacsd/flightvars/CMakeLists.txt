@@ -4,9 +4,12 @@ project(FlightVars)
 
 set(flightvars_SOURCES
    FlightVars.def
-   src/mqtt/broker.cpp
    src/dllmain.cpp
    src/main.cpp
+   src/module.h
+   src/conf/provider.cpp
+   src/conf/settings.cpp
+   src/mqtt/broker.cpp
 )
 
 set(flightvars_INCLUDE_DIR
@@ -41,4 +44,7 @@ test_link_libraries(
    fsuipc_user_internal
 )
 
+add_unit_test(conf/provider-test fv)
+
 add_integration_test(mqtt/broker-itest fv)
+add_integration_test(conf/provider-itest fv)

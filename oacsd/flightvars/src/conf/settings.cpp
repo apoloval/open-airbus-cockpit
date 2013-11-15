@@ -16,28 +16,21 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <Windows.h>
+#include <liboac/exception.h>
 
-#include "module.h"
+#include "conf/settings.h"
 
-static std::unique_ptr<oac::fv::flightvars_module> module;
+namespace oac { namespace fv { namespace conf {
 
-void start_module()
+const mqtt_broker_runner_id
+flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER(
+   mqtt_broker_runner_id::MOSQUITTO_PROCESS
+);
+
+std::string
+flightvars_settings::default_log_file()
 {
-   module.reset(new oac::fv::flightvars_module());
+    return "C:\\ProgramData\\OACSD\\FlightVars.log";
 }
 
-void stop_module()
-{
-   module.reset();
-}
-
-void __stdcall DLLStart(void)
-{
-   start_module();
-}
-
-void __stdcall DLLStop(void)
-{
-   stop_module();
-}
+}}} // namespace oac::fv::conf
