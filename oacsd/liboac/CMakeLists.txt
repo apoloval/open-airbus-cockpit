@@ -51,6 +51,7 @@ set(liboac_HEADERS
    include/liboac/stream.h
    include/liboac/stream/adapters.h
    include/liboac/stream/functions.h
+   include/liboac/thread/channel.h
    include/liboac/timing.h
    include/liboac/util/enum.h
    include/liboac/worker.h
@@ -101,6 +102,7 @@ add_unit_test(exception-test liboac)
 add_unit_test(filesystem-test liboac)
 add_unit_test(fsuipc-test liboac)
 add_unit_test(stream-test liboac)
+add_unit_test(thread/channel-test liboac)
 add_unit_test(timing-test liboac)
 
 add_integration_test(simconn-itest liboac)
