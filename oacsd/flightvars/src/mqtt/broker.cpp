@@ -71,6 +71,7 @@ mosquitto_process_runner::shutdown_broker()
    }
    if (
          !TerminateProcess(_proc_info.hProcess, 0) ||
+         WaitForSingleObject(_proc_info.hProcess, INFINITE) == WAIT_FAILED ||
          !CloseHandle(_proc_info.hProcess) ||
          !CloseHandle(_proc_info.hThread))
    {

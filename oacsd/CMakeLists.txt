@@ -37,6 +37,7 @@ find_package(Boost COMPONENTS
    thread
    unit_test_framework
 REQUIRED)
+find_package(Mosquitto REQUIRED)
 find_package(SimConnect REQUIRED)
 
 enable_testing()
