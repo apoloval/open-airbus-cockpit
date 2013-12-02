@@ -241,11 +241,17 @@ mosquitto_client::connect(
       log_error(
             "cannot connect to %s:%d: error code %d",
             host, port, e.get_error_code());
+      disconnect();
+      stop();
+      destroy();
       throw;
    }
    catch (const thread::channel_timeout_error& e)
    {
       log_error("cannot connect to %s:%d: connection timed out", host, port);
+      disconnect();
+      stop();
+      destroy();
       OAC_THROW_EXCEPTION(mosquitto_timeout_error("connect response", e));
    }
 }
