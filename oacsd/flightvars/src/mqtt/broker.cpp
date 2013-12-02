@@ -69,19 +69,44 @@ mosquitto_process_runner::shutdown_broker()
       log_warn("cannot shut down Mosquitto broker: no such process");
       OAC_THROW_EXCEPTION(no_such_broker_error());
    }
-   if (
-         !TerminateProcess(_proc_info.hProcess, 0) ||
-         WaitForSingleObject(_proc_info.hProcess, INFINITE) == WAIT_FAILED ||
-         !CloseHandle(_proc_info.hProcess) ||
-         !CloseHandle(_proc_info.hThread))
+   test_shutdown_action(
+         "terminate Mosquitto broker process",
+         [this]()
+   {
+      return TerminateProcess(_proc_info.hProcess, 0) != 0;
+   });
+   test_shutdown_action(
+         "wait for Mosquitto broker process to finish",
+         [this]()
+   {
+      return WaitForSingleObject(_proc_info.hProcess, INFINITE) != WAIT_FAILED;
+   });
+   test_shutdown_action(
+         "close Mosquitto broker process handler",
+         [this]()
+   {
+      return CloseHandle(_proc_info.hProcess) != 0;
+   });
+   test_shutdown_action(
+         "close Mosquitto broker thread handlers",
+         [this]()
+   {
+      return CloseHandle(_proc_info.hThread) != 0;
+   });
+   log_info("Mosquitto broker shut down successfully");
+}
+
+void
+mosquitto_process_runner::test_shutdown_action(
+      const std::string& action_des,
+      std::function<bool(void)> action)
+{
+   if (!action())
    {
       auto ec = GetLastError();
-      log_error(
-            "cannot terminate Mosquitto broker subprocess: return code %d",
-            ec);
+      log_error("cannot %s: return code %d", action_des, ec);
       OAC_THROW_EXCEPTION(broker_shutdown_error(ec));
    }
-   log_info("Mosquitto broker shut down successfully");
 }
 
 }}} // namespace oac::fv::mqtt

@@ -147,6 +147,8 @@ private:
    void destroy();
 
    async_result wait_for_async(std::function<bool(const async_result&)> pred);
+
+   int make_error_code(int mosq_error);
 };
 
 }}} // namespace oac::fv::mqtt

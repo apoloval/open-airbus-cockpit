@@ -62,7 +62,7 @@ mosquitto_client::publish(
       bool retain)
 {
    log_trace("Publishing %d bytes of data to topic %s", data_len, t.to_string());
-   auto ec = mosquitto_publish(
+   auto error = mosquitto_publish(
          _mosq,                  // mosq
          nullptr,                // mid
          t.to_c_str(),           // topic
@@ -71,8 +71,8 @@ mosquitto_client::publish(
          static_cast<int>(qos),  // qos
          retain                  // retain
    );
-   if (ec != MOSQ_ERR_SUCCESS)
-      OAC_THROW_EXCEPTION(publish_error(t, ec));
+   if (error != MOSQ_ERR_SUCCESS)
+      OAC_THROW_EXCEPTION(publish_error(t, make_error_code(error)));
 }
 
 void
@@ -82,14 +82,15 @@ mosquitto_client::subscribe(
 {
    log_info("subscribing to topic pattern %s... ", pattern.to_string());
    int mid;
-   auto ec = mosquitto_subscribe(
+   auto error = mosquitto_subscribe(
       _mosq,                  // mosq
       &mid,                   // mid
       pattern.to_c_str(),     // sub
       static_cast<int>(qos)   // qos
    );
-   if (ec != MOSQ_ERR_SUCCESS)
+   if (error != MOSQ_ERR_SUCCESS)
    {
+      auto ec = make_error_code(error);
       log_error(
             "subscription to %s failed: error code %d",
             pattern.to_string(), ec);
@@ -224,9 +225,10 @@ mosquitto_client::connect(
          host, port, keepalive);
    try
    {
-      auto ec = mosquitto_connect(_mosq, host.c_str(), port, keepalive);
-      if (ec != MOSQ_ERR_SUCCESS)
-         OAC_THROW_EXCEPTION(connection_error(host, port, ec));
+      auto error = mosquitto_connect(_mosq, host.c_str(), port, keepalive);
+      if (error != MOSQ_ERR_SUCCESS)
+         OAC_THROW_EXCEPTION(
+               connection_error(host, port, make_error_code(error)));
 
       wait_for_async([](const async_result& r)
       {
@@ -273,24 +275,24 @@ mosquitto_client::set_callbacks()
 void
 mosquitto_client::start()
 {
-   auto ec = mosquitto_loop_start(_mosq);
-   if (ec != MOSQ_ERR_SUCCESS)
+   auto error = mosquitto_loop_start(_mosq);
+   if (error != MOSQ_ERR_SUCCESS)
    {
       OAC_THROW_EXCEPTION(mosquitto_internal_error(
             "starting internal loop",
-            ec));
+            make_error_code(error)));
    }
 }
 
 void
 mosquitto_client::stop()
 {
-   auto ec = mosquitto_loop_stop(_mosq, false);
-   if (ec != MOSQ_ERR_SUCCESS)
+   auto error = mosquitto_loop_stop(_mosq, true);
+   if (error != MOSQ_ERR_SUCCESS)
    {
       OAC_THROW_EXCEPTION(mosquitto_internal_error(
             "starting internal loop",
-            ec));
+            make_error_code(error)));
    }
 }
 
@@ -298,24 +300,33 @@ void
 mosquitto_client::disconnect()
 {
    log_info("disconnecting from %s:%d... ", _server_host, _server_port);
-   if (_mosq && (mosquitto_disconnect(_mosq) == MOSQ_ERR_SUCCESS))
+   if (!_mosq)
    {
-      try
-      {
-         wait_for_async([](const async_result& r)
-         {
-            return r.op == async_op::DISCONNECT;
-         });
-         log_info("disconnected sucessfully");
-      }
-      catch (const thread::channel_timeout_error&)
-      {
-      log_error("cannot disconnect from broker: disconnection timed out");
-      }
+      log_error("cannot disconnect from broker: mosquitto was not initialized");
+      return;
    }
-   else
-      log_error("cannot disconnect from broker: "
-                "invalid mosq object or disconnect error");
+
+   auto error = mosquitto_disconnect(_mosq);
+   if (error != MOSQ_ERR_SUCCESS)
+   {
+      log_error(
+            "cannot disconnect from broker: error code %d",
+            make_error_code(error));
+      return;
+   }
+
+   try
+   {
+      wait_for_async([](const async_result& r)
+      {
+         return r.op == async_op::DISCONNECT;
+      });
+      log_info("disconnected sucessfully");
+   }
+   catch (const thread::channel_timeout_error&)
+   {
+      log_error("cannot disconnect from broker: disconnection timed out");
+   }
 }
 
 void
@@ -331,13 +342,14 @@ mosquitto_client::async_result
 mosquitto_client::wait_for_async(
       std::function<bool(const async_result&)> pred)
 {
-   while (true)
-   {
-      auto result = _async_result_chan.read_for(DEFAULT_MSG_TIMEOUT);
-      if (pred(result))
-         return result;
-      _async_result_chan.write(result);
-   }
+   return _async_result_chan.read_for(DEFAULT_MSG_TIMEOUT, pred);
+}
+
+int
+mosquitto_client::make_error_code(
+      int mosq_error)
+{
+   return mosq_error * 100 + errno;
 }
 
 }}} // namespace oac::fv::mqtt

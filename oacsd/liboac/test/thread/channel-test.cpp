@@ -32,10 +32,14 @@ struct let_test
 
    ~let_test()
    {
-      _reader.join();
+      for (auto& reader : _readers)
+      {
+         if (reader.get_id() != std::thread::id {} && reader.joinable())
+            reader.join();
+	   }
    }
 
-   template< class Rep, class Period >
+   template <class Rep, class Period>
    let_test& set_timeout(const std::chrono::duration<Rep,Period>& timeout)
    {
       _chan.set_timeout(timeout);
@@ -48,37 +52,63 @@ struct let_test
       return *this;
    }
 
-   let_test& read(int expected_message)
+   template <class Rep, class Period>
+   let_test& write_message_and_wait(
+         int msg,
+         const std::chrono::duration<Rep,Period>& time)
    {
-      _reader = std::thread([this, expected_message]()
-      {
-         BOOST_CHECK_EQUAL(expected_message, _chan.read());
-      });
+      write_message(msg);
+      std::this_thread::sleep_for(time);
       return *this;
    }
 
-   template< class Rep, class Period >
+   let_test& read(
+         int expected_message,
+         const thread::channel<int>::message_predicate& pred =
+               thread::channel<int>::any_message_pred)
+   {
+      _readers.push_back(std::thread([this, expected_message, pred]()
+      {
+         int msg;
+         BOOST_CHECK_NO_THROW(msg = _chan.read(pred));
+         BOOST_CHECK_EQUAL(expected_message, msg);
+      }));
+      return *this;
+   }
+
+   template <class Rep, class Period>
    let_test& read_for(
          int expected_message,
-         const std::chrono::duration<Rep,Period>& timeout)
+         const std::chrono::duration<Rep,Period>& timeout,
+         const thread::channel<int>::message_predicate& pred =
+               thread::channel<int>::any_message_pred)
    {
-      _reader = std::thread([this, expected_message, timeout]()
+      _readers.push_back(std::thread([this, expected_message, timeout, pred]()
       {
-         BOOST_CHECK_EQUAL(expected_message, _chan.read_for(timeout));
-      });
+         BOOST_CHECK_EQUAL(expected_message, _chan.read_for(timeout, pred));
+      }));
       return *this;
    }
 
-   template< class Rep, class Period >
+   template <class Rep, class Period>
    let_test& read_for_and_timeout(
-         const std::chrono::duration<Rep,Period>& timeout)
+         const std::chrono::duration<Rep,Period>& timeout,
+         const thread::channel<int>::message_predicate& pred =
+               thread::channel<int>::any_message_pred)
    {
-      _reader = std::thread([this, timeout]()
+      using namespace std::chrono;
+      _readers.push_back(std::thread([this, timeout, pred]()
       {
+         auto t1 = steady_clock::now();
          BOOST_CHECK_THROW(
-               _chan.read_for(timeout),
+               _chan.read_for(timeout, pred),
                thread::channel_timeout_error);
-      });
+         auto t2 = steady_clock::now();
+         auto elapsed = duration_cast<std::chrono::duration<Rep,Period>>(t2 - t1);
+         // elapsed time is not greater than timeout + 15ms
+         BOOST_CHECK_GE(15, std::abs(elapsed.count() - timeout.count()));
+
+      }));
       return *this;
    }
 
@@ -86,7 +116,7 @@ private:
 
    thread::channel<int> _chan;
    int _received_message;
-   std::thread _reader;
+   std::list<std::thread> _readers;
 };
 
 BOOST_AUTO_TEST_CASE(MustReceiveMessageAlreadyInMailbox)
@@ -115,6 +145,41 @@ BOOST_AUTO_TEST_CASE(MustHonourConfiguredTimeout)
          .set_timeout(std::chrono::milliseconds(50))
          .read(1234)
          .write_message(1234);
+}
+
+BOOST_AUTO_TEST_CASE(MustIgnoreFilteredMessages)
+{
+   let_test()
+         .write_message(20)
+         .write_message(30)
+         .write_message(40)
+         .write_message(1234)
+         .read(1234, [](const int& msg) { return msg > 1024; });
+}
+
+BOOST_AUTO_TEST_CASE(MustFilterButNotDropMessages)
+{
+   let_test()
+         .write_message(20)
+         .write_message(30)
+         .write_message(40)
+         .write_message(1234)
+         .read(1234, [](const int& msg) { return msg > 1024; })
+         .read(20, [](const int& msg) { return msg < 1024; });
+}
+
+BOOST_AUTO_TEST_CASE(MustHonourConfiguredWhileIgnoringMessages)
+{
+   let_test()
+         .read_for_and_timeout(std::chrono::milliseconds(50), [](const int& msg)
+         {
+            return msg > 1024;
+         })
+         .write_message_and_wait(20, std::chrono::milliseconds(20))
+         .write_message_and_wait(30, std::chrono::milliseconds(20))
+         .write_message_and_wait(40, std::chrono::milliseconds(20))
+         .write_message_and_wait(50, std::chrono::milliseconds(20))
+         .write_message_and_wait(60, std::chrono::milliseconds(20));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

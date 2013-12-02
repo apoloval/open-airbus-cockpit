@@ -36,7 +36,7 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(broker_run_error, broker_exception,
       "cannot create subprocess with Mosquitto broker: error code %d",
       error_code
    ),
-   (error_code, std::uint32_t)
+   (error_code, int)
 );
 
 OAC_DECL_EXCEPTION_WITH_PARAMS(broker_shutdown_error, broker_exception,
@@ -44,7 +44,7 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(broker_shutdown_error, broker_exception,
       "cannot terminate subprocess with Mosquitto broker: error code %d",
       error_code
    ),
-   (error_code, std::uint32_t)
+   (error_code, int)
 );
 
 OAC_DECL_EXCEPTION(
@@ -81,6 +81,10 @@ private:
 
    std::wstring _command_line;
    PROCESS_INFORMATION _proc_info;
+
+   void test_shutdown_action(
+         const std::string& action_des,
+         std::function<bool(void)> action);
 };
 
 }}} // namespace oac::fv::mqtt

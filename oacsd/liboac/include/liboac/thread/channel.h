@@ -21,8 +21,8 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <list>
 #include <mutex>
-#include <queue>
 
 #include <liboac/exception.h>
 
@@ -45,7 +45,21 @@ class channel
 {
 public:
 
+   /**
+    * A predicate on a message object. This predicate type is used by readers
+    * to filter the messages. For any new message in the channel, the reader
+    * will evaluate it using the predicate. If true, the message is returned
+    * as result of the read operation. Otherwise, the message is
+    */
+   typedef std::function<bool(const Message&)> message_predicate;
+
+   static bool any_message_pred(const Message&) { return true; }
+
    channel() : _timeout(std::chrono::microseconds::max()) {}
+
+   channel(const channel& chan) = delete;
+
+   channel& operator = (const channel& chan) = delete;
 
    /**
     * Write the given message into this channel.
@@ -66,7 +80,7 @@ public:
       return *this;
    }
 
-   template< class Rep, class Period >
+   template <typename Rep, typename Period>
    void set_timeout(const std::chrono::duration<Rep,Period>& timeout)
    {
       std::lock_guard<std::mutex> lock(_mutex);
@@ -82,41 +96,57 @@ public:
    void write(const Message& msg)
    {
       std::lock_guard<std::mutex> lock(_mutex);
-      _messages.push(msg);
+      _messages.push_back(msg);
       _new_msg.notify_all();
    }
 
    /**
     * Read a messsage from this channel. This operation invokes read_for()
     * with the channel timeout value. By default, it is set to infinity, but
-    * it can be overriden using the set_timeout() function.
+    * it can be overriden using the set_timeout() function. The message
+    * predicate is used to filter those messages that are not to be read.
     */
-   Message read()
-   { return read_for(_timeout); }
+   Message read(const message_predicate& msg_pred = any_message_pred)
+   { return read_for(_timeout, msg_pred); }
 
    /**
     * Read a message before given timeout. If there is any queued message,
     * it will be returned. Otherwise, the caller thread will be blocked until
-    * a new message is written or the given timeout, what happens first.
+    * a new message is written or the given timeout, what happens first. The
+    * message predicate is used to filter those messages that are not to be
+    * read.
     */
-   template< class Rep, class Period >
-   Message read_for(const std::chrono::duration<Rep,Period>& timeout)
+   template <typename Rep, typename Period>
+   Message read_for(
+         const std::chrono::duration<Rep,Period>& timeout,
+         const message_predicate& msg_pred = any_message_pred)
    {
-      std::unique_lock<std::mutex> lock(_mutex);
-      while (_messages.empty())
+      using namespace std::chrono;
+      std::unique_lock<std::mutex> lock { _mutex };
+      auto sleep_for = timeout;
+      while (true)
       {
-         if (_new_msg.wait_for(lock, timeout) == std::cv_status::timeout)
-            OAC_THROW_EXCEPTION(channel_timeout_error());
+         auto msg = std::find_if(_messages.begin(), _messages.end(), msg_pred);
+         if (msg != _messages.end())
+         {
+            auto result = *msg;
+            lock.unlock();
+            return result;
+         }
+         else
+         {
+            auto t1 = steady_clock::now();
+            if (_new_msg.wait_for(lock, sleep_for) == std::cv_status::timeout)
+               OAC_THROW_EXCEPTION(channel_timeout_error());
+            auto t2 = steady_clock::now();
+            sleep_for -= duration_cast<decltype(sleep_for)>(t2 - t1);
+         }
       }
-      auto result = _messages.front();
-      _messages.pop();
-      lock.unlock();
-      return result;
    }
 
 private:
 
-   typedef std::queue<Message> message_queue;
+   typedef std::list<Message> message_queue;
 
    message_queue _messages;
    std::mutex _mutex;
