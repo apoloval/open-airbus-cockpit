@@ -2,6 +2,18 @@ cmake_minimum_required(VERSION 2.8)
 
 project(liboac)
 
+###
+# Project files
+#
+include_directories(
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   ${fsuipc_user_INCLUDE_DIR}
+)
+
+set(liboac_INCLUDE_DIR
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   PARENT_SCOPE)
+
 set(liboac_HEADERS
    include/liboac/attempt.h
    include/liboac/buffer.h
@@ -51,6 +63,7 @@ set(liboac_HEADERS
    include/liboac/stream.h
    include/liboac/stream/adapters.h
    include/liboac/stream/functions.h
+   include/liboac/test.h
    include/liboac/thread/channel.h
    include/liboac/thread/monitor.h
    include/liboac/timing.h
@@ -69,15 +82,33 @@ set(liboac_SOURCES
    src/timing.cpp
 )
 
-set(liboac_INCLUDE_DIR
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
-   PARENT_SCOPE)
-
-include_directories(
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${fsuipc_user_INCLUDE_DIR}
+set(liboac_UNIT_TESTS
+   test/unit-test/attempt-test.h
+   test/unit-test/buffer-test.h
+   test/unit-test/buffer/asio_handler-test.h
+   test/unit-test/concurrency-test.h
+   test/unit-test/exception-test.h
+   test/unit-test/filesystem-test.h
+   test/unit-test/fsuipc-test.h
+   test/unit-test/stream-test.h
+   test/unit-test/thread/channel-test.h
+   test/unit-test/thread/monitor-test.h
+   test/unit-test/timing-test.h
 )
 
+set(liboac_INTEGRATION_TESTS
+   test/integration-test/logging-itest.h
+   test/integration-test/simconn-itest.h
+   test/integration-test/timing-itest.h
+   test/integration-test/network/async_client-itest.h
+   test/integration-test/network/async_server-itest.h
+   test/integration-test/network/client-itest.h
+   test/integration-test/network/server-itest.h
+)
+
+###
+# liboac static library
+#
 add_library(liboac STATIC
    ${liboac_SOURCES}
    ${liboac_HEADERS})
@@ -88,29 +119,31 @@ target_link_libraries(liboac
    fsuipc_user_internal
 )
 
-test_link_libraries(
+###
+# Unit tests executable
+#
+add_executable(liboac-unittest test/unit-test/main.cpp ${liboac_UNIT_TESTS})
+
+target_link_libraries(liboac-unittest
       liboac
       fsuipc_user_internal
       ${SIM_CONNECT_LIBRARY}
       ${Boost_LIBRARIES}
 )
+add_test(NAME "liboac unit tests" COMMAND liboac-unittest)
 
-add_unit_test(attempt-test liboac)
-add_unit_test(buffer-test liboac)
-add_unit_test(buffer/asio_handler-test liboac)
-add_unit_test(concurrency-test liboac)
-add_unit_test(exception-test liboac)
-add_unit_test(filesystem-test liboac)
-add_unit_test(fsuipc-test liboac)
-add_unit_test(stream-test liboac)
-add_unit_test(thread/channel-test liboac)
-add_unit_test(thread/monitor-test liboac)
-add_unit_test(timing-test liboac)
+###
+# Integration tests executable
+#
 
-add_integration_test(simconn-itest liboac)
-add_integration_test(logging-itest liboac)
-add_integration_test(network/async_client-itest liboac_network)
-add_integration_test(network/async_server-itest liboac_network)
-add_integration_test(network/client-itest liboac_network)
-add_integration_test(network/server-itest liboac_network)
-add_integration_test(timing-itest liboac)
+add_executable(liboac-integrationtest
+      test/integration-test/main.cpp
+      ${liboac_INTEGRATION_TESTS}
+)
+
+target_link_libraries(liboac-integrationtest
+      liboac
+      fsuipc_user_internal
+      ${SIM_CONNECT_LIBRARY}
+      ${Boost_LIBRARIES}
+)
