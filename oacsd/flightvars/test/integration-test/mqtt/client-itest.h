@@ -16,7 +16,6 @@
  * along with Open Airbus Cockpit. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
 #include <thread>
@@ -177,7 +176,6 @@ private:
    }
 };
 
-/*
 BOOST_AUTO_TEST_CASE(MustConnectAndDisconnectToBroker)
 {
    let_test()
@@ -186,7 +184,6 @@ BOOST_AUTO_TEST_CASE(MustConnectAndDisconnectToBroker)
          .disconnect()
          .assert_no_error();
 }
-*/
 
 BOOST_AUTO_TEST_CASE(MustThrowOnConnectionError)
 {
@@ -195,7 +192,6 @@ BOOST_AUTO_TEST_CASE(MustThrowOnConnectionError)
          .assert_error<mqtt::connection_error>();
 }
 
-/*
 BOOST_AUTO_TEST_CASE(MustPublishSubscribe)
 {
    let_test()
@@ -223,6 +219,5 @@ BOOST_AUTO_TEST_CASE(MustPublishInBurst)
          .disconnect_probe()
          .assert_no_error();
 }
-*/
 
 BOOST_AUTO_TEST_SUITE_END()

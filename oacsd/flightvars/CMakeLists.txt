@@ -2,6 +2,23 @@ cmake_minimum_required(VERSION 2.8)
 
 project(FlightVars)
 
+###
+# Project files
+#
+include_directories(
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   ${CMAKE_CURRENT_SOURCE_DIR}/src
+   ${Boost_INCLUDE_DIR}
+   ${MOSQUITTO_INCLUDE_DIR}
+   ${SIM_CONNECT_INCLUDE_DIR}
+   ${fsuipc_user_INCLUDE_DIR}
+   ${liboac_INCLUDE_DIR}
+)
+
+set(flightvars_INCLUDE_DIR
+   ${CMAKE_CURRENT_SOURCE_DIR}/include
+   PARENT_SCOPE)
+
 set(flightvars_SOURCES
    FlightVars.def
    src/dllmain.cpp
@@ -15,22 +32,21 @@ set(flightvars_SOURCES
    src/mqtt/topic.h
 )
 
-set(flightvars_INCLUDE_DIR
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
-   PARENT_SCOPE)
+set(flightvars_UNIT_TESTS
+   test/unit-test/conf/provider-test.h
+   test/unit-test/mqtt/topic-test.h
+)
 
-include_directories(
-   ${CMAKE_CURRENT_SOURCE_DIR}/include
-   ${CMAKE_CURRENT_SOURCE_DIR}/src
-   ${Boost_INCLUDE_DIR}
-   ${MOSQUITTO_INCLUDE_DIR}
-   ${SIM_CONNECT_INCLUDE_DIR}
-   ${fsuipc_user_INCLUDE_DIR}
-   ${liboac_INCLUDE_DIR}
-   )
+set(flightvars_INTEGRATION_TESTS
+   test/integration-test/conf/provider-itest.h
+   test/integration-test/mqtt/broker-itest.h
+   test/integration-test/mqtt/client-itest.h
+)
 
+###
+# FlightVars plugin DLL target
+#
 add_library(FlightVars SHARED ${flightvars_SOURCES} ${flightvars_HEADERS})
-add_library(FlightVars_Static STATIC ${flightvars_SOURCES} ${flightvars_HEADERS})
 
 target_link_libraries(FlightVars
    ${Boost_LIBRARIES}
@@ -40,7 +56,20 @@ target_link_libraries(FlightVars
    liboac
 )
 
-test_link_libraries(
+###
+# FlightVars static library (for testing purposes)
+#
+add_library(FlightVars_Static STATIC ${flightvars_SOURCES} ${flightvars_HEADERS})
+
+###
+# Unit tests executable
+#
+add_executable(flightvars-unittest
+   test/unit-test/main.cpp
+   ${flightvars_UNIT_TESTS}
+)
+
+target_link_libraries(flightvars-unittest
    liboac
    FlightVars_Static
    ${Boost_LIBRARIES}
@@ -49,9 +78,21 @@ test_link_libraries(
    fsuipc_user_internal
 )
 
-add_unit_test(conf/provider-test fv)
-add_unit_test(mqtt/topic-test fv)
+add_test(NAME "flightvars unit tests" COMMAND flightvars-unittest)
 
-add_integration_test(mqtt/broker-itest fv)
-add_integration_test(mqtt/client-itest fv)
-add_integration_test(conf/provider-itest fv)
+###
+# Integration tests executable
+#
+add_executable(flightvars-integrationtest
+   test/integration-test/main.cpp
+   ${flightvars_INTEGRATION_TESTS}
+)
+
+target_link_libraries(flightvars-integrationtest
+   liboac
+   FlightVars_Static
+   ${Boost_LIBRARIES}
+   ${MOSQUITTO_LIBRARY}
+   ${SIM_CONNECT_LIBRARY}
+   fsuipc_user_internal
+)
