@@ -26,7 +26,8 @@ set(flightvars_SOURCES
    src/module.h
    src/conf/provider.cpp
    src/conf/settings.cpp
-   src/mqtt/broker.cpp
+   src/mqtt/broker.h
+   src/mqtt/broker_mosquitto.cpp
    src/mqtt/client.cpp
    src/mqtt/client_mosquitto.cpp
    src/mqtt/topic.h

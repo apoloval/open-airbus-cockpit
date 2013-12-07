@@ -63,7 +63,6 @@ set(liboac_HEADERS
    include/liboac/stream.h
    include/liboac/stream/adapters.h
    include/liboac/stream/functions.h
-   include/liboac/test.h
    include/liboac/thread/channel.h
    include/liboac/thread/monitor.h
    include/liboac/timing.h

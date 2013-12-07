@@ -23,7 +23,7 @@
 #include <liboac/filesystem.h>
 #include <liboac/logging.h>
 
-#include "mqtt/broker.h"
+#include "mqtt/broker_mosquitto.h"
 
 using namespace oac;
 using namespace oac::fv;

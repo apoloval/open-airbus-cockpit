@@ -19,39 +19,11 @@
 #ifndef OAC_FV_BROKER
 #define OAC_FV_BROKER
 
-#include <cstdint>
-#include <string>
-
-#include <Windows.h>
-
 #include <liboac/exception.h>
-#include <liboac/logging.h>
 
 namespace oac { namespace fv { namespace mqtt {
 
 OAC_DECL_ABSTRACT_EXCEPTION(broker_exception);
-
-OAC_DECL_EXCEPTION_WITH_PARAMS(broker_run_error, broker_exception,
-   (
-      "cannot create subprocess with Mosquitto broker: error code %d",
-      error_code
-   ),
-   (error_code, int)
-);
-
-OAC_DECL_EXCEPTION_WITH_PARAMS(broker_shutdown_error, broker_exception,
-   (
-      "cannot terminate subprocess with Mosquitto broker: error code %d",
-      error_code
-   ),
-   (error_code, int)
-);
-
-OAC_DECL_EXCEPTION(
-      no_such_broker_error,
-      broker_exception,
-      "cannot terminate subprocess with Mosquitto broker: no such subprocess"
-);
 
 /**
  * An object able to run a MQTT broker.
@@ -63,28 +35,6 @@ public:
    virtual void run_broker() throw (broker_exception) = 0;
 
    virtual void shutdown_broker() throw (broker_exception) = 0;
-};
-
-class mosquitto_process_runner :
-      public oac::logger_component,
-      public broker_runner
-{
-public:
-
-   mosquitto_process_runner();
-
-   virtual void run_broker() throw (broker_exception);
-
-   virtual void shutdown_broker() throw (broker_exception);
-
-private:
-
-   std::wstring _command_line;
-   PROCESS_INFORMATION _proc_info;
-
-   void test_shutdown_action(
-         const std::string& action_des,
-         std::function<bool(void)> action);
 };
 
 }}} // namespace oac::fv::mqtt

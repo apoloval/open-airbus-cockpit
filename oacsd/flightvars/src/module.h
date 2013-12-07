@@ -25,6 +25,7 @@
 #include "conf/provider.h"
 #include "conf/settings.h"
 #include "mqtt/broker.h"
+#include "mqtt/broker_mosquitto.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\FlightVars.log"
 #define CONFIG_DIR "C:\\ProgramData\\OACSD"
