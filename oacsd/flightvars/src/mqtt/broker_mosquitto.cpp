@@ -16,6 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#include <liboac/util/win.h>
+
 #include "mqtt/broker_mosquitto.h"
 
 namespace oac { namespace fv { namespace mqtt {
@@ -69,31 +71,20 @@ mosquitto_process_runner::shutdown_broker()
       log_warn("cannot shut down Mosquitto broker: no such process");
       OAC_THROW_EXCEPTION(no_such_broker_error());
    }
-   test_shutdown_action(
-         "terminate Mosquitto broker process",
-         [this]()
+   try
    {
-      return TerminateProcess(_proc_info.hProcess, 0) != 0;
-   });
-   test_shutdown_action(
-         "wait for Mosquitto broker process to finish",
-         [this]()
+      OAC_CALL_WIN32_EXPECT_NOT_NULL(TerminateProcess, _proc_info.hProcess, 0);
+      OAC_CALL_WIN32_EXPECT_NOT(
+            WAIT_FAILED, WaitForSingleObject, _proc_info.hProcess, INFINITE);
+      OAC_CALL_WIN32_EXPECT_NOT_NULL(CloseHandle, _proc_info.hProcess);
+      OAC_CALL_WIN32_EXPECT_NOT_NULL(CloseHandle, _proc_info.hThread);
+      log_info("Mosquitto broker shut down successfully");
+   }
+   catch (const util::win32_exception& e)
    {
-      return WaitForSingleObject(_proc_info.hProcess, INFINITE) != WAIT_FAILED;
-   });
-   test_shutdown_action(
-         "close Mosquitto broker process handler",
-         [this]()
-   {
-      return CloseHandle(_proc_info.hProcess) != 0;
-   });
-   test_shutdown_action(
-         "close Mosquitto broker thread handlers",
-         [this]()
-   {
-      return CloseHandle(_proc_info.hThread) != 0;
-   });
-   log_info("Mosquitto broker shut down successfully");
+      log_error("cannot shutdown mosquitto broker: %s", e.report());
+      OAC_THROW_EXCEPTION(broker_shutdown_error(e.get_error_code(), e));
+   }
 }
 
 void

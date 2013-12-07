@@ -67,6 +67,7 @@ set(liboac_HEADERS
    include/liboac/thread/monitor.h
    include/liboac/timing.h
    include/liboac/util/enum.h
+   include/liboac/util/win.h
    include/liboac/worker.h
 )
 
