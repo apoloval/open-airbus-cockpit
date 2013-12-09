@@ -124,7 +124,7 @@ BOOST_AUTO_TEST_CASE(MustReadConfigFromJsonIfJsonAndXmlAreAvailable)
                "mqtt.broker.runner", "mosquitto-process")
          .given_xml_config(
                "logging.enabled", "false",
-               "mqtt.broker.runner", "mosquitto-service")
+               "mqtt.broker.runner", "none")
          .load_config()
          .assert_equal(
                true,
@@ -139,13 +139,13 @@ BOOST_AUTO_TEST_CASE(MustReadConfigFromXmlIfJsonIsNotPresent)
    let_test()
          .given_xml_config(
                "logging.enabled", "false",
-               "mqtt.broker.runner", "mosquitto-service")
+               "mqtt.broker.runner", "mosquitto-process")
          .load_config()
          .assert_equal(
                false,
                [](const flightvars_settings& s) { return s.logging.enabled; })
          .assert_equal(
-               mqtt_broker_runner_id::MOSQUITTO_SERVICE,
+               mqtt_broker_runner_id::MOSQUITTO_PROCESS,
                [](const flightvars_settings& s) { return s.mqtt.broker.runner; });
 }
 
@@ -157,7 +157,7 @@ BOOST_AUTO_TEST_CASE(MustReadDefaultConfigIfJsonAndXmlAreNotPresent)
                true,
                [](const flightvars_settings& s) { return s.logging.enabled; })
          .assert_equal(
-               mqtt_broker_runner_id::MOSQUITTO_PROCESS,
+               mqtt_broker_runner_id::NONE,
                [](const flightvars_settings& s) { return s.mqtt.broker.runner; });
 }
 

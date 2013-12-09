@@ -150,10 +150,10 @@ BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingLevel)
 BOOST_AUTO_TEST_CASE(MustReadMqttBrokerRunner)
 {
    let_test()
-      .with_input("mqtt.broker.runner", "mosquitto-service")
+      .with_input("mqtt.broker.runner", "mosquitto-process")
       .load_settings()
       .assert_equal(
-            mqtt_broker_runner_id::MOSQUITTO_SERVICE,
+            mqtt_broker_runner_id::MOSQUITTO_PROCESS,
             [](const flightvars_settings& s) { return s.mqtt.broker.runner; });
 }
 

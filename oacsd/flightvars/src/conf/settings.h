@@ -29,13 +29,13 @@ namespace oac { namespace fv { namespace conf {
 
 enum class mqtt_broker_runner_id
 {
+   NONE,
    MOSQUITTO_PROCESS,
-   MOSQUITTO_SERVICE,
 };
 
 OAC_DECL_ENUM_CONVERSIONS(mqtt_broker_runner_id,
-   mqtt_broker_runner_id::MOSQUITTO_PROCESS, "mosquitto-process",
-   mqtt_broker_runner_id::MOSQUITTO_SERVICE, "mosquitto-service"
+   mqtt_broker_runner_id::NONE, "none",
+   mqtt_broker_runner_id::MOSQUITTO_PROCESS, "mosquitto-process"
 );
 
 struct flightvars_settings

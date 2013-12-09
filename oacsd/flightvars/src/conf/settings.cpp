@@ -24,7 +24,7 @@ namespace oac { namespace fv { namespace conf {
 
 const mqtt_broker_runner_id
 flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER(
-   mqtt_broker_runner_id::MOSQUITTO_PROCESS
+   mqtt_broker_runner_id::NONE
 );
 
 const log_level
