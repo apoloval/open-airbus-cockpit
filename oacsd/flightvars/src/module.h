@@ -19,6 +19,8 @@
 #ifndef OAC_FV_FLIGHTVARS_MODULE_H
 #define OAC_FV_FLIGHTVARS_MODULE_H
 
+#include <codecvt>
+
 #include <liboac/filesystem.h>
 #include <liboac/logging.h>
 
@@ -42,7 +44,9 @@ public:
       {
          read_config();
          logging_setup();
+         log_info("initializing FlightVars module... ");
          mqtt_broker_setup();
+         log_info("FlightVars module successfully initialized");
       }
       catch (oac::exception& e)
       {
@@ -64,7 +68,9 @@ public:
    {
       try
       {
+         log_info("terminating FlightVars module... ");
          mqtt_broker_teardown();
+         log_info("FlightVars module successfully terminated");
       }
       catch (oac::exception& e)
       {
@@ -87,7 +93,26 @@ private:
    void read_config()
    {
       // Logging is not ready: do not log
-      conf::bpt_config_provider(CONFIG_DIR).load_settings(_settings);
+      try
+      {
+         conf::bpt_config_provider(CONFIG_DIR).load_settings(_settings);
+      }
+      catch (const conf::invalid_config_error& e)
+      {
+         std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+         auto msg = oac::format(
+               "Unexpected error occured while reading FlightVars config "
+               "from %s: %s! Please correct the config file and run again.",
+               CONFIG_DIR,
+               e.message());
+         MessageBox(
+               NULL,
+               converter.from_bytes(msg).c_str(),
+               L"FlightVars warning",
+               MB_OK | MB_ICONEXCLAMATION);
+         // Rethrow the exception and let the plugin uninitialized
+         throw;
+      }
    }
 
    void logging_setup()
@@ -105,9 +130,6 @@ private:
    {
       typedef conf::mqtt_broker_runner_id_conversions conv;
       auto runner = _settings.mqtt.broker.runner;
-      log_info(
-            "setting up MQTT broker runner using %s... ",
-            conv::to_string(runner));
       switch (_settings.mqtt.broker.runner)
       {
          case conf::mqtt_broker_runner_id::MOSQUITTO_PROCESS:
@@ -116,17 +138,29 @@ private:
          // TODO: cover other cases
       }
       if (_mbr)
+      {
+         log_info(
+               "running MQTT broker using runner %s... ",
+               conv::to_string(runner));
          _mbr->run_broker();
-      log_info("MQTT broker runner loaded successfully");
+         log_info("MQTT broker run successfully");
+      }
+      else
+         log_info("no MQTT broker runner configured: broker run omitted");
    }
 
    void mqtt_broker_teardown()
    {
-      log_info("Shutting down MQTT broker runner... ");
       if (_mbr)
+      {
+         log_info("shutting down MQTT broker runner... ");
          _mbr->shutdown_broker();
-      _mbr.reset();
-      log_info("MQTT broker runner shut down successfully");
+         _mbr.reset();
+         log_info("MQTT broker runner shut down successfully");
+      }
+      else
+         log_info(
+               "no MQTT broker runner was configured: broker shutdown omitted");
    }
 
 private:
