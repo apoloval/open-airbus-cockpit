@@ -115,7 +115,7 @@ inline
 void
 async_tcp_connection::on_io_completed_with_promise(
       const std::shared_ptr<std::promise<std::size_t>>& promise,
-      const attempt<std::size_t>& nbytes)
+      const util::attempt<std::size_t>& nbytes)
 {
    try
    {

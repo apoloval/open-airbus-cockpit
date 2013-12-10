@@ -61,7 +61,7 @@ void write_msg(
 {
    auto buff = std::make_shared<ring_buffer>(512);
    stream::write_as_string(*buff, "Hello World!");
-   conn->write(*buff, [buff](const attempt<std::size_t>& nbytes) {});
+   conn->write(*buff, [buff](const util::attempt<std::size_t>& nbytes) {});
 }
 
 template <typename OnReceivedHandler,
@@ -73,7 +73,7 @@ void receive_msg(
       OnReceivedHandler handler)
 {
    conn->read(*buff, [conn, buff, expected_msg, handler](
-      const attempt<std::size_t>& nbytes)
+      const util::attempt<std::size_t>& nbytes)
   {
       auto expected_len = sizeof(char) * expected_msg.length();
       if (buff->available_for_read() < expected_len)
@@ -98,7 +98,7 @@ void receive_dwords(
 {
    auto to_read = expected_dwords_count * sizeof(std::uint32_t);
    conn->read(*buff, [conn, buff, handler, to_read, expected_dwords_count](
-         const attempt<std::size_t>& nbytes)
+         const util::attempt<std::size_t>& nbytes)
    {
       if (buff->available_for_read() < to_read)
          receive_dwords(conn, buff, expected_dwords_count, handler);

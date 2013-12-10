@@ -47,7 +47,7 @@ struct async_io_handler
       if (!ec)
       {
          _update_index(nbytes);
-         _handler(make_success(nbytes));
+         _handler(util::make_success(nbytes));
       }
       else
       {
@@ -55,16 +55,16 @@ struct async_io_handler
          switch (ecv)
          {
             case boost::asio::error::eof:
-               _handler(make_failure<std::size_t>(
+               _handler(util::make_failure<std::size_t>(
                      OAC_MAKE_EXCEPTION(io::eof_error())));
                break;
             case boost::asio::error::connection_aborted:
             case boost::asio::error::connection_reset:
-               _handler(make_failure<std::size_t>(
+               _handler(util::make_failure<std::size_t>(
                      OAC_MAKE_EXCEPTION(network::connection_reset())));
                break;
             default:
-               _handler(make_failure<std::size_t>(
+               _handler(util::make_failure<std::size_t>(
                      OAC_MAKE_EXCEPTION(io::boost_asio_error(ec))));
                break;
          }

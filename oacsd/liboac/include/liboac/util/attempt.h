@@ -21,7 +21,7 @@
 
 #include <liboac/exception.h>
 
-namespace oac {
+namespace oac { namespace util {
 
 /**
  * An object representing an attempt to produce a value. This object
@@ -49,7 +49,16 @@ public:
     * @param error The reason to fail
     */
    template <typename Exception>
-   attempt(const Exception& error) : _error(std::make_exception_ptr(error)) {}
+   attempt(const Exception& error)
+    : attempt { std::make_exception_ptr(error) }
+   {}
+
+   /**
+    * Create a failed attempt from given exception.
+    *
+    * @param error The reason to fail
+    */
+   attempt(const std::exception_ptr& error) : _error { error } {}
 
    /**
     * Copy constructor.
@@ -122,6 +131,6 @@ attempt<T> make_failure(const Exception& error)
    return attempt<T>(error);
 }
 
-} // namespace oac
+}} // namespace oac::util
 
 #endif

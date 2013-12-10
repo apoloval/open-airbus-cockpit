@@ -19,7 +19,6 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
-#include "attempt-test.h"
 #include "buffer-test.h"
 #include "buffer/asio_handler-test.h"
 #include "concurrency-test.h"
@@ -30,3 +29,4 @@
 #include "thread/channel-test.h"
 #include "thread/monitor-test.h"
 #include "timing-test.h"
+#include "util/attempt-test.h"

@@ -22,8 +22,8 @@
 #include <boost/test/auto_unit_test.hpp>
 #include <boost/thread.hpp>
 
-#include <liboac/attempt.h>
 #include <liboac/buffer/asio_handler.h>
+#include <liboac/util/attempt.h>
 
 using namespace oac;
 using namespace oac::buffer;
@@ -83,7 +83,7 @@ private:
       io_handler(ec, nbytes);
    }
 
-   void handler(const attempt<std::size_t>& result)
+   void handler(const util::attempt<std::size_t>& result)
    {
       _result = result;
    }
@@ -93,7 +93,7 @@ private:
       _index_inc = inc;
    }
 
-   attempt<std::size_t> _result;
+   util::attempt<std::size_t> _result;
    std::size_t _index_inc;
 };
 

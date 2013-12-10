@@ -18,7 +18,7 @@
 
 #include <boost/test/auto_unit_test.hpp>
 
-#include <liboac/attempt.h>
+#include <liboac/util/attempt.h>
 
 using namespace oac;
 
@@ -31,7 +31,7 @@ OAC_DECL_EXCEPTION(
 
 BOOST_AUTO_TEST_CASE(MustGetFromSuccessAttempt)
 {
-   attempt<int> a(12);
+   util::attempt<int> a(12);
 
    BOOST_CHECK_EQUAL(12, a.get_value());
 }
@@ -39,7 +39,7 @@ BOOST_AUTO_TEST_CASE(MustGetFromSuccessAttempt)
 BOOST_AUTO_TEST_CASE(MustThrowFromErroneousAttempt)
 {
    auto error = OAC_MAKE_EXCEPTION(fake_error());
-   attempt<int> a(error);
+   util::attempt<int> a(error);
 
    BOOST_CHECK_THROW(
          a.get_value(),
@@ -48,8 +48,8 @@ BOOST_AUTO_TEST_CASE(MustThrowFromErroneousAttempt)
 
 BOOST_AUTO_TEST_CASE(MustCopyConstructFromSuccessAttempt)
 {
-   attempt<int> a(12);
-   attempt<int> b(a);
+   util::attempt<int> a(12);
+   util::attempt<int> b(a);
 
    BOOST_CHECK_EQUAL(12, b.get_value());
 }
@@ -57,8 +57,8 @@ BOOST_AUTO_TEST_CASE(MustCopyConstructFromSuccessAttempt)
 BOOST_AUTO_TEST_CASE(MustCopyConstructFromErroneousAttempt)
 {
    auto error = OAC_MAKE_EXCEPTION(fake_error());
-   attempt<int> a(error);
-   attempt<int> b(a);
+   util::attempt<int> a(error);
+   util::attempt<int> b(a);
 
    BOOST_CHECK_THROW(
          b.get_value(),
@@ -67,7 +67,7 @@ BOOST_AUTO_TEST_CASE(MustCopyConstructFromErroneousAttempt)
 
 BOOST_AUTO_TEST_CASE(MustAssignFromSuccessAttempt)
 {
-   attempt<int> a(12);
+   util::attempt<int> a(12);
    auto b = a;
 
    BOOST_CHECK_EQUAL(12, b.get_value());
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE(MustAssignFromSuccessAttempt)
 BOOST_AUTO_TEST_CASE(MustAssignFromErroneousAttempt)
 {
    auto error = OAC_MAKE_EXCEPTION(fake_error());
-   attempt<int> a(error);
+   util::attempt<int> a(error);
    auto b = a;
 
    BOOST_CHECK_THROW(

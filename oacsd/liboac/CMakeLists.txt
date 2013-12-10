@@ -15,7 +15,6 @@ set(liboac_INCLUDE_DIR
    PARENT_SCOPE)
 
 set(liboac_HEADERS
-   include/liboac/attempt.h
    include/liboac/buffer.h
    include/liboac/buffer/asio_handler.h
    include/liboac/buffer/double.h
@@ -66,6 +65,7 @@ set(liboac_HEADERS
    include/liboac/thread/channel.h
    include/liboac/thread/monitor.h
    include/liboac/timing.h
+   include/liboac/util/attempt.h
    include/liboac/util/enum.h
    include/liboac/util/win.h
    include/liboac/worker.h
@@ -83,7 +83,6 @@ set(liboac_SOURCES
 )
 
 set(liboac_UNIT_TESTS
-   test/unit-test/attempt-test.h
    test/unit-test/buffer-test.h
    test/unit-test/buffer/asio_handler-test.h
    test/unit-test/concurrency-test.h
@@ -94,6 +93,7 @@ set(liboac_UNIT_TESTS
    test/unit-test/thread/channel-test.h
    test/unit-test/thread/monitor-test.h
    test/unit-test/timing-test.h
+   test/unit-test/util/attempt-test.h
 )
 
 set(liboac_INTEGRATION_TESTS

@@ -55,7 +55,7 @@ struct let_test
       linear_buffer output_buffer(4096);
 
       auto on_write = [](
-            const attempt<std::size_t>& nbytes)
+            const util::attempt<std::size_t>& nbytes)
       {
          BOOST_CHECK_EQUAL(15+21+27+1, nbytes.get_value());
       };
@@ -95,7 +95,7 @@ struct let_test
    {
       linear_buffer input_buffer(4096);
 
-      auto on_read = [](const attempt<std::size_t>& nbytes) {};
+      auto on_read = [](const util::attempt<std::size_t>& nbytes) {};
 
       _client->connection().read(input_buffer, on_read);
       _io_srv->reset();

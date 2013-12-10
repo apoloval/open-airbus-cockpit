@@ -23,13 +23,13 @@
 
 #include <boost/asio/ip/tcp.hpp>
 
-#include <liboac/attempt.h>
 #include <liboac/network/types.h>
+#include <liboac/util/attempt.h>
 
 namespace oac { namespace network {
 
-typedef std::function<attempt<std::size_t>> async_read_handler;
-typedef std::function<attempt<std::size_t>> async_write_handler;
+typedef std::function<util::attempt<std::size_t>> async_read_handler;
+typedef std::function<util::attempt<std::size_t>> async_write_handler;
 
 /**
  * An asynchronous TCP connection, which uses handlers to perform read and
@@ -121,7 +121,7 @@ private:
 
    static void on_io_completed_with_promise(
          const std::shared_ptr<std::promise<std::size_t>>& promise,
-         const attempt<std::size_t>& nbytes);
+         const util::attempt<std::size_t>& nbytes);
 };
 
 typedef std::shared_ptr<async_tcp_connection> async_tcp_connection_ptr;
