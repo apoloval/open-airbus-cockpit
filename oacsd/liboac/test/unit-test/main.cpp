@@ -28,5 +28,6 @@
 #include "stream-test.h"
 #include "thread/channel-test.h"
 #include "thread/monitor-test.h"
+#include "thread/task-test.h"
 #include "timing-test.h"
 #include "util/attempt-test.h"

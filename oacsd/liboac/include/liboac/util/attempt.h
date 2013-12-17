@@ -113,18 +113,51 @@ private:
 
 };
 
-/**
- * Make a successful attempt.
- */
-template <typename T>
-attempt<T> make_success(const T& t)
+template <>
+class attempt<void>
 {
-   return attempt<T>(t);
-}
+public:
 
-/**
- * Make a failed attempt.
- */
+   attempt() {}
+
+   template <typename Exception>
+   attempt(const Exception& error)
+      : attempt { std::make_exception_ptr(error) }
+   {}
+
+   attempt(const std::exception_ptr& error) : _error { error } {}
+
+   attempt(const attempt& a) : _error(a._error) {}
+
+   attempt& operator = (const attempt& a)
+   {
+      _error = a._error;
+      return *this;
+   }
+
+   bool is_success() const { return !_error; }
+
+   bool is_failure() const { return !is_success(); }
+
+   void get_value() const
+   {
+      if (is_failure())
+         std::rethrow_exception(_error);
+   }
+
+private:
+
+   std::exception_ptr _error;
+};
+
+/** Make a successful attempt. */
+template <typename T>
+attempt<T> make_success(const T& t) { return attempt<T>(t); }
+
+/** Make a successful void attempt. */
+attempt<void> make_success() { return attempt<void>(); }
+
+/** Make a failed attempt. */
 template <typename T, typename Exception>
 attempt<T> make_failure(const Exception& error)
 {

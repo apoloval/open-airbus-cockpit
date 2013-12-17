@@ -64,6 +64,7 @@ set(liboac_HEADERS
    include/liboac/stream/functions.h
    include/liboac/thread/channel.h
    include/liboac/thread/monitor.h
+   include/liboac/thread/task.h
    include/liboac/timing.h
    include/liboac/util/attempt.h
    include/liboac/util/enum.h
@@ -92,6 +93,7 @@ set(liboac_UNIT_TESTS
    test/unit-test/stream-test.h
    test/unit-test/thread/channel-test.h
    test/unit-test/thread/monitor-test.h
+   test/unit-test/thread/task-test.h
    test/unit-test/timing-test.h
    test/unit-test/util/attempt-test.h
 )
