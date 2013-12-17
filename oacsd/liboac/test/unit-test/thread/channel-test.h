@@ -139,6 +139,14 @@ BOOST_AUTO_TEST_CASE(MustThrowWhenNoMessageIsDeliverdAndTimedOut)
          .read_for_and_timeout(std::chrono::milliseconds(50));
 }
 
+BOOST_AUTO_TEST_CASE(MustThrowWhenMessageWasAlreadyReadAndNoMoreAreDelivered)
+{
+   let_test()
+      .write_message(1234)
+      .read_for(1234, std::chrono::milliseconds(50))
+      .read_for_and_timeout(std::chrono::milliseconds(50));
+}
+
 BOOST_AUTO_TEST_CASE(MustHonourConfiguredTimeout)
 {
    let_test()

@@ -130,6 +130,7 @@ public:
          if (msg != _messages.end())
          {
             auto result = *msg;
+            _messages.erase(msg);
             lock.unlock();
             return result;
          }
