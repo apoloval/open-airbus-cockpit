@@ -91,7 +91,7 @@ struct let_test
 
    let_test& subscribe_probe(const mqtt::topic_pattern& pattern)
    {
-      _probe->subscribe_as<int>(
+      _probe->subscribe_as_data<int>(
             pattern,
             mqtt::qos_level::LEVEL_0,
             [this](const int& number)

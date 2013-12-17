@@ -30,11 +30,14 @@ set(flightvars_SOURCES
    src/mqtt/broker_mosquitto.cpp
    src/mqtt/client.cpp
    src/mqtt/client_mosquitto.cpp
+   src/mqtt/message.h
    src/mqtt/topic.h
+   src/mqtt/qos.h
 )
 
 set(flightvars_UNIT_TESTS
    test/unit-test/conf/provider-test.h
+   test/unit-test/mqtt/message-test.h
    test/unit-test/mqtt/topic-test.h
 )
 

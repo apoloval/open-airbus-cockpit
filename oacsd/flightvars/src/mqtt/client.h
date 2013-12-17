@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FV_CLIENT_H
-#define OAC_FV_CLIENT_H
+#ifndef OAC_FV_MQTT_CLIENT_H
+#define OAC_FV_MQTT_CLIENT_H
 
 #include <cstdint>
 #include <map>
@@ -27,15 +27,10 @@
 #include <liboac/logging.h>
 
 #include "mqtt/topic.h"
+#include "mqtt/message.h"
+#include "mqtt/qos.h"
 
 namespace oac { namespace fv { namespace mqtt {
-
-enum class qos_level
-{
-   LEVEL_0,
-   LEVEL_1,
-   LEVEL_2
-};
 
 OAC_DECL_ABSTRACT_EXCEPTION(client_exception);
 
@@ -68,34 +63,56 @@ class client : public oac::logger_component
 {
 public:
 
-   /**
-    * Subscribe to given topic pattern using the given callback function.
-    * This function may be use to subscribe the client to a topic pattern
-    * and register a callback function to be used to process incoming
-    * messages. The callback function determines the data type of the expected
-    * messages. Internally, if the message length doesn't match the size of
-    * expected Data, the message is discarded.
-    */
+   /** A callback function used to process messages published on a topic. */
    template <typename Data>
-   void subscribe_as(
+   using message_callback = std::function<void(const message<Data>&)>;
+
+   /** A callback function used to process data published on a topic. */
+   template <typename Data>
+   using data_callback = std::function<void(const Data&)>;
+
+   template <typename Data>
+   void subscribe_as_message(
          const topic_pattern& pattern,
          const qos_level& qos,
-         std::function<void(const Data&)> callback)
+         const message_callback<Data>& callback)
    {
-      _subscriptions[pattern] = [this, callback, pattern](const message& msg)
+      _subscriptions[pattern] = [this, callback, pattern](
+            const buffered_message& msg)
       {
-         if (sizeof(Data) == msg.data_len)
-            callback(*static_cast<const Data*>(msg.data));
-         else
+         try { callback(msg.convert_to<Data>()); }
+         catch (const buffered_message::conversion_error& e)
+         {
             log_warn(
-                  "cannot deliver message for topic pattern %s: "
-                  "message length (%d bytes) does not match expected "
-                  "length of %d bytes",
+                  "cannot deliver message for topic pattern %s: %s",
                   pattern.to_string(),
-                  msg.data_len,
-                  sizeof(Data));
+                  e.report());
+
+         }
       };
       subscribe(pattern, qos);
+   }
+
+   /**
+    * Subscribe to given topic pattern using the given data callback function.
+    *
+    * This function may be use to subscribe the client to a topic pattern
+    * and register a data callback function to be used to process incoming
+    * messages directly from its data. The callback function determines the
+    * data type of the expected messages. Internally, if the message length
+    * doesn't match the size of expected Data, the message is discarded.
+    */
+   template <typename Data>
+   void subscribe_as_data(
+         const topic_pattern& pattern,
+         const qos_level& qos,
+         const data_callback<Data>& callback)
+   {
+      subscribe_as_message<Data>(pattern, qos, [callback](
+            const message<Data>& msg)
+      {
+         callback(msg.data);
+      });
    }
 
    /**
@@ -123,22 +140,13 @@ public:
 
 protected:
 
-   struct message
-   {
-      topic tpc;
-      const void* data;
-      std::size_t data_len;
-      qos_level qos;
-      bool retain;
-   };
-
    client(const oac::log_author& author);
 
    virtual void subscribe(
          const topic_pattern& pattern,
          const qos_level& qos) = 0;
 
-   void on_message(const message& msg);
+   void on_message(const buffered_message& msg);
 
 private:
 
@@ -150,8 +158,10 @@ private:
       { return lhs.to_string() < rhs.to_string(); }
    };
 
-   typedef std::function<void(const message&)> callback;
-   typedef std::map<topic_pattern, callback, pattern_compare> subscription_map;
+   using buffered_message_callback =
+         std::function<void(const buffered_message&)>;
+   using subscription_map =
+         std::map<topic_pattern, buffered_message_callback, pattern_compare>;
 
    subscription_map _subscriptions;
 };

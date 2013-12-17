@@ -16,29 +16,19 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
-
-#include "mqtt/client.h"
+#ifndef OAC_FV_MQTT_QOS_H
+#define OAC_FV_MQTT_QOS_H
 
 namespace oac { namespace fv { namespace mqtt {
 
-client::client(const oac::log_author& author) : logger_component(author) {}
-
-void
-client::on_message(const buffered_message& msg)
+/** QoS level of MQTT messages. */
+enum class qos_level
 {
-   log_trace("new message received from topic %s", msg.tpc.to_string());
-   for (auto& subs : _subscriptions)
-   {
-      if (subs.first.match(msg.tpc))
-      {
-         subs.second(msg);
-         return;
-      }
-   }
-   log_warn(
-         "no callback registered for message on topic %s",
-         msg.tpc.to_string());
-}
+   LEVEL_0,
+   LEVEL_1,
+   LEVEL_2
+};
 
 }}} // namespace oac::fv::mqtt
+
+#endif

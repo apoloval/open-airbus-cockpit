@@ -141,11 +141,11 @@ mosquitto_client::message_callback_dispatcher(
       const mosquitto_message* msg)
 {
    mosquitto_client& instance = *static_cast<mosquitto_client*>(client);
-   message m =
+   buffered_message m =
    {
       msg->topic,
       msg->payload,
-      msg->payloadlen,
+      static_cast<std::size_t>(msg->payloadlen),
       static_cast<qos_level>(msg->qos),
       msg->retain
    };
