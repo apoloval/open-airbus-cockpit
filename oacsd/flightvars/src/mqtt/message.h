@@ -27,7 +27,7 @@
 
 namespace oac { namespace fv { namespace mqtt {
 
-/** A MQTT message. */
+/** A typed MQTT message. */
 template <typename Data>
 struct message
 {
@@ -42,7 +42,22 @@ struct message
 
    /** The retain flag of the message. */
    const bool retain;
+
+   /** Convert this typed message into a raw message. */
+   message<buffer::fixed_buffer> to_raw() const;
 };
+
+/** Make a typed message from its parameters. */
+template <typename Data>
+message<Data>
+make_typed_message(
+      const topic& tpc,
+      const Data& data,
+      const qos_level& qos = qos_level::LEVEL_0,
+      bool retain = false)
+{
+   return { tpc, data, qos, retain };
+}
 
 /**
  * A special form of message where data is represented by a fixed buffer.
@@ -87,7 +102,7 @@ struct message<buffer::fixed_buffer>
    }
 
    template <typename Data>
-   message<Data> convert_to() const
+   message<Data> to_typed() const
    throw (conversion_error)
    {
       auto expected_data_len = sizeof(Data);
@@ -101,7 +116,45 @@ struct message<buffer::fixed_buffer>
    }
 };
 
-using buffered_message = message<buffer::fixed_buffer>;
+using raw_message = message<buffer::fixed_buffer>;
+
+template <typename Data>
+message<buffer::fixed_buffer>
+message<Data>::to_raw() const
+{
+   return { tpc, &data, sizeof(data), qos, retain };
+}
+
+/** An object able to publish MQTT messages. */
+class message_publisher
+{
+public:
+
+   /** Publish a MQTT message. */
+   virtual void publish(const raw_message& msg) = 0;
+
+   template <typename Data>
+   void publish_as(const message<Data>& msg)
+   {
+      publish(msg.to_raw());
+   }
+
+   /**
+    * Publish a new message from an object on given topic.
+    */
+   template <typename T>
+   void publish_as(
+         const topic& tpc,
+         const T& data,
+         const qos_level& qos = qos_level::LEVEL_0,
+         bool retain = false)
+   {
+      publish_as(make_typed_message(tpc, data, qos, retain));
+   }
+
+};
+
+using message_publisher_ptr = std::shared_ptr<message_publisher>;
 
 }}} // namespace oac::fv::mqtt
 

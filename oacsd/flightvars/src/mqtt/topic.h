@@ -108,6 +108,9 @@ public:
 
    operator const std::string& () const { return _stringfied; }
 
+   bool operator == (const topic_pattern& p) const
+   { return _stringfied == p._stringfied; }
+
    std::string to_string() const { return _stringfied; }
 
    const char* to_c_str() const { return _stringfied.c_str(); }

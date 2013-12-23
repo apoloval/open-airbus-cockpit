@@ -25,7 +25,7 @@ namespace oac { namespace fv { namespace mqtt {
 client::client(const oac::log_author& author) : logger_component(author) {}
 
 void
-client::on_message(const buffered_message& msg)
+client::on_message(const raw_message& msg)
 {
    log_trace("new message received from topic %s", msg.tpc.to_string());
    for (auto& subs : _subscriptions)

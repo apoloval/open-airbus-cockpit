@@ -59,29 +59,45 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(publish_error, client_exception,
  * An MQTT client that may be used to publish messages and subscribe to topic
  * patterns.
  */
-class client : public oac::logger_component
+class client : public oac::logger_component, public message_publisher
 {
 public:
 
-   /** A callback function used to process messages published on a topic. */
+   /** A callback function used to process raw messages published on a topic. */
+   using raw_message_callback = std::function<void(const raw_message&)>;
+
+   /**
+    * A callback function used to process typed messages published on a topic.
+    */
    template <typename Data>
-   using message_callback = std::function<void(const message<Data>&)>;
+   using typed_message_callback = std::function<void(const message<Data>&)>;
 
    /** A callback function used to process data published on a topic. */
    template <typename Data>
    using data_callback = std::function<void(const Data&)>;
 
-   template <typename Data>
-   void subscribe_as_message(
+   void subscribe(
          const topic_pattern& pattern,
          const qos_level& qos,
-         const message_callback<Data>& callback)
+         const raw_message_callback& callback)
    {
-      _subscriptions[pattern] = [this, callback, pattern](
-            const buffered_message& msg)
+      _subscriptions[pattern] = callback;
+      subscribe_to(pattern, qos);
+   }
+
+   template <typename Data>
+   void subscribe_as(
+         const topic_pattern& pattern,
+         const qos_level& qos,
+         const typed_message_callback<Data>& callback)
+   {
+      subscribe(
+            pattern,
+            qos,
+            [this, callback, pattern](const raw_message& msg)
       {
-         try { callback(msg.convert_to<Data>()); }
-         catch (const buffered_message::conversion_error& e)
+         try { callback(msg.to_typed<Data>()); }
+         catch (const raw_message::conversion_error& e)
          {
             log_warn(
                   "cannot deliver message for topic pattern %s: %s",
@@ -89,8 +105,7 @@ public:
                   e.report());
 
          }
-      };
-      subscribe(pattern, qos);
+      });
    }
 
    /**
@@ -108,7 +123,7 @@ public:
          const qos_level& qos,
          const data_callback<Data>& callback)
    {
-      subscribe_as_message<Data>(pattern, qos, [callback](
+      subscribe_as<Data>(pattern, qos, [callback](
             const message<Data>& msg)
       {
          callback(msg.data);
@@ -118,35 +133,17 @@ public:
    /**
     * Publish a new message from raw bytes on given topic.
     */
-   virtual void publish(
-         const topic& t,
-         const void* data,
-         std::size_t data_len,
-         const qos_level& qos = qos_level::LEVEL_0,
-         bool retain = false) = 0;
-
-   /**
-    * Publish a new message from an object on given topic.
-    */
-   template <typename T>
-   void publish_as(
-         const topic& t,
-         const T& data,
-         const qos_level& qos = qos_level::LEVEL_0,
-         bool retain = false)
-   {
-      publish(t, &data, sizeof(T), qos, retain);
-   }
+   virtual void publish(const raw_message& msg) = 0;
 
 protected:
 
    client(const oac::log_author& author);
 
-   virtual void subscribe(
+   virtual void subscribe_to(
          const topic_pattern& pattern,
          const qos_level& qos) = 0;
 
-   void on_message(const buffered_message& msg);
+   void on_message(const raw_message& msg);
 
 private:
 
@@ -158,13 +155,13 @@ private:
       { return lhs.to_string() < rhs.to_string(); }
    };
 
-   using buffered_message_callback =
-         std::function<void(const buffered_message&)>;
    using subscription_map =
-         std::map<topic_pattern, buffered_message_callback, pattern_compare>;
+         std::map<topic_pattern, raw_message_callback, pattern_compare>;
 
    subscription_map _subscriptions;
 };
+
+using client_ptr = std::shared_ptr<client>;
 
 }}} // namespace oac::fv::mqtt
 

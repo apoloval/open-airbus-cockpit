@@ -58,18 +58,13 @@ public:
 
    ~mosquitto_client();
 
-   virtual void publish(
-         const topic& t,
-         const void* data,
-         std::size_t data_len,
-         const qos_level& qos,
-         bool retain);
+   void publish(const raw_message& msg) override;
 
 protected:
 
-   virtual void subscribe(
+   void subscribe_to(
          const topic_pattern& pattern,
-         const qos_level& qos);
+         const qos_level& qos) override;
 
 private:
 

@@ -54,29 +54,26 @@ mosquitto_client::~mosquitto_client()
 }
 
 void
-mosquitto_client::publish(
-      const topic& t,
-      const void* data,
-      std::size_t data_len,
-      const qos_level& qos,
-      bool retain)
+mosquitto_client::publish(const raw_message& msg)
 {
-   log_trace("Publishing %d bytes of data to topic %s", data_len, t.to_string());
+   auto data_len = msg.data.capacity();
+   log_trace("Publishing %d bytes of data to topic %s",
+         data_len, msg.tpc.to_string());
    auto error = mosquitto_publish(
-         _mosq,                  // mosq
-         nullptr,                // mid
-         t.to_c_str(),           // topic
-         data_len,               // payload_len
-         data,                   // payload
-         static_cast<int>(qos),  // qos
-         retain                  // retain
+         _mosq,                        // mosq
+         nullptr,                      // mid
+         msg.tpc.to_c_str(),           // topic
+         data_len,                     // payload_len
+         msg.data.data(),              // payload
+         static_cast<int>(msg.qos),    // qos
+         msg.retain                    // retain
    );
    if (error != MOSQ_ERR_SUCCESS)
-      OAC_THROW_EXCEPTION(publish_error(t, make_error_code(error)));
+      OAC_THROW_EXCEPTION(publish_error(msg.tpc, make_error_code(error)));
 }
 
 void
-mosquitto_client::subscribe(
+mosquitto_client::subscribe_to(
       const topic_pattern& pattern,
       const qos_level& qos)
 {
@@ -141,7 +138,7 @@ mosquitto_client::message_callback_dispatcher(
       const mosquitto_message* msg)
 {
    mosquitto_client& instance = *static_cast<mosquitto_client*>(client);
-   buffered_message m =
+   raw_message m =
    {
       msg->topic,
       msg->payload,

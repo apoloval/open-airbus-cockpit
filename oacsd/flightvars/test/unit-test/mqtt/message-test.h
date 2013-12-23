@@ -25,10 +25,10 @@ using namespace oac::fv;
 
 BOOST_AUTO_TEST_SUITE(MqttMessageTest)
 
-BOOST_AUTO_TEST_CASE(MustConvertFromBufferedMessage)
+BOOST_AUTO_TEST_CASE(MustConvertFromRawMessage)
 {
    int orig_num = 1234;
-   mqtt::buffered_message orig_msg {
+   mqtt::raw_message orig_msg {
       mqtt::topic { "foo/bar" },
       &orig_num,
       sizeof(int),
@@ -36,7 +36,7 @@ BOOST_AUTO_TEST_CASE(MustConvertFromBufferedMessage)
       false
    };
 
-   auto dest_msg = orig_msg.convert_to<int>();
+   auto dest_msg = orig_msg.to_typed<int>();
 
    BOOST_CHECK_EQUAL("foo/bar", dest_msg.tpc.to_string());
    BOOST_CHECK_EQUAL(1234, dest_msg.data);
@@ -45,10 +45,10 @@ BOOST_AUTO_TEST_CASE(MustConvertFromBufferedMessage)
 }
 
 
-BOOST_AUTO_TEST_CASE(MustThrowOnConversionFromBufferedMessageWithInvalidSize)
+BOOST_AUTO_TEST_CASE(MustThrowOnConversionFromRawMessageWithInvalidSize)
 {
    int orig_num = 1234;
-   mqtt::buffered_message orig_msg {
+   mqtt::raw_message orig_msg {
       mqtt::topic { "foo/bar" },
       &orig_num,
       sizeof(int),
@@ -57,7 +57,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnConversionFromBufferedMessageWithInvalidSize)
    };
 
    BOOST_CHECK_THROW(
-         orig_msg.convert_to<bool>(),
-         mqtt::buffered_message::conversion_error);
+         orig_msg.to_typed<bool>(),
+         mqtt::raw_message::conversion_error);
 }
 BOOST_AUTO_TEST_SUITE_END()
