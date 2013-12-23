@@ -35,31 +35,18 @@ BOOST_AUTO_TEST_SUITE(MqttMosquittoClientIT)
 
 struct let_test
 {
-   let_test() : _broker_running(false)
+   let_test()
    {
-      auto logger = make_logger(log_level::TRACE, file_output_stream::STDERR);
+      auto logger = make_logger(log_level::INFO, file_output_stream::STDERR);
       set_main_logger(logger);
    }
 
-   ~let_test()
-   {
-      if (_broker_running)
-      {
-         _broker_runner.shutdown_broker();
-      }
-   }
-
-   let_test& given_broker()
-   {
-      _broker_runner.run_broker();
-      _broker_running = true;
-      return *this;
-   }
-
-   let_test& connect()
+   let_test& connect(
+         const std::string& server_host = mqtt::mosquitto_client::DEFAULT_HOST,
+         std::uint16_t server_port = mqtt::mosquitto_client::DEFAULT_PORT)
    {
       try
-      { _cli.reset(new mqtt::mosquitto_client()); }
+      { _cli.reset(new mqtt::mosquitto_client(server_host, server_port)); }
       catch (...)
       { _error = std::current_exception(); }
       return *this;
@@ -165,7 +152,6 @@ private:
 
    std::unique_ptr<mqtt::mosquitto_client> _cli;
    std::unique_ptr<mqtt::mosquitto_client> _probe;
-   mqtt::mosquitto_process_runner _broker_runner;
    bool _broker_running;
    std::exception_ptr _error;
    thread::monitor<std::queue<int>> _received_messages;
@@ -179,7 +165,6 @@ private:
 BOOST_AUTO_TEST_CASE(MustConnectAndDisconnectToBroker)
 {
    let_test()
-         .given_broker()
          .connect()
          .disconnect()
          .assert_no_error();
@@ -188,14 +173,13 @@ BOOST_AUTO_TEST_CASE(MustConnectAndDisconnectToBroker)
 BOOST_AUTO_TEST_CASE(MustThrowOnConnectionError)
 {
    let_test()
-         .connect()
+         .connect("www.example.com")
          .assert_error<mqtt::connection_error>();
 }
 
 BOOST_AUTO_TEST_CASE(MustPublishSubscribe)
 {
    let_test()
-         .given_broker()
          .connect()
          .connect_probe()
          .subscribe_probe("foo/+")
@@ -209,7 +193,6 @@ BOOST_AUTO_TEST_CASE(MustPublishSubscribe)
 BOOST_AUTO_TEST_CASE(MustPublishInBurst)
 {
    let_test()
-         .given_broker()
          .connect()
          .connect_probe()
          .subscribe_probe("foo/+")
