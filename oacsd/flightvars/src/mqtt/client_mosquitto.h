@@ -54,7 +54,9 @@ public:
    static const unsigned int DEFAULT_KEEP_ALIVE;
    static const std::uint16_t DEFAULT_PORT;
 
-   mosquitto_client();
+   mosquitto_client(
+         const std::string& server_host = DEFAULT_HOST,
+         std::uint16_t server_port = DEFAULT_PORT);
 
    ~mosquitto_client();
 
@@ -126,10 +128,7 @@ private:
 
    void init();
 
-   void connect(
-         const std::string& host = DEFAULT_HOST,
-         std::uint16_t port = DEFAULT_PORT,
-         int keepalive = DEFAULT_KEEP_ALIVE);
+   void connect(int keepalive = DEFAULT_KEEP_ALIVE);
 
    void set_callbacks();
 

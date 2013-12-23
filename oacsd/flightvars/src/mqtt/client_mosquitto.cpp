@@ -34,11 +34,13 @@ mosquitto_client::DEFAULT_KEEP_ALIVE(10);
 const std::uint16_t
 mosquitto_client::DEFAULT_PORT(1883);
 
-mosquitto_client::mosquitto_client()
+mosquitto_client::mosquitto_client(
+      const std::string& server_host,
+      std::uint16_t server_port)
  : client("mosquitto_client"),
    _mosq(nullptr),
-   _server_host(DEFAULT_HOST),
-   _server_port(DEFAULT_PORT)
+   _server_host(server_host),
+   _server_port(server_port)
 {
    init();
    set_callbacks();
@@ -212,20 +214,19 @@ mosquitto_client::init()
 }
 
 void
-mosquitto_client::connect(
-      const std::string& host,
-      std::uint16_t port,
-      int keepalive)
+mosquitto_client::connect(int keepalive)
 {
    log_info(
          "Connecting to %s:%d with keep-alive %d seconds... ",
-         host, port, keepalive);
+         _server_host, _server_port, keepalive);
    try
    {
-      auto error = mosquitto_connect(_mosq, host.c_str(), port, keepalive);
+      auto error = mosquitto_connect(
+            _mosq, _server_host.c_str(), _server_port, keepalive);
       if (error != MOSQ_ERR_SUCCESS)
          OAC_THROW_EXCEPTION(
-               connection_error(host, port, make_error_code(error)));
+               connection_error(
+                     _server_host, _server_port, make_error_code(error)));
 
       wait_for_async([](const async_result& r)
       {
@@ -237,7 +238,7 @@ mosquitto_client::connect(
    {
       log_error(
             "cannot connect to %s:%d: error code %d",
-            host, port, e.get_error_code());
+            _server_host, _server_port, e.get_error_code());
       disconnect();
       stop();
       destroy();
@@ -245,7 +246,8 @@ mosquitto_client::connect(
    }
    catch (const thread::channel_timeout_error& e)
    {
-      log_error("cannot connect to %s:%d: connection timed out", host, port);
+      log_error("cannot connect to %s:%d: connection timed out",
+            _server_host, _server_port);
       disconnect();
       stop();
       destroy();
