@@ -18,6 +18,8 @@
 
 #include <boost/test/auto_unit_test.hpp>
 
+#include <boost/property_tree/json_parser.hpp>
+
 #include "conf/provider.h"
 
 using namespace oac;
@@ -40,6 +42,30 @@ struct let_test
          const T& value)
    {
       pt.put(prop, value);
+      return *this;
+   }
+
+   template <typename... T>
+   let_test& with_array_item(
+         const std::string& prop,
+         T... t)
+   {
+      if (!pt.get_child_optional(prop))
+      {
+         ptree child;
+         pt.put_child(prop, child);
+      }
+      ptree array = pt.get_child(prop);
+      ptree item;
+      fill_array(item, t...);
+      array.push_back(std::make_pair("", item));
+      pt.put_child(prop, array);
+      return *this;
+   }
+
+   let_test& print_json()
+   {
+      boost::property_tree::write_json("C:\\Windows\\Temp\\test.json", pt);
       return *this;
    }
 
@@ -80,25 +106,44 @@ private:
    ptree pt;
    flightvars_settings settings;
    std::exception_ptr error;
+
+   template <typename T1, typename... T>
+   void fill_array(
+         ptree& pt,
+         const std::string& prop,
+         const T1& value,
+         T... other)
+   {
+      pt.put(prop, value);
+      fill_array(pt, other...);
+   }
+
+   template <typename T>
+   void fill_array(
+         ptree& pt,
+         const std::string& prop,
+         const T& value)
+   {
+      pt.put(prop, value);
+   }
 };
+
+#define GET_SETTING(prop) \
+      [](const flightvars_settings& s) { return s.prop; }
 
 BOOST_AUTO_TEST_CASE(MustReadLoggingEnabled)
 {
    let_test()
       .with_input("logging.enabled", true)
       .load_settings()
-      .assert_equal(
-            true,
-            [](const flightvars_settings& s) { return s.logging.enabled; });
+      .assert_equal(true, GET_SETTING(logging.enabled));
 }
 
 BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingEnabled)
 {
    let_test()
       .load_settings()
-      .assert_equal(
-            true,
-            [](const flightvars_settings& s) { return s.logging.enabled; });
+      .assert_equal(true, GET_SETTING(logging.enabled));
 }
 
 BOOST_AUTO_TEST_CASE(MustReadLoggingFile)
@@ -108,7 +153,7 @@ BOOST_AUTO_TEST_CASE(MustReadLoggingFile)
       .load_settings()
       .assert_equal(
             "C:\\Path\\To\\Log\\File.log",
-            [](const flightvars_settings& s) { return s.logging.file; });
+            GET_SETTING(logging.file));
 }
 
 BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingFile)
@@ -117,7 +162,7 @@ BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingFile)
       .load_settings()
       .assert_equal(
             flightvars_settings::default_log_file(),
-            [](const flightvars_settings& s) { return s.logging.file; });
+            GET_SETTING(logging.file));
 }
 
 BOOST_AUTO_TEST_CASE(MustReadLoggingLevel)
@@ -125,9 +170,7 @@ BOOST_AUTO_TEST_CASE(MustReadLoggingLevel)
    let_test()
       .with_input("logging.level", "error")
       .load_settings()
-      .assert_equal(
-            log_level::ERROR,
-            [](const flightvars_settings& s) { return s.logging.level; });
+      .assert_equal(log_level::ERROR, GET_SETTING(logging.level));
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowOnInvalidLoggingLevel)
@@ -142,9 +185,7 @@ BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingLevel)
 {
    let_test()
       .load_settings()
-      .assert_equal(
-            log_level::WARN,
-            [](const flightvars_settings& s) { return s.logging.level; });
+      .assert_equal(log_level::WARN, GET_SETTING(logging.level));
 }
 
 BOOST_AUTO_TEST_CASE(MustReadMqttBrokerRunner)
@@ -154,7 +195,7 @@ BOOST_AUTO_TEST_CASE(MustReadMqttBrokerRunner)
       .load_settings()
       .assert_equal(
             mqtt_broker_runner_id::MOSQUITTO_PROCESS,
-            [](const flightvars_settings& s) { return s.mqtt.broker.runner; });
+            GET_SETTING(mqtt.broker.runner));
 }
 
 BOOST_AUTO_TEST_CASE(MustThrowOnInvalidMqttBrokerRunner)
@@ -171,7 +212,46 @@ BOOST_AUTO_TEST_CASE(MustReadDefaulMqttBrokerRunner)
       .load_settings()
       .assert_equal(
             flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER,
-            [](const flightvars_settings& s) { return s.mqtt.broker.runner; });
+            GET_SETTING(mqtt.broker.runner));
+}
+
+BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
+{
+   let_test()
+      .with_array_item("domains",
+            "name", "dom1",
+            "description", "The Domain #1",
+            "customField1", 1000,
+            "customField2", true)
+      .with_array_item("domains",
+            "name", "dom2",
+            "description", "The Domain #2",
+            "customField3", 3.14,
+            "customField4", "barbecue")
+      .load_settings()
+      .assert_equal("dom1",
+            GET_SETTING(domains[0].name))
+      .assert_equal(
+            "The Domain #1",
+            GET_SETTING(domains[0].description))
+      .assert_equal(
+            1000,
+            GET_SETTING(domains[0].properties.get<int>("customField1")))
+      .assert_equal(
+            true,
+            GET_SETTING(domains[0].properties.get<bool>("customField2")))
+      .assert_equal(
+            "dom2",
+            GET_SETTING(domains[1].name))
+      .assert_equal(
+            "The Domain #2",
+            GET_SETTING(domains[1].description))
+      .assert_equal(
+            3.14,
+            GET_SETTING(domains[1].properties.get<double>("customField3")))
+      .assert_equal(
+            "barbecue",
+            GET_SETTING(domains[1].properties.get<std::string>("customField4")));
 }
 
 BOOST_AUTO_TEST_SUITE_END()

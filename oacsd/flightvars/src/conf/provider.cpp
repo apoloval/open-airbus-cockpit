@@ -25,6 +25,8 @@
 
 namespace oac { namespace fv { namespace conf {
 
+namespace {
+
 template <typename Enum, typename EnumConversions>
 void
 bpt_load_enum_setting(
@@ -56,6 +58,22 @@ bpt_load_path(
 }
 
 void
+bpt_load_domain_settings(
+      const boost::property_tree::ptree& domain_props,
+      std::vector<domain_settings>& domains)
+{
+   for (auto& dom : domain_props)
+   {
+      auto& props = dom.second;
+      auto& name = props.get("name", "");
+      auto& desc = props.get("description", "");
+      domains.push_back({ name, desc, props });
+   }
+}
+
+} // anonymous namespace
+
+void
 bpt_load_settings(
       const boost::property_tree::ptree& props,
       flightvars_settings& settings)
@@ -81,6 +99,9 @@ throw (invalid_config_error)
          "mqtt.broker.runner",
          flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER,
          settings.mqtt.broker.runner);
+   auto dom_props = props.get_child_optional("domains");
+   if (dom_props)
+      bpt_load_domain_settings(*dom_props, settings.domains);
 }
 
 void

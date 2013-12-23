@@ -22,6 +22,7 @@
 #include <string>
 
 #include <boost/filesystem/path.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <liboac/logging.h>
 #include <liboac/util/enum.h>
 
@@ -37,6 +38,13 @@ OAC_DECL_ENUM_CONVERSIONS(mqtt_broker_runner_id,
    mqtt_broker_runner_id::NONE, "none",
    mqtt_broker_runner_id::MOSQUITTO_PROCESS, "mosquitto-process"
 );
+
+struct domain_settings
+{
+   std::string name;
+   std::string description;
+   boost::property_tree::ptree properties;
+};
 
 struct flightvars_settings
 {
@@ -56,6 +64,7 @@ struct flightvars_settings
          mqtt_broker_runner_id runner;
       } broker;
    } mqtt;
+   std::vector<domain_settings> domains;
 };
 
 }}} // namespace oac::fv::conf
