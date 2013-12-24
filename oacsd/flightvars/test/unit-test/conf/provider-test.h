@@ -219,33 +219,44 @@ BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
 {
    let_test()
       .with_array_item("domains",
-            "name", "dom1",
-            "description", "The Domain #1",
+            "name", "fsuipc-offsets",
+            "description", "Access to FSUIPC offsets",
             "customField1", 1000,
             "customField2", true)
       .with_array_item("domains",
             "name", "dom2",
             "description", "The Domain #2",
+            "enabled", false,
             "customField3", 3.14,
             "customField4", "barbecue")
       .load_settings()
-      .assert_equal("dom1",
+      .assert_equal(conf::domain_type::FSUIPC_OFFSETS,
+            GET_SETTING(domains[0].type))
+      .assert_equal("fsuipc-offsets",
             GET_SETTING(domains[0].name))
       .assert_equal(
-            "The Domain #1",
+            "Access to FSUIPC offsets",
             GET_SETTING(domains[0].description))
+      .assert_equal(
+            true,
+            GET_SETTING(domains[0].enabled))
       .assert_equal(
             1000,
             GET_SETTING(domains[0].properties.get<int>("customField1")))
       .assert_equal(
             true,
             GET_SETTING(domains[0].properties.get<bool>("customField2")))
+      .assert_equal(conf::domain_type::CUSTOM,
+            GET_SETTING(domains[1].type))
       .assert_equal(
             "dom2",
             GET_SETTING(domains[1].name))
       .assert_equal(
             "The Domain #2",
             GET_SETTING(domains[1].description))
+      .assert_equal(
+            false,
+            GET_SETTING(domains[1].enabled))
       .assert_equal(
             3.14,
             GET_SETTING(domains[1].properties.get<double>("customField3")))

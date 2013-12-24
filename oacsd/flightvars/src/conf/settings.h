@@ -39,10 +39,22 @@ OAC_DECL_ENUM_CONVERSIONS(mqtt_broker_runner_id,
    mqtt_broker_runner_id::MOSQUITTO_PROCESS, "mosquitto-process"
 );
 
+enum class domain_type
+{
+   FSUIPC_OFFSETS,
+   CUSTOM,
+};
+
+OAC_DECL_ENUM_CONVERSIONS(domain_type,
+   domain_type::FSUIPC_OFFSETS, "fsuipc-offsets"
+);
+
 struct domain_settings
 {
+   domain_type type;
    std::string name;
    std::string description;
+   bool enabled;
    boost::property_tree::ptree properties;
 };
 

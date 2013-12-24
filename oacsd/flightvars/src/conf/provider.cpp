@@ -67,7 +67,13 @@ bpt_load_domain_settings(
       auto& props = dom.second;
       auto& name = props.get("name", "");
       auto& desc = props.get("description", "");
-      domains.push_back({ name, desc, props });
+      auto enabled = props.get("enabled", true);
+
+      auto type = domain_type::CUSTOM;
+      try { type = domain_type_conversions::from_string(name); }
+      catch (const util::enum_tag_error&) {}
+
+      domains.push_back({ type, name, desc, enabled, props });
    }
 }
 
