@@ -22,20 +22,20 @@
 
 namespace oac { namespace fv { namespace conf {
 
+const boost::filesystem::path
+domain_settings::DEFAULT_FSUIPC_OFFSETS_EXPORT_FILE
+{ "C:\\ProgramData\\OACSD\\Exports-FSUIPC_Offsets.json" };
+
 const mqtt_broker_runner_id
-flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER(
-   mqtt_broker_runner_id::NONE
-);
+flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER
+{ mqtt_broker_runner_id::NONE };
 
 const log_level
-flightvars_settings::DEFAULT_LOG_LEVEL(
-   log_level::WARN
-);
+flightvars_settings::DEFAULT_LOG_LEVEL
+{ log_level::WARN };
 
-boost::filesystem::path
-flightvars_settings::default_log_file()
-{
-    return "C:\\ProgramData\\OACSD\\FlightVars.log";
-}
+const boost::filesystem::path
+flightvars_settings::DEFAULT_LOG_FILE
+{ "C:\\ProgramData\\OACSD\\FlightVars.log" };
 
 }}} // namespace oac::fv::conf

@@ -97,7 +97,7 @@ private:
       {
          conf::bpt_config_provider(CONFIG_DIR).load_settings(_settings);
       }
-      catch (const conf::invalid_config_error& e)
+      catch (const conf::config_exception& e)
       {
          std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
          auto msg = oac::format(
@@ -110,7 +110,7 @@ private:
                converter.from_bytes(msg).c_str(),
                L"FlightVars warning",
                MB_OK | MB_ICONEXCLAMATION);
-         // Rethrow the exception and let the plugin uninitialized
+         // Rethrow the exception and leave the plugin uninitialized
          throw;
       }
    }

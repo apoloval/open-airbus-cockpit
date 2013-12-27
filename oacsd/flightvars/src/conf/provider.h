@@ -28,10 +28,19 @@
 
 namespace oac { namespace fv { namespace conf {
 
-OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_config_error, oac::exception,
+OAC_DECL_ABSTRACT_EXCEPTION(config_exception);
+
+OAC_DECL_EXCEPTION_WITH_PARAMS(illegal_property_value, config_exception,
    ("invalid value '%s' for config property %s", value, key),
    (key, std::string),
    (value, std::string)
+);
+
+OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_config_format, config_exception,
+   ("invalid format of config file %s: expected %s format",
+         file.string(), expected_format),
+   (file, boost::filesystem::path),
+   (expected_format, std::string)
 );
 
 /**
@@ -40,48 +49,33 @@ OAC_DECL_EXCEPTION_WITH_PARAMS(invalid_config_error, oac::exception,
 void bpt_load_settings(
       const boost::property_tree::ptree& props,
       flightvars_settings& settings)
-throw (invalid_config_error);
+throw (config_exception);
 
-/**
- * A config provider implemented by Boost Property Tree library using JSON
- * serialization.
- */
-class bpt_json_config_provider
+/** A property tree loader for JSON files. */
+struct bpt_json_config_loader
 {
-public:
+   void load_from_file(
+         const boost::filesystem::path& file,
+         boost::property_tree::ptree& pt);
+};
 
-   bpt_json_config_provider(const boost::filesystem::path& config_file)
-    : _config_file(config_file)
-   {}
-
-   void load_settings(
-         flightvars_settings& settings)
-   throw (invalid_config_error);
-
-private:
-
-   boost::filesystem::path _config_file;
+/** A property tree loader for XML files. */
+struct bpt_xml_config_loader
+{
+   void load_from_file(
+         const boost::filesystem::path& file,
+         boost::property_tree::ptree& pt);
 };
 
 /**
- * A config provider implemented by Boost Property Tree library using XML
- * serialization.
+ * A property tree loader that attemps to detect file format and use the
+ * appropriate loader.
  */
-class bpt_xml_config_provider
+struct bpt_auto_config_loader
 {
-public:
-
-   bpt_xml_config_provider(const boost::filesystem::path& config_file)
-    : _config_file(config_file)
-   {}
-
-   void load_settings(
-         flightvars_settings& settings)
-   throw (invalid_config_error);
-
-private:
-
-   boost::filesystem::path _config_file;
+   void load_from_file(
+         const boost::filesystem::path& file,
+         boost::property_tree::ptree& pt);
 };
 
 class bpt_config_provider
@@ -95,7 +89,7 @@ public:
 
    void load_settings(
          flightvars_settings& settings)
-   throw (invalid_config_error);
+   throw (config_exception);
 
 private:
 

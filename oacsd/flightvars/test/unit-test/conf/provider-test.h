@@ -18,6 +18,8 @@
 
 #include <boost/test/auto_unit_test.hpp>
 
+#include <iostream>
+
 #include <boost/property_tree/json_parser.hpp>
 
 #include "conf/provider.h"
@@ -161,7 +163,7 @@ BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingFile)
    let_test()
       .load_settings()
       .assert_equal(
-            flightvars_settings::default_log_file(),
+            flightvars_settings::DEFAULT_LOG_FILE,
             GET_SETTING(logging.file));
 }
 
@@ -178,7 +180,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnInvalidLoggingLevel)
    let_test()
       .with_input("logging.level", "that-unexisting-level")
       .load_settings()
-      .assert_error<invalid_config_error>();
+      .assert_error<conf::config_exception>();
 }
 
 BOOST_AUTO_TEST_CASE(MustReadDefaultLoggingLevel)
@@ -203,7 +205,7 @@ BOOST_AUTO_TEST_CASE(MustThrowOnInvalidMqttBrokerRunner)
    let_test()
       .with_input("mqtt.broker.runner", "no-such-runner")
       .load_settings()
-      .assert_error<invalid_config_error>();
+      .assert_error<conf::config_exception>();
 }
 
 BOOST_AUTO_TEST_CASE(MustReadDefaulMqttBrokerRunner)
@@ -227,6 +229,7 @@ BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
             "name", "dom2",
             "description", "The Domain #2",
             "enabled", false,
+            "exports", "C:\\ProgramData\\OACSD\\Exports-Custom2.json",
             "customField3", 3.14,
             "customField4", "barbecue")
       .load_settings()
@@ -240,6 +243,9 @@ BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
       .assert_equal(
             true,
             GET_SETTING(domains[0].enabled))
+      .assert_equal(
+            conf::domain_settings::DEFAULT_FSUIPC_OFFSETS_EXPORT_FILE,
+            GET_SETTING(domains[0].exports_file))
       .assert_equal(
             1000,
             GET_SETTING(domains[0].properties.get<int>("customField1")))
@@ -257,6 +263,10 @@ BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
       .assert_equal(
             false,
             GET_SETTING(domains[1].enabled))
+      .assert_equal(
+            boost::filesystem::path(
+                  "C:\\ProgramData\\OACSD\\Exports-Custom2.json"),
+            GET_SETTING(domains[1].exports_file))
       .assert_equal(
             3.14,
             GET_SETTING(domains[1].properties.get<double>("customField3")))

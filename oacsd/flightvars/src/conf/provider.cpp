@@ -43,7 +43,7 @@ bpt_load_enum_setting(
       value = EnumConversions::from_string(text);
    } catch (util::enum_tag_error& e)
    {
-      OAC_THROW_EXCEPTION(invalid_config_error(prop, text, e));
+      OAC_THROW_EXCEPTION(illegal_property_value(prop, text, e));
    }
 }
 
@@ -58,6 +58,40 @@ bpt_load_path(
 }
 
 void
+bpt_load_domain_type(
+      const boost::property_tree::ptree& props,
+      domain_type& type)
+{
+   auto domain_name = props.get<std::string>("name");
+   try
+   { type = domain_type_conversions::from_string(domain_name); }
+   catch (const util::enum_tag_error&)
+   { type = domain_type::CUSTOM; }
+}
+
+void
+bpt_load_exports_file(
+      const boost::property_tree::ptree& props,
+      boost::filesystem::path& exports)
+{
+   domain_type type;
+   bpt_load_domain_type(props, type);
+   boost::filesystem::path default_exports;
+   switch (type)
+   {
+      case domain_type::FSUIPC_OFFSETS:
+         default_exports = domain_settings::DEFAULT_FSUIPC_OFFSETS_EXPORT_FILE;
+         break;
+      default:
+         auto name = props.get<std::string>("name");
+         default_exports = boost::filesystem::path("C:\\ProgramData\\OACSD\\") /
+               format("Exports-%s.json", name);
+         break;
+   }
+   bpt_load_path(props, "exports", default_exports, exports);
+}
+
+void
 bpt_load_domain_settings(
       const boost::property_tree::ptree& domain_props,
       std::vector<domain_settings>& domains)
@@ -65,15 +99,16 @@ bpt_load_domain_settings(
    for (auto& dom : domain_props)
    {
       auto& props = dom.second;
-      auto& name = props.get("name", "");
-      auto& desc = props.get("description", "");
-      auto enabled = props.get("enabled", true);
+      domain_settings settings;
 
-      auto type = domain_type::CUSTOM;
-      try { type = domain_type_conversions::from_string(name); }
-      catch (const util::enum_tag_error&) {}
+      settings.properties = props;
+      settings.name = props.get("name", "");
+      settings.description = props.get("description", "");
+      settings.enabled = props.get("enabled", true);
+      bpt_load_domain_type(props, settings.type);
+      bpt_load_exports_file(props,settings.exports_file);
 
-      domains.push_back({ type, name, desc, enabled, props });
+      domains.push_back(settings);
    }
 }
 
@@ -83,7 +118,7 @@ void
 bpt_load_settings(
       const boost::property_tree::ptree& props,
       flightvars_settings& settings)
-throw (invalid_config_error)
+throw (config_exception)
 {
    settings.logging.enabled = props.get(
          "logging.enabled",
@@ -91,7 +126,7 @@ throw (invalid_config_error)
    bpt_load_path(
          props,
          "logging.file",
-         flightvars_settings::default_log_file(),
+         flightvars_settings::DEFAULT_LOG_FILE,
          settings.logging.file);
    bpt_load_enum_setting<
          log_level, log_level_conversions>(
@@ -111,31 +146,51 @@ throw (invalid_config_error)
 }
 
 void
-bpt_json_config_provider::load_settings(
-      flightvars_settings& settings)
-throw (invalid_config_error)
+bpt_json_config_loader::load_from_file(
+      const boost::filesystem::path& file,
+      boost::property_tree::ptree& pt)
 {
-   boost::property_tree::ptree pt;
-   boost::property_tree::read_json(_config_file.string(), pt);
-
-   bpt_load_settings(pt, settings);
+   try
+   { boost::property_tree::read_json(file.string(), pt); }
+   catch (const boost::property_tree::json_parser_error& e)
+   { OAC_THROW_EXCEPTION(invalid_config_format(file, "JSON", e)); }
 }
 
 void
-bpt_xml_config_provider::load_settings(
-      flightvars_settings& settings)
-throw (invalid_config_error)
+bpt_xml_config_loader::load_from_file(
+      const boost::filesystem::path& file,
+      boost::property_tree::ptree& pt)
 {
-   boost::property_tree::ptree pt;
-   boost::property_tree::read_xml(_config_file.string(), pt);
+   try { boost::property_tree::read_xml(file.string(), pt); }
+   catch (const boost::property_tree::xml_parser_error& e)
+   { OAC_THROW_EXCEPTION(invalid_config_format(file, "XML", e)); }
+}
 
-   bpt_load_settings(pt, settings);
+void
+bpt_auto_config_loader::load_from_file(
+      const boost::filesystem::path& file,
+      boost::property_tree::ptree& pt)
+{
+   auto ext = file.extension();
+   if (ext == ".json")
+      return bpt_json_config_loader().load_from_file(file, pt);
+   if (ext == ".xml")
+      return bpt_xml_config_loader().load_from_file(file, pt);
+
+   // Unknown extension: let's try with the rest of loaders until one succeeds.
+   try { return bpt_json_config_loader().load_from_file(file, pt); }
+   catch (...) {}
+   try { return bpt_xml_config_loader().load_from_file(file, pt); }
+   catch (...) {}
+
+   // No loader succeed.
+   OAC_THROW_EXCEPTION(invalid_config_format(file, "any known"));
 }
 
 void
 bpt_config_provider::load_settings(
       flightvars_settings& settings)
-throw (invalid_config_error)
+throw (config_exception)
 {
    using boost::filesystem::path;
    using boost::filesystem::exists;
@@ -143,15 +198,15 @@ throw (invalid_config_error)
    auto json_file = path(_config_dir) / "FlightVars.json";
    auto xml_file = path(_config_dir) / "FlightVars.xml";
 
+   boost::property_tree::ptree pt;
    if (exists(json_file))
-      bpt_json_config_provider(json_file).load_settings(settings);
+      bpt_json_config_loader().load_from_file(json_file, pt);
    else if (exists(xml_file))
-      bpt_xml_config_provider(xml_file).load_settings(settings);
-   else
-   {
-      boost::property_tree::ptree pt;
-      bpt_load_settings(pt, settings);
-   }
+      bpt_xml_config_loader().load_from_file(xml_file, pt);
+
+   // Regardless it was loaded or not, read settings from pt; if the tree was
+   // not loaded, the default settings will be loaded.
+   bpt_load_settings(pt, settings);
 }
 
 

@@ -51,19 +51,21 @@ OAC_DECL_ENUM_CONVERSIONS(domain_type,
 
 struct domain_settings
 {
+   static const boost::filesystem::path DEFAULT_FSUIPC_OFFSETS_EXPORT_FILE;
+
    domain_type type;
    std::string name;
    std::string description;
    bool enabled;
+   boost::filesystem::path exports_file;
    boost::property_tree::ptree properties;
 };
 
 struct flightvars_settings
 {
    static const mqtt_broker_runner_id DEFAULT_MQTT_BROKER_RUNNER;
-   static const log_level DEFAULT_LOG_LEVEL;
-
-   static boost::filesystem::path default_log_file();
+   static const log_level DEFAULT_LOG_LEVEL;   
+   static const boost::filesystem::path DEFAULT_LOG_FILE;
 
    struct {
       bool enabled;
