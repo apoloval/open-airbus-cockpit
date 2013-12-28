@@ -35,17 +35,23 @@ BOOST_AUTO_TEST_SUITE(FsuipcClient)
 struct let_test
 {
    std::uint8_t _buffer[0xffff];
+   dummy_user_adapter_ptr _user_adapter;
    fsuipc_client<dummy_user_adapter> _cli;
    std::list<valued_offset> _update_inputs;
    std::list<offset> _query_inputs;
    std::list<valued_offset> _query_results;
+
+   let_test()
+    : _user_adapter { make_dummy_user_adapter() },
+      _cli { _user_adapter }
+   {}
 
    let_test& with_offset(
          offset_address addr,
          offset_length len,
          offset_value val)
    {
-      _cli.user_adapter().write_value_to_buffer(addr, len, val);
+      _user_adapter->write_value_to_buffer(addr, len, val);
       return *this;
    }
 
@@ -72,7 +78,7 @@ struct let_test
    {
       BOOST_CHECK_EQUAL(
                val,
-               _cli.user_adapter().read_value_from_buffer(addr, len));
+               _user_adapter->read_value_from_buffer(addr, len));
       return *this;
    }
 
@@ -193,11 +199,12 @@ BOOST_AUTO_TEST_SUITE(FsuipcUpdateObserver)
 struct let_test
 {
    let_test()
-      : _observer(
-           std::bind(
-              &let_test::on_offset_update,
-              this,
-              std::placeholders::_1))
+    : _fsuipc_adapter { make_dummy_user_adapter() },
+      _observer
+      {
+         make_fsuipc_client(_fsuipc_adapter),
+         std::bind(&let_test::on_offset_update, this, std::placeholders::_1)
+      }
    {}
 
    let_test& then_offset_changes(
@@ -205,7 +212,7 @@ struct let_test
             offset_length len,
             offset_value val)
    {
-      _observer.get_client().user_adapter().write_value_to_buffer(
+      _fsuipc_adapter->write_value_to_buffer(
                addr, len, val);
       return *this;
    }
@@ -229,6 +236,7 @@ struct let_test
    let_test& check_for_updates()
    {
       _observer.check_for_updates();
+
       return *this;
    }
 
@@ -262,11 +270,13 @@ struct let_test
 
 private:
 
+   dummy_user_adapter_ptr _fsuipc_adapter;
    update_observer<dummy_user_adapter> _observer;
    std::list<valued_offset> _updates;
 
    void on_offset_update(const valued_offset& update)
    {
+      std::cout << "update on " << update.address << std::endl;
       _updates.push_back(update);
    }
 };

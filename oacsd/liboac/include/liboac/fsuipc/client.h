@@ -99,22 +99,17 @@ class fsuipc_client
 {
 public:
 
+   using user_adapter_ptr = std::shared_ptr<FsuipcUserAdapter>;
+
    /**
     * Create a new client over given FSUIPC user adapter.
     *
     * @param user_adapter The user adapter that wraps the FSUIPC API functions.
     *                     By default obtained by its default constructor.
     */
-   fsuipc_client(
-         const FsuipcUserAdapter& user_adapter = FsuipcUserAdapter())
+   fsuipc_client(const user_adapter_ptr& user_adapter)
       : _user_adapter(user_adapter)
    {}
-
-   FsuipcUserAdapter& user_adapter()
-   { return _user_adapter; }
-
-   const FsuipcUserAdapter& user_adapter() const
-   { return _user_adapter; }
 
    /**
     * Execute a query on the given offsets and execute the corresponding
@@ -141,9 +136,9 @@ public:
       {
          values.push_back(valued_offset(offset, 0));
          auto& valued_offset = values.back();
-         _user_adapter.read(valued_offset);
+         _user_adapter->read(valued_offset);
       }
-      _user_adapter.process();
+      _user_adapter->process();
       for (auto& val : values)
          evaluate(val);
    }
@@ -166,15 +161,27 @@ public:
 
       for (auto& val : valued_offsets)
       {
-         _user_adapter.write(val);
+         _user_adapter->write(val);
       }
-      _user_adapter.process();
+      _user_adapter->process();
    }
 
 private:
 
-   FsuipcUserAdapter _user_adapter;
+   user_adapter_ptr _user_adapter;
 };
+
+template <typename FsuipcUserAdapter>
+using fsuipc_client_ptr = std::shared_ptr<fsuipc_client<FsuipcUserAdapter>>;
+
+/** Make a FSUIPC client from its adapter. */
+template <typename FsuipcUserAdapter>
+inline fsuipc_client_ptr<FsuipcUserAdapter>
+make_fsuipc_client(
+      const std::shared_ptr<FsuipcUserAdapter>& adapter)
+{
+   return std::make_shared<fsuipc_client<FsuipcUserAdapter>>(adapter);
+}
 
 /**
  * A dummy FsuipcUserAdapter which reads and writes from a raw buffer
@@ -232,6 +239,13 @@ private:
 
    void process_write_requests();
 };
+
+using dummy_user_adapter_ptr = std::shared_ptr<dummy_user_adapter>;
+
+/** Create a new dummy user adapter. */
+inline dummy_user_adapter_ptr
+make_dummy_user_adapter()
+{ return std::make_shared<dummy_user_adapter>(); }
 
 /**
  * A client for local FSUIPC using ModuleUser.lib

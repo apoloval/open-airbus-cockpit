@@ -23,6 +23,7 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <liboac/fsuipc/client.h>
 #include <liboac/fsuipc/offset.h>
 
 namespace oac { namespace fsuipc {
@@ -42,6 +43,9 @@ class update_observer
 {
 public:
 
+   using client_type = fsuipc_client<FsuipcUserAdapter>;
+   using client_ptr_type = fsuipc_client_ptr<FsuipcUserAdapter>;
+
    typedef fsuipc_client<FsuipcUserAdapter> client_type;
    typedef FsuipcValuedOffsetEvaluator update_evaluator_type;
 
@@ -54,17 +58,11 @@ public:
     * @param client      The FSUIPC client to be used for observing
     */
    update_observer(
-            const update_evaluator_type& update_eval = update_evaluator_type(),
-            const client_type& client = client_type())
+            const client_ptr_type& client,
+            const update_evaluator_type& update_eval = update_evaluator_type())
       : _client(client),
         _update_eval(update_eval)
    {}
-
-   const client_type& get_client() const
-   { return _client; }
-
-   client_type& get_client()
-   { return _client; }
 
    /**
     * Start observing the given offset. This requires the observer to read
@@ -92,7 +90,7 @@ public:
          _offsets.insert(offset);      
          _pending_welcomes.insert(offset);
       }
-      _client.query(offsets, [this](const valued_offset& val)
+      _client->query(offsets, [this](const valued_offset& val)
       {
          _values[val] = val.value;
       });
@@ -125,7 +123,7 @@ public:
     */
    void check_for_updates()
    {
-      _client.query(_offsets, [this](const valued_offset& val)
+      _client->query(_offsets, [this](const valued_offset& val)
       {
          auto cached_val = _values.find(val);
          auto pending_welcome = _pending_welcomes.find(val);
@@ -146,12 +144,15 @@ private:
    typedef std::unordered_map<
          offset, offset_value, offset::hash> offset_value_map;
 
-   client_type _client;
+   client_ptr_type _client;
    offset_set _offsets;
    offset_set _pending_welcomes;
    offset_value_map _values;
    update_evaluator_type _update_eval;
 };
+
+using dummy_update_observer = update_observer<dummy_user_adapter>;
+using local_update_observer = update_observer<local_user_adapter>;
 
 }} // namespace oac::fsuipc
 
