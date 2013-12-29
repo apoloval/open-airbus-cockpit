@@ -140,6 +140,12 @@ throw (config_exception)
          "mqtt.broker.runner",
          flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER,
          settings.mqtt.broker.runner);
+   bpt_load_enum_setting<
+         mqtt_client_id, mqtt_client_id_conversions>(
+         props,
+         "mqtt.client",
+         flightvars_settings::DEFAULT_MQTT_CLIENT,
+         settings.mqtt.client);
    auto dom_props = props.get_child_optional("domains");
    if (dom_props)
       bpt_load_domain_settings(*dom_props, settings.domains);

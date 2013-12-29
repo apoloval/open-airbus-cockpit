@@ -39,6 +39,17 @@ OAC_DECL_ENUM_CONVERSIONS(mqtt_broker_runner_id,
    mqtt_broker_runner_id::MOSQUITTO_PROCESS, "mosquitto-process"
 );
 
+enum class mqtt_client_id
+{
+   DEFAULT,
+   MOSQUITTO,
+};
+
+OAC_DECL_ENUM_CONVERSIONS(mqtt_client_id,
+   mqtt_client_id::DEFAULT, "default",
+   mqtt_client_id::MOSQUITTO, "mosquitto"
+);
+
 enum class domain_type
 {
    FSUIPC_OFFSETS,
@@ -64,6 +75,7 @@ struct domain_settings
 struct flightvars_settings
 {
    static const mqtt_broker_runner_id DEFAULT_MQTT_BROKER_RUNNER;
+   static const mqtt_client_id DEFAULT_MQTT_CLIENT;
    static const log_level DEFAULT_LOG_LEVEL;   
    static const boost::filesystem::path DEFAULT_LOG_FILE;
 
@@ -77,6 +89,7 @@ struct flightvars_settings
       {
          mqtt_broker_runner_id runner;
       } broker;
+      mqtt_client_id client;
    } mqtt;
    std::vector<domain_settings> domains;
 };

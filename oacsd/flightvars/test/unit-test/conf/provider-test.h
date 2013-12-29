@@ -217,6 +217,33 @@ BOOST_AUTO_TEST_CASE(MustReadDefaulMqttBrokerRunner)
             GET_SETTING(mqtt.broker.runner));
 }
 
+BOOST_AUTO_TEST_CASE(MustReadMqttClient)
+{
+   let_test()
+      .with_input("mqtt.client", "mosquitto")
+      .load_settings()
+      .assert_equal(
+            mqtt_client_id::MOSQUITTO,
+            GET_SETTING(mqtt.client));
+}
+
+BOOST_AUTO_TEST_CASE(MustThrowOnInvalidMqttClient)
+{
+   let_test()
+      .with_input("mqtt.client", "no-such-client")
+      .load_settings()
+      .assert_error<conf::config_exception>();
+}
+
+BOOST_AUTO_TEST_CASE(MustReadDefaulMqttClient)
+{
+   let_test()
+      .load_settings()
+      .assert_equal(
+            flightvars_settings::DEFAULT_MQTT_CLIENT,
+            GET_SETTING(mqtt.client));
+}
+
 BOOST_AUTO_TEST_CASE(MustReadDomainProperties)
 {
    let_test()

@@ -30,6 +30,10 @@ const mqtt_broker_runner_id
 flightvars_settings::DEFAULT_MQTT_BROKER_RUNNER
 { mqtt_broker_runner_id::NONE };
 
+const mqtt_client_id
+flightvars_settings::DEFAULT_MQTT_CLIENT
+{ mqtt_client_id::DEFAULT };
+
 const log_level
 flightvars_settings::DEFAULT_LOG_LEVEL
 { log_level::WARN };
