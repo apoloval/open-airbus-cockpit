@@ -50,16 +50,6 @@ typedef std::uint32_t offset_value;
  */
 struct offset
 {
-   /**
-    * A hash type for offset. This allow offset to be used
-    * in hash-based STL collections.
-    */
-   struct hash
-   {
-      std::size_t operator()(const offset& offset) const
-      { return offset.address * 4 + offset.length; }
-   };
-
    offset_address address;
    offset_length length;
 
@@ -96,5 +86,24 @@ struct valued_offset : offset
 };
 
 }} // namespace oac::fsuipc
+
+namespace std {
+
+/** A hash function for offset objects. */
+template <>
+struct hash<oac::fsuipc::offset>
+{
+   using argument_type = oac::fsuipc::offset;
+   using value_type = std::size_t;
+
+   value_type operator()(const argument_type& offset) const
+   {
+      auto h1 = std::hash<oac::fsuipc::offset_address>()(offset.address);
+      auto h2 = std::hash<int>()(static_cast<int>(offset.length));
+      return h1 ^ (h2 << 1);
+   }
+};
+
+} // namespace std
 
 #endif

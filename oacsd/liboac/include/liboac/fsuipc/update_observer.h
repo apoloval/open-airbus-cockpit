@@ -23,8 +23,10 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include <boost/optional.hpp>
 #include <liboac/fsuipc/client.h>
 #include <liboac/fsuipc/offset.h>
+#include <liboac/util/hash.h>
 
 namespace oac { namespace fsuipc {
 
@@ -87,13 +89,9 @@ public:
    void start_observing(const FsuipcOffsetCollection& offsets)
    {
       for (auto& offset : offsets) {
-         _offsets.insert(offset);      
-         _pending_welcomes.insert(offset);
+         _offsets.insert(offset);
+         _values[offset];
       }
-      _client->query(offsets, [this](const valued_offset& val)
-      {
-         _values[val] = val.value;
-      });
    }
 
    /**
@@ -102,9 +100,34 @@ public:
     *
     * @param offset The offset that must not be observed anymore
     */
-   void stop_observing(const offset& offset)
+   void stop_observing(const offset& o)
    {
-      _offsets.erase(offset);
+      _offsets.erase(o);
+   }
+
+   /** Check whether given offset is being observed. */
+   bool is_observing(const offset& o) const
+   {
+      return std::any_of(
+            _offsets.begin(),
+            _offsets.end(),
+            [o](const offset& oo)
+      {
+         return oo == o;
+      });
+   }
+
+   /**
+    * Update the given offset without evaluation. Update the given offset
+    * without evaluating. It means that the change will not be observed and
+    * therefore will not be evaluated
+    */
+   void update_offset(const valued_offset& val)
+   {
+      auto& cache_value = _values[val];
+      if (cache_value)
+         _values[val] = val.value;
+      _client->update(std::list<valued_offset>(1, val));
    }
 
    /**
@@ -125,34 +148,47 @@ public:
    {
       _client->query(_offsets, [this](const valued_offset& val)
       {
-         auto cached_val = _values.find(val);
-         auto pending_welcome = _pending_welcomes.find(val);
-
-         if ((pending_welcome != _pending_welcomes.end()) ||
-             (cached_val->second != val.value))
+         auto& cache_value = _values[val];
+         if (!cache_value || *cache_value != val.value)
          {
             _values[val] = val.value;
             _update_eval(val);
          }
       });
-      _pending_welcomes.clear();
    }
 
 private:
 
-   typedef std::unordered_set<offset, offset::hash> offset_set;
-   typedef std::unordered_map<
-         offset, offset_value, offset::hash> offset_value_map;
+   using opt_offset_value = boost::optional<offset_value>;
+   using offset_set = std::unordered_set<offset>;
+   using offset_value_map = std::unordered_map<offset, opt_offset_value>;
 
    client_ptr_type _client;
    offset_set _offsets;
-   offset_set _pending_welcomes;
    offset_value_map _values;
    update_evaluator_type _update_eval;
 };
 
+template <typename FsuipcUserAdapter,
+          typename FsuipcValuedOffsetEvaluator =
+               std::function<void(const valued_offset&)>>
+using update_observer_ptr =
+      std::shared_ptr<update_observer<
+            FsuipcUserAdapter, FsuipcValuedOffsetEvaluator>>;
+
 using dummy_update_observer = update_observer<dummy_user_adapter>;
 using local_update_observer = update_observer<local_user_adapter>;
+
+template <typename FsuipcUserAdapter,
+          typename FsuipcValuedOffsetEvaluator =
+               std::function<void(const valued_offset&)>>
+inline update_observer_ptr<FsuipcUserAdapter, FsuipcValuedOffsetEvaluator>
+make_update_observer(
+      const fsuipc_client_ptr<FsuipcUserAdapter>& client,
+      const FsuipcValuedOffsetEvaluator& update_eval)
+{
+   return std::make_shared(client, update_eval);
+}
 
 }} // namespace oac::fsuipc
 

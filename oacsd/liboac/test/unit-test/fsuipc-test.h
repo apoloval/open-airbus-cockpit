@@ -233,6 +233,15 @@ struct let_test
       return *this;
    }
 
+   let_test& update(
+         offset_address addr,
+         offset_length len,
+         offset_value val)
+   {
+      _observer.update_offset(valued_offset(addr, len, val));
+      return *this;
+   }
+
    let_test& check_for_updates()
    {
       _observer.check_for_updates();
@@ -276,12 +285,11 @@ private:
 
    void on_offset_update(const valued_offset& update)
    {
-      std::cout << "update on " << update.address << std::endl;
       _updates.push_back(update);
    }
 };
 
-BOOST_AUTO_TEST_CASE(MustObserveNoChangeIfOffsetIsNotUpdated)
+BOOST_AUTO_TEST_CASE(MustEvaluateOnStartObserving)
 {
    let_test()
          .observe(0x700, OFFSET_LEN_DWORD)
@@ -291,7 +299,7 @@ BOOST_AUTO_TEST_CASE(MustObserveNoChangeIfOffsetIsNotUpdated)
 }
 
 
-BOOST_AUTO_TEST_CASE(MustObserveOffsetUpdateAfterOffsetIsChanged)
+BOOST_AUTO_TEST_CASE(MustEvaluateOnOffsetUpdate)
 {
    let_test()
          .observe(0x700, OFFSET_LEN_DWORD)
@@ -304,7 +312,7 @@ BOOST_AUTO_TEST_CASE(MustObserveOffsetUpdateAfterOffsetIsChanged)
          .assert_update(0x700, OFFSET_LEN_DWORD, 0x01020304);
 }
 
-BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterOffsetIsChangedBySameValue)
+BOOST_AUTO_TEST_CASE(MustNotEvaluateOnOffsetUpdateWithSameValue)
 {
    let_test()
          .observe(0x700, OFFSET_LEN_DWORD)
@@ -316,7 +324,7 @@ BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterOffsetIsChangedBySameValue)
          .assert_updates_count(0);
 }
 
-BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterStoppingObserving)
+BOOST_AUTO_TEST_CASE(MustNotEvaluateOnOffsetUpdateAfterStoppingObserving)
 {
    let_test()
          .observe(0x700, OFFSET_LEN_DWORD)
@@ -332,7 +340,7 @@ BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterStoppingObserving)
          .assert_updates_count(0);
 }
 
-BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterReobserving)
+BOOST_AUTO_TEST_CASE(MustNotEvaluateOnOffsetUpdateWhileNotObservingPeriod)
 {
    let_test()
          .observe(0x700, OFFSET_LEN_DWORD)
@@ -347,4 +355,26 @@ BOOST_AUTO_TEST_CASE(MustNotObserveOffsetUpdateAfterReobserving)
          .assert_updates_count(1);
 }
 
+BOOST_AUTO_TEST_CASE(MustNotEvaluateOnOffsetUpdateFromObserver)
+{
+   let_test()
+         .observe(0x700, OFFSET_LEN_DWORD)
+         .then_offset_changes(0x700, OFFSET_LEN_DWORD, 0x01020304)
+         .check_for_updates()
+         .and_then()
+         .update(0x700, OFFSET_LEN_DWORD, 0x05060708)
+         .check_for_updates()
+         .assert_updates_count(0);
+}
+
+
+BOOST_AUTO_TEST_CASE(MustEvaluateOnOffsetUpdateFromObserverBeforeFirstEvaluation)
+{
+   let_test()
+         .observe(0x700, OFFSET_LEN_DWORD)
+         .update(0x700, OFFSET_LEN_DWORD, 0x05060708)
+         .check_for_updates()
+         .assert_updates_count(1)
+         .assert_update(0x700, OFFSET_LEN_DWORD, 0x05060708);
+}
 BOOST_AUTO_TEST_SUITE_END()

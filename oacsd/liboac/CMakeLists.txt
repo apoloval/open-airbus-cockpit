@@ -68,6 +68,7 @@ set(liboac_HEADERS
    include/liboac/timing.h
    include/liboac/util/attempt.h
    include/liboac/util/enum.h
+   include/liboac/util/hash.h
    include/liboac/util/win.h
    include/liboac/worker.h
 )
