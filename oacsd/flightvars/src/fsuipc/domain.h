@@ -26,6 +26,7 @@
 #include "conf/exports_fsuipc.h"
 #include "conf/settings.h"
 #include "core/domain.h"
+#include "mqtt/message.h"
 
 namespace oac { namespace fv { namespace fsuipc {
 
@@ -70,6 +71,10 @@ public:
 
 private:
 
+   using opt_valued_offset = boost::optional<oac::fsuipc::valued_offset>;
+   using opt_offset_address = boost::optional<oac::fsuipc::offset_address>;
+   using opt_offset_length = boost::optional<oac::fsuipc::offset_length>;
+
    conf::domain_settings _settings;
    fsuipc_update_observer_type _update_obs;
 
@@ -107,7 +112,13 @@ private:
    void on_message(const mqtt::raw_message& msg)
    {
       auto value = valued_offset_for(msg);
-      _update_obs.update_offset(value);
+      if (value)
+      {
+         log_trace(
+               "MQTT message requesting update on offset 0x%x:%d with value %d",
+               value->address, value->length, value->value);
+         _update_obs.update_offset(*value);
+      }
    }
 
    mqtt::topic topic_for(const oac::fsuipc::offset& o)
@@ -119,28 +130,60 @@ private:
       return tpc;
    }
 
-   oac::fsuipc::valued_offset valued_offset_for(const mqtt::raw_message& msg)
+   opt_valued_offset valued_offset_for(const mqtt::raw_message& msg)
    {
-      auto typed = msg.to_typed<oac::fsuipc::offset_value>();
       const auto& tpc = msg.tpc.to_string();
+      try
+      {
+         auto typed = msg.to_typed<oac::fsuipc::offset_value>();
 
-      auto str_offset = tpc.substr(tpc.rfind('/') + 1);
-      auto str_addr = str_offset.substr(0, str_offset.find(':'));
-      auto str_len = str_offset.substr(str_offset.find(':') + 1);
+         auto str_offset = tpc.substr(tpc.rfind('/') + 1);
+         auto str_addr = str_offset.substr(0, str_offset.find(':'));
+         auto str_len = str_offset.substr(str_offset.find(':') + 1);
 
-      auto addr = offset_address_for(str_addr);
-      auto len = boost::lexical_cast<std::uint32_t>(str_len);
-      return oac::fsuipc::valued_offset(
-            addr, static_cast<oac::fsuipc::offset_length>(len), typed.data);
+         auto addr = offset_address_for(str_addr);
+         auto len = offset_length_for(str_len);
+         if (addr && len)
+            return oac::fsuipc::valued_offset(*addr, *len, typed.data);
+      }
+      catch (const mqtt::raw_message::conversion_error& e)
+      {
+         log_warn("received a message with invalid payload: %s", e.report());
+      }
+      catch (boost::bad_lexical_cast&)
+      {
+         log_warn("received message with invalid topic %s", tpc);
+      }
+      return opt_valued_offset();
    }
 
-   oac::fsuipc::offset_address offset_address_for(const std::string& str)
+   opt_offset_address offset_address_for(const std::string& str)
    {
-      oac::fsuipc::offset_address addr;
+      std::int32_t addr;
       std::stringstream ss;
       ss << std::hex << str;
       ss >> addr;
-      return addr;
+      if (0 < addr && addr < 0xcccc)
+         return addr;
+      else
+      {
+         log_warn("receive message with invalid offset address %s", str);
+         return opt_offset_address();
+      }
+   }
+
+   opt_offset_length offset_length_for(const std::string& str)
+   {
+      auto len = boost::lexical_cast<std::uint32_t>(str);
+      switch (len)
+      {
+         case 1: return oac::fsuipc::OFFSET_LEN_BYTE;
+         case 2: return oac::fsuipc::OFFSET_LEN_WORD;
+         case 3: return oac::fsuipc::OFFSET_LEN_DWORD;
+         default:
+            log_warn("received message with invalid offset length %s", str);
+            return opt_offset_length();
+      }
    }
 };
 

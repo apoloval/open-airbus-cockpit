@@ -21,6 +21,9 @@
 #include "fsuipc/domain.h"
 #include "mqtt/client_dummy.h"
 
+#include <liboac/filesystem.h>
+#include <liboac/logging.h>
+
 using namespace oac;
 using namespace oac::fv;
 
@@ -31,6 +34,8 @@ struct let_test
 
    let_test()
    {
+      auto logger = make_logger(log_level::TRACE, file_output_stream::STDERR);
+      set_main_logger(logger);
       _mqtt = std::make_shared<mqtt_client>();
    }
 
@@ -148,6 +153,16 @@ struct let_test
       return *this;
    }
 
+   let_test& assert_offset_unchanged(
+         const oac::fsuipc::valued_offset& o)
+   {
+      auto value = _fsuipc_adapter->read_value_from_buffer(o.address, o.length);
+      BOOST_CHECK_MESSAGE(
+            value != o.value,
+            format("unexpected value in offset 0x%x", o.address));
+      return *this;
+   }
+
 private:
 
    using mqtt_client = oac::fv::mqtt::dummy_client;
@@ -206,8 +221,48 @@ BOOST_AUTO_TEST_CASE(MustChangeOffsetOnMessageReceived)
                oac::fsuipc::offset(0x1000, oac::fsuipc::OFFSET_LEN_BYTE))
          .create_exports_file()
          .init_domain()
-         .on_message_received("/flightvars/fsuipc/offset/1000:1", 150)
-         .assert_offset_changed(
+         .on_message_received("/flightvars/fsuipc/offset/1000:1", 'x')
+         .assert_offset_unchanged(
+               oac::fsuipc::valued_offset(
+                     0x1000, oac::fsuipc::OFFSET_LEN_BYTE, 150));
+}
+
+BOOST_AUTO_TEST_CASE(MustIgnoreMessageWithInvalidTopic)
+{
+   let_test()
+         .with_exports(
+               oac::fsuipc::offset(0x1000, oac::fsuipc::OFFSET_LEN_BYTE))
+         .create_exports_file()
+         .init_domain()
+         .on_message_received("/flightvars/fsuipc/offset/wrong-offset", 150)
+         .assert_offset_unchanged(
+               oac::fsuipc::valued_offset(
+                     0x1000, oac::fsuipc::OFFSET_LEN_BYTE, 150));
+}
+
+BOOST_AUTO_TEST_CASE(MustIgnoreMessageWithInvalidOffsetAddress)
+{
+   let_test()
+         .with_exports(
+               oac::fsuipc::offset(0x1000, oac::fsuipc::OFFSET_LEN_BYTE))
+         .create_exports_file()
+         .init_domain()
+         .on_message_received("/flightvars/fsuipc/offset/1000000000:1", 150)
+         .assert_offset_unchanged(
+               oac::fsuipc::valued_offset(
+                     0x1000, oac::fsuipc::OFFSET_LEN_BYTE, 150));
+}
+
+
+BOOST_AUTO_TEST_CASE(MustIgnoreMessageWithInvalidPayload)
+{
+   let_test()
+         .with_exports(
+               oac::fsuipc::offset(0x1000, oac::fsuipc::OFFSET_LEN_BYTE))
+         .create_exports_file()
+         .init_domain()
+         .on_message_received("/flightvars/fsuipc/offset/wrong-offset", 150)
+         .assert_offset_unchanged(
                oac::fsuipc::valued_offset(
                      0x1000, oac::fsuipc::OFFSET_LEN_BYTE, 150));
 }

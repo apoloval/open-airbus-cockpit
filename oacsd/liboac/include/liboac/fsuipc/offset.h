@@ -53,6 +53,8 @@ struct offset
    offset_address address;
    offset_length length;
 
+   offset() {}
+
    offset(
          offset_address addr,
          offset_length len)
@@ -70,6 +72,8 @@ struct offset
 struct valued_offset : offset
 {
    offset_value value;
+
+   valued_offset() {}
 
    valued_offset(
          const offset& offset,
