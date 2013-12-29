@@ -26,8 +26,12 @@
 
 #include "conf/provider.h"
 #include "conf/settings.h"
+#include "core/domain.h"
+#include "fsuipc/domain.h"
 #include "mqtt/broker.h"
 #include "mqtt/broker_mosquitto.h"
+#include "mqtt/client.h"
+#include "mqtt/client_mosquitto.h"
 
 #define LOG_FILE "C:\\Windows\\Temp\\FlightVars.log"
 #define CONFIG_DIR "C:\\ProgramData\\OACSD"
@@ -46,21 +50,21 @@ public:
          logging_setup();
          log_info("initializing FlightVars module... ");
          mqtt_broker_setup();
+         mqtt_client_setup();
+         domain_setup();
          log_info("FlightVars module successfully initialized");
       }
       catch (oac::exception& e)
-      {
-         log(
-               "DLLStart",
-               log_level::FATAL,
-               format("Unexpected error: %s", e.report()));
+      {         
+         auto msg = format("Unexpected error: %s", e.report());
+         popup_message(msg);
+         log("DLLStart", log_level::FATAL, msg);
       }
       catch (...)
       {
-         log(
-               "DLLStart",
-               log_level::FATAL,
-               "Unexpected error: unknown exception thrown");
+         auto msg = "Unexpected error: unknown exception thrown";
+         popup_message(msg);
+         log("DLLStart", log_level::FATAL, msg);
       }
    }
 
@@ -69,6 +73,8 @@ public:
       try
       {
          log_info("terminating FlightVars module... ");
+         domain_teardown();
+         mqtt_client_teardown();
          mqtt_broker_teardown();
          log_info("FlightVars module successfully terminated");
       }
@@ -90,6 +96,16 @@ public:
 
 private:
 
+   void popup_message(const std::string& msg)
+   {
+      std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
+      MessageBox(
+            NULL,
+            converter.from_bytes(msg).c_str(),
+            L"FlightVars warning",
+            MB_OK | MB_ICONEXCLAMATION);
+   }
+
    void read_config()
    {
       // Logging is not ready: do not log
@@ -99,17 +115,12 @@ private:
       }
       catch (const conf::config_exception& e)
       {
-         std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
          auto msg = oac::format(
                "Unexpected error occured while reading FlightVars config "
                "from %s: %s! Please correct the config file and run again.",
                CONFIG_DIR,
                e.message());
-         MessageBox(
-               NULL,
-               converter.from_bytes(msg).c_str(),
-               L"FlightVars warning",
-               MB_OK | MB_ICONEXCLAMATION);
+         popup_message(msg);
          // Rethrow the exception and leave the plugin uninitialized
          throw;
       }
@@ -130,19 +141,18 @@ private:
    {
       typedef conf::mqtt_broker_runner_id_conversions conv;
       auto runner = _settings.mqtt.broker.runner;
-      switch (_settings.mqtt.broker.runner)
+      switch (runner)
       {
          case conf::mqtt_broker_runner_id::MOSQUITTO_PROCESS:
-            _mbr.reset(new mqtt::mosquitto_process_runner());
+            _mqtt_runner.reset(new mqtt::mosquitto_process_runner());
             break;
-         // TODO: cover other cases
       }
-      if (_mbr)
+      if (_mqtt_runner)
       {
          log_info(
                "running MQTT broker using runner %s... ",
                conv::to_string(runner));
-         _mbr->run_broker();
+         _mqtt_runner->run_broker();
          log_info("MQTT broker run successfully");
       }
       else
@@ -151,11 +161,11 @@ private:
 
    void mqtt_broker_teardown()
    {
-      if (_mbr)
+      if (_mqtt_runner)
       {
          log_info("shutting down MQTT broker runner... ");
-         _mbr->shutdown_broker();
-         _mbr.reset();
+         _mqtt_runner->shutdown_broker();
+         _mqtt_runner.reset();
          log_info("MQTT broker runner shut down successfully");
       }
       else
@@ -163,10 +173,79 @@ private:
                "no MQTT broker runner was configured: broker shutdown omitted");
    }
 
+   void mqtt_client_setup()
+   {
+      auto client = _settings.mqtt.client;
+      log_info("initializing MQTT client using %s implementation",
+            conf::mqtt_client_id_conversions::to_string(client));
+      switch (client)
+      {
+         case conf::mqtt_client_id::DEFAULT:
+         case conf::mqtt_client_id::MOSQUITTO:
+            _mqtt_client.reset(new mqtt::mosquitto_client());
+            break;
+      }
+      log_info("MQTT client initialized successfully");
+   }
+
+   void mqtt_client_teardown()
+   {
+      if (_mqtt_client)
+      {
+         log_info("shutting down MQTT client... ");
+         _mqtt_client.reset();
+         log_info("MQTT client shut down successfully");
+      }
+      else
+         log_info("no MQTT client was configured: client shutdown omitted");
+   }
+
+   void domain_setup()
+   {
+      for (auto& dom_setts : _settings.domains)
+      {
+         log_info("setting up domain %s...", dom_setts.name);
+         switch (dom_setts.type)
+         {
+            case conf::domain_type::FSUIPC_OFFSETS:
+               _domains.fsuipc = fsuipc::make_domain(
+                     dom_setts,
+                     _mqtt_client,
+                     oac::fsuipc::make_fsuipc_client(
+                           std::make_shared<oac::fsuipc::local_user_adapter>()));
+               log_info("domain %s set up as FSUIPC Offsets successfully",
+                     dom_setts.name);
+               break;
+            case conf::domain_type::CUSTOM:
+               log_warn("cannot set up domain %s: %s",
+                     dom_setts.name,
+                     "custom domains are not supported yet");
+               break;
+         }
+      }
+   }
+
+   void domain_teardown()
+   {
+      if (_domains.fsuipc)
+      {
+         log_info("shutting down FSUIPC Offsets domain...");
+         _domains.fsuipc.reset();
+      }
+   }
+
 private:
 
-   std::unique_ptr<mqtt::broker_runner> _mbr;
+   using fsuipc_domain_ptr =
+         fsuipc::domain_ptr<oac::fsuipc::local_user_adapter>;
+
    conf::flightvars_settings _settings;
+   mqtt::broker_runner_ptr _mqtt_runner;
+   mqtt::client_ptr _mqtt_client;
+   struct
+   {
+      fsuipc_domain_ptr fsuipc;
+   } _domains;
 };
 
 }} // namespace oac::fv

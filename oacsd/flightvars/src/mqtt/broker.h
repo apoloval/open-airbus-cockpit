@@ -37,6 +37,8 @@ public:
    virtual void shutdown_broker() throw (broker_exception) = 0;
 };
 
+using broker_runner_ptr = std::shared_ptr<broker_runner>;
+
 }}} // namespace oac::fv::mqtt
 
 #endif
