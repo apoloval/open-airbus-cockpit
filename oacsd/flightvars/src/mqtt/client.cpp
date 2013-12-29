@@ -27,6 +27,7 @@ client::client(const oac::log_author& author) : logger_component(author) {}
 void
 client::on_message(const raw_message& msg)
 {
+   std::unique_lock<std::mutex> lock { _mutex };
    log_trace("new message received from topic %s", msg.tpc.to_string());
    for (auto& subs : _subscriptions)
    {

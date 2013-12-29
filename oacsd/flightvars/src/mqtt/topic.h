@@ -106,6 +106,8 @@ public:
 
    topic_pattern(const char* pattern) : topic_pattern(std::string(pattern)) {}
 
+   topic_pattern(const topic& tpc) : topic_pattern(tpc.to_string()) {}
+
    operator const std::string& () const { return _stringfied; }
 
    bool operator == (const topic_pattern& p) const

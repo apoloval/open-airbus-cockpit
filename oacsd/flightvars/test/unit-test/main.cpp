@@ -20,5 +20,6 @@
 #include <boost/test/auto_unit_test.hpp>
 
 #include "conf/provider-test.h"
+#include "fsuipc/domain-test.h"
 #include "mqtt/message-test.h"
 #include "mqtt/topic-test.h"

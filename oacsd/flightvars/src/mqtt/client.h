@@ -21,6 +21,7 @@
 
 #include <cstdint>
 #include <map>
+#include <mutex>
 #include <string>
 
 #include <liboac/exception.h>
@@ -81,6 +82,7 @@ public:
          const qos_level& qos,
          const raw_message_callback& callback)
    {
+      std::unique_lock<std::mutex> lock { _mutex };
       _subscriptions[pattern] = callback;
       subscribe_to(pattern, qos);
    }
@@ -159,6 +161,7 @@ private:
          std::map<topic_pattern, raw_message_callback, pattern_compare>;
 
    subscription_map _subscriptions;
+   std::mutex _mutex;
 };
 
 using client_ptr = std::shared_ptr<client>;

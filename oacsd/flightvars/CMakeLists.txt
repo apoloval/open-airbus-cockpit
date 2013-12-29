@@ -24,11 +24,14 @@ set(flightvars_SOURCES
    src/dllmain.cpp
    src/main.cpp
    src/module.h
+   src/fsuipc/domain.cpp
    src/conf/provider.cpp
    src/conf/settings.cpp
+   src/core/domain.cpp
    src/mqtt/broker.h
    src/mqtt/broker_mosquitto.cpp
    src/mqtt/client.cpp
+   src/mqtt/client_dummy.h
    src/mqtt/client_mosquitto.cpp
    src/mqtt/message.h
    src/mqtt/topic.h
@@ -37,6 +40,7 @@ set(flightvars_SOURCES
 
 set(flightvars_UNIT_TESTS
    test/unit-test/conf/provider-test.h
+   test/unit-test/fsuipc/domain-test.h
    test/unit-test/mqtt/message-test.h
    test/unit-test/mqtt/topic-test.h
 )

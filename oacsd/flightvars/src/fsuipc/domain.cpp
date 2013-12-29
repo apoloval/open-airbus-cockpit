@@ -16,27 +16,12 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FV_MQTT_QOS_H
-#define OAC_FV_MQTT_QOS_H
+#include "conf/provider.h"
+#include "fsuipc/domain.h"
 
-#include <liboac/util/enum.h>
+namespace oac { namespace fv { namespace fsuipc {
 
-namespace oac { namespace fv { namespace mqtt {
+const std::string
+FSUIPC_OFFSETS_TOPIC_PREFIX { "/flightvars/fsuipc/offset" };
 
-/** QoS level of MQTT messages. */
-enum class qos_level
-{
-   LEVEL_0,
-   LEVEL_1,
-   LEVEL_2
-};
-
-OAC_DECL_ENUM_CONVERSIONS(qos_level,
-      qos_level::LEVEL_0, "QoS level 0",
-      qos_level::LEVEL_1, "QoS level 1",
-      qos_level::LEVEL_2, "QoS level 2"
-);
-
-}}} // namespace oac::fv::mqtt
-
-#endif
+}}}
