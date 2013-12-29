@@ -23,6 +23,7 @@
 #include <liboac/fsuipc/update_observer.h>
 #include <liboac/logging.h>
 
+#include "conf/exports_fsuipc.h"
 #include "conf/settings.h"
 #include "core/domain.h"
 
@@ -74,28 +75,14 @@ private:
 
    void load_exports()
    {
-      try
-      {
-         boost::property_tree::ptree pt;
-         conf::bpt_auto_config_loader config_loader;
-         config_loader.load_from_file(_settings.exports_file, pt);
+      std::list<oac::fsuipc::offset> offsets;
+      conf::load_exports(_settings, offsets);
 
-         for (auto& entry : pt)
-         {
-            auto& offset_desc = entry.second;
-            auto addr = offset_desc.get<oac::fsuipc::offset_address>("address");
-            auto len = static_cast<oac::fsuipc::offset_length>(
-                  offset_desc.get<int>("length"));
-            oac::fsuipc::offset offset(addr, len);
-
-            observe_offset(offset);
-         }
-      }
-      catch (const conf::config_exception& e)
+      for (auto& offset : offsets)
       {
-         OAC_THROW_EXCEPTION(
-               core::invalid_domain_exports(
-                     _settings.name, _settings.exports_file, e));
+         log_info("loading export for offset 0x%x:%d",
+               offset.address, offset.length);
+         observe_offset(offset);
       }
    }
 

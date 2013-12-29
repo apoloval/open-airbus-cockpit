@@ -19,6 +19,7 @@
 #define BOOST_AUTO_TEST_MAIN
 #include <boost/test/auto_unit_test.hpp>
 
+#include "conf/exports_fsuipc-test.h"
 #include "conf/provider-test.h"
 #include "fsuipc/domain-test.h"
 #include "mqtt/message-test.h"

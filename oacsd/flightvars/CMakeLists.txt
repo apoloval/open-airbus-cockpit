@@ -25,6 +25,7 @@ set(flightvars_SOURCES
    src/main.cpp
    src/module.h
    src/fsuipc/domain.cpp
+   src/conf/exports_fsuipc.h
    src/conf/provider.cpp
    src/conf/settings.cpp
    src/core/domain.cpp
@@ -39,6 +40,7 @@ set(flightvars_SOURCES
 )
 
 set(flightvars_UNIT_TESTS
+   test/unit-test/conf/exports_fsuipc-test.h
    test/unit-test/conf/provider-test.h
    test/unit-test/fsuipc/domain-test.h
    test/unit-test/mqtt/message-test.h
