@@ -16,8 +16,8 @@
  * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef OAC_FV_FLIGHTVARS_CORE_DOMAIN_H
-#define OAC_FV_FLIGHTVARS_CORE_DOMAIN_H
+#ifndef OAC_FV_CORE_DOMAIN_H
+#define OAC_FV_CORE_DOMAIN_H
 
 #include <boost/filesystem/path.hpp>
 

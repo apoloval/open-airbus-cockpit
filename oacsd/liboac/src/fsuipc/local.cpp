@@ -143,7 +143,7 @@ std::uint8_t local_user_adapter::_buffer[LOCAL_FSUIPC_BUFFER_SIZE];
 
 local_user_adapter::local_user_adapter()
 throw (fsuipc_error)
- : logger_component("local_user_adapter")
+ : logger_component("fsuipc_local_adapter")
 {
    if (_instance_count == 0)
    {

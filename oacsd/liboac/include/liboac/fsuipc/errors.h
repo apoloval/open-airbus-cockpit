@@ -20,6 +20,7 @@
 #define OAC_FSUIPC_ERRORS_H
 
 #include <liboac/exception.h>
+#include <liboac/io.h>
 
 namespace oac { namespace fsuipc {
 
