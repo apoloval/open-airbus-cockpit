@@ -24,6 +24,10 @@
 
 #include "conf/provider.h"
 
+#ifdef ERROR
+#undef ERROR
+#endif
+
 using namespace oac;
 using namespace oac::fv;
 using namespace oac::fv::conf;
@@ -131,7 +135,7 @@ private:
 };
 
 #define GET_SETTING(prop) \
-      [](const flightvars_settings& s) { return s.prop; }
+      [](const flightvars_settings& fvs) { return fvs.prop; }
 
 BOOST_AUTO_TEST_CASE(MustReadLoggingEnabled)
 {
