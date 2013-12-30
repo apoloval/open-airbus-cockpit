@@ -179,7 +179,7 @@ private:
       {
          case 1: return oac::fsuipc::OFFSET_LEN_BYTE;
          case 2: return oac::fsuipc::OFFSET_LEN_WORD;
-         case 3: return oac::fsuipc::OFFSET_LEN_DWORD;
+         case 4: return oac::fsuipc::OFFSET_LEN_DWORD;
          default:
             log_warn("received message with invalid offset length %s", str);
             return opt_offset_length();
