@@ -23,6 +23,7 @@
 
 #include <liboac/filesystem.h>
 #include <liboac/logging.h>
+#include <liboac/thread/task.h>
 
 #include "conf/provider.h"
 #include "conf/settings.h"
@@ -49,6 +50,7 @@ public:
          read_config();
          logging_setup();
          log_info("initializing FlightVars module... ");
+         task_executor_setup();
          mqtt_broker_setup();
          mqtt_client_setup();
          domain_setup();
@@ -76,6 +78,7 @@ public:
          domain_teardown();
          mqtt_client_teardown();
          mqtt_broker_teardown();
+         task_executor_teardown();
          log_info("FlightVars module successfully terminated");
       }
       catch (oac::exception& e)
@@ -135,6 +138,24 @@ private:
          auto logger = make_logger(_settings.logging.level, log_file.append());
          set_main_logger(logger);
       }
+   }
+
+   void task_executor_setup()
+   {
+      log_info("initializing task executor...");
+      _executor = std::make_shared<thread::task_executor>();
+      _executor_thread = std::thread
+      { std::bind(&thread::task_executor::loop, _executor) };
+      log_info("task executor successfully initialized");
+   }
+
+   void task_executor_teardown()
+   {
+      log_info("shutting down task executor");
+      _executor->stop_loop();
+      _executor_thread.join();
+      _executor.reset();
+      log_info("task executor shut down successfully");
    }
 
    void mqtt_broker_setup()
@@ -204,17 +225,10 @@ private:
    {
       for (auto& dom_setts : _settings.domains)
       {
-         log_info("setting up domain %s...", dom_setts.name);
          switch (dom_setts.type)
          {
             case conf::domain_type::FSUIPC_OFFSETS:
-               _domains.fsuipc = fsuipc::make_domain(
-                     dom_setts,
-                     _mqtt_client,
-                     oac::fsuipc::make_fsuipc_client(
-                           std::make_shared<oac::fsuipc::local_user_adapter>()));
-               log_info("domain %s set up as FSUIPC Offsets successfully",
-                     dom_setts.name);
+               fsuipc_domain_setup(dom_setts);
                break;
             case conf::domain_type::CUSTOM:
                log_warn("cannot set up domain %s: %s",
@@ -225,12 +239,36 @@ private:
       }
    }
 
+   void fsuipc_domain_setup(const conf::domain_settings& dom_setts)
+   {
+      log_info("setting up domain %s...", dom_setts.name);
+      _domains.fsuipc = fsuipc::make_domain(
+            dom_setts,
+            _mqtt_client,
+            oac::fsuipc::make_fsuipc_client(
+                  std::make_shared<oac::fsuipc::local_user_adapter>()));
+      _domains.fsuipc_update_task =
+      {
+         _executor,
+         [this]()
+         {
+            _domains.fsuipc->fsuipc_observer().check_for_updates();
+         },
+         std::chrono::milliseconds(250)
+      };
+      _domains.fsuipc_update_task.start();
+      log_info("domain %s set up as FSUIPC Offsets successfully",
+            dom_setts.name);
+   }
+
    void domain_teardown()
    {
       if (_domains.fsuipc)
       {
          log_info("shutting down FSUIPC Offsets domain...");
-         _domains.fsuipc.reset();
+         _domains.fsuipc_update_task.stop();
+         _domains.fsuipc.reset();         
+         log_info("FSUIPC Offsets domain shut down successfully");
       }
    }
 
@@ -242,9 +280,12 @@ private:
    conf::flightvars_settings _settings;
    mqtt::broker_runner_ptr _mqtt_runner;
    mqtt::client_ptr _mqtt_client;
+   thread::task_executor_ptr _executor;
+   std::thread _executor_thread;
    struct
    {
       fsuipc_domain_ptr fsuipc;
+      thread::recurrent_task<void> fsuipc_update_task;
    } _domains;
 };
 
