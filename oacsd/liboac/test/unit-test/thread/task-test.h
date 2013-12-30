@@ -32,6 +32,9 @@ struct let_test
 
    OAC_DECL_EXCEPTION(foobar_exception, oac::exception, "foobar");
 
+   let_test() : _executor { std::make_shared<thread::task_executor>() }
+   {}
+
    ~let_test()
    {
       stop_loop();
@@ -39,7 +42,7 @@ struct let_test
 
    let_test& submit_success_task_by_callback()
    {
-      _executor.submit_task<int>(
+      _executor->submit_task<int>(
             [this]() { return 123; },
             [this](const util::attempt<int>& n) { _number = n.get_value(); });
       return *this;
@@ -47,7 +50,7 @@ struct let_test
 
    let_test& submit_failing_task_by_callback()
    {
-      _executor.submit_task<int>(
+      _executor->submit_task<int>(
             [this]() -> int { OAC_THROW_EXCEPTION(foobar_exception()); },
             [this](const util::attempt<int>& n)
             {
@@ -60,7 +63,7 @@ struct let_test
 
    let_test& submit_success_task_by_future()
    {
-      _number = _executor.submit_task<int>([this]() { return 123; }).get();
+      _number = _executor->submit_task<int>([this]() { return 123; }).get();
       return *this;
    }
 
@@ -68,7 +71,7 @@ struct let_test
    {
       try
       {
-         _executor.submit_task<int>(
+         _executor->submit_task<int>(
             [this]() -> int { OAC_THROW_EXCEPTION(foobar_exception()); }
          ).get();
       }
@@ -78,7 +81,7 @@ struct let_test
 
    let_test& loop_in_background()
    {
-      _loop_thread = std::thread([this]() {  _executor.loop(); });
+      _loop_thread = std::thread([this]() {  _executor->loop(); });
       return *this;
    }
 
@@ -86,6 +89,13 @@ struct let_test
    {
       sleep(50);
       BOOST_CHECK_EQUAL(123, _number);
+      return *this;
+   }
+
+   let_test& check_task_is_undone()
+   {
+      sleep(50);
+      BOOST_CHECK_NE(123, _number);
       return *this;
    }
 
@@ -99,7 +109,7 @@ struct let_test
 
    let_test& stop_loop()
    {
-      _executor.stop_loop();
+      _executor->stop_loop();
       _loop_thread.join();
       return *this;
    }
@@ -108,7 +118,7 @@ struct let_test
    {
       if (ntasks)
       {
-         auto fnumber = _executor.submit_task<int>(
+         auto fnumber = _executor->submit_task<int>(
             [ntasks]() { return ntasks; }
          );
          submit_tasks(ntasks - 1);
@@ -117,12 +127,32 @@ struct let_test
       return *this;
    }
 
+   let_test& submit_recurrent_task()
+   {
+      _recurrent_task = thread::recurrent_task<int>
+      {
+         _executor,
+         [this]() { return 123; },
+         [this](const util::attempt<int>& n) { _number = n.get_value(); },
+         std::chrono::milliseconds(500)
+      };
+      _recurrent_task.start();
+      return *this;
+   }
+
+   let_test& wait_for(long millis)
+   {
+      sleep(millis);
+      return *this;
+   }
+
 private:
 
-   thread::task_executor _executor;
+   thread::task_executor_ptr _executor;
    std::atomic_int _number;
    std::exception_ptr _error;
    std::thread _loop_thread;
+   thread::recurrent_task<int> _recurrent_task;
 
    void sleep(long millis)
    {
@@ -167,6 +197,17 @@ BOOST_AUTO_TEST_CASE(MustExecuteBunchOfActions)
    let_test()
       .loop_in_background()
       .submit_tasks(1000);
+}
+
+BOOST_AUTO_TEST_CASE(MustExecuteRecurrentTask)
+{
+   let_test()
+      .loop_in_background()
+      .submit_recurrent_task()
+      .wait_for(100)
+      .check_task_is_undone()
+      .wait_for(500)
+      .check_task_is_done();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

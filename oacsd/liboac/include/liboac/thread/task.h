@@ -27,15 +27,17 @@
 
 namespace oac { namespace thread {
 
+OAC_DECL_ABSTRACT_EXCEPTION(task_exception);
+
+template <typename T>
+using task_callback = std::function<void(const util::attempt<T>&)>;
+
+template <typename T>
+using task_action = std::function<T(void)>;
+
 class task_executor
 {
 public:
-
-   template <typename T>
-   using task_callback = std::function<void(const util::attempt<T>&)>;
-
-   template <typename T>
-   using task_action = std::function<T(void)>;
 
    template <typename T>
    void submit_task(
@@ -166,6 +168,119 @@ private:
          catch (...) { p->set_exception(std::current_exception()); }
       };
    }
+};
+
+using task_executor_ptr = std::shared_ptr<task_executor>;
+
+OAC_DECL_EXCEPTION(task_state_error, task_exception,
+      "an operation was invoked on a task that was on a unexpected state");
+
+/** A task that can be recurrently executed. */
+template <typename T>
+class recurrent_task
+{
+public:
+
+   /** Create a recurrent ask object with no task at all. */
+   recurrent_task() {}
+
+   template <typename Rep,
+             typename Period = std::ratio<1>>
+   recurrent_task(const task_executor_ptr& executor,
+                 const task_action<T>& action,
+                 const task_callback<T>& callback,
+                 const std::chrono::duration<Rep, Period>& delay)
+    : _executor { executor },
+      _action { action },
+      _callback { callback },
+      _delay { delay }
+   {}
+
+   template <typename Rep,
+             typename Period = std::ratio<1>>
+   recurrent_task(const task_executor_ptr& executor,
+                 const task_action<T>& action,
+                 const std::chrono::duration<Rep, Period>& delay)
+    : recurrent_task
+   {
+      executor,
+      action,
+      [](const util::attempt<T>&) {},
+      delay
+   }
+   {}
+
+   recurrent_task(recurrent_task&& task)
+    : _executor { std::move(task._executor) },
+      _action { std::move(task._action) },
+      _callback { std::move(task._callback) },
+      _delay { task._delay },
+      _continue { task._continue },
+      _thread { std::move(task._thread) }
+   {}
+
+   recurrent_task& operator = (recurrent_task&& task)
+   {
+      swap(task);
+      return *this;
+   }
+
+   ~recurrent_task()
+   {
+      if (is_running())
+         stop();
+   }
+
+   bool is_valid() const
+   { return !!_executor; }
+
+   bool is_running() const
+   { return _thread.get_id() != std::thread::id(); }
+
+   void start()
+   {
+      if (!is_valid() || is_running())
+         OAC_THROW_EXCEPTION(task_state_error());
+      _continue = true;
+      _thread = std::thread { std::bind(&recurrent_task::loop, this) };
+   }
+
+   void stop()
+   {
+      if (!is_valid() || !is_running())
+         OAC_THROW_EXCEPTION(task_state_error());
+      _continue = false;
+      _thread.join();
+   }
+
+   void swap(recurrent_task& task)
+   {
+      std::swap(task._executor, _executor);
+      std::swap(task._action, _action);
+      std::swap(task._callback, _callback);
+      std::swap(task._delay, _delay);
+      std::swap(task._continue, _continue);
+      std::swap(task._thread, _thread);
+   }
+
+private:
+
+   void loop()
+   {
+      while (_continue)
+      {
+         std::this_thread::sleep_for(_delay);
+         _executor->submit_task(_action, _callback);
+      }
+   }
+
+   task_executor_ptr _executor;
+   task_action<T> _action;
+   task_callback<T> _callback;
+   std::chrono::milliseconds _delay;
+
+   std::atomic_bool _continue;
+   std::thread _thread;
 };
 
 }} // namespace oac::thread
