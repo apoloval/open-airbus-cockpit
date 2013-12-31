@@ -172,7 +172,13 @@ BOOL FSUIPC_Process(DWORD *pdwResult)
 	}
 	*((DWORD *) m_pView) = dwError;
 	
-	dwError = SendMessage(m_hWnd, WM_IPCTHREADACCESS, (WPARAM) (m_pNext - m_pView - 4), (LPARAM) m_pView);
+	dwError = SendMessageTimeout(
+		m_hWnd, WM_IPCTHREADACCESS,
+		(WPARAM) (m_pNext - m_pView - 4),
+		(LPARAM) m_pView,
+		SMTO_BLOCK,
+		1000, // timeout of 1 second
+		NULL);
 
 	m_pNext = m_pView + 4;
 	
