@@ -22,6 +22,7 @@
 #include <boost/lexical_cast.hpp>
 #include <liboac/fsuipc/update_observer.h>
 #include <liboac/logging.h>
+#include <liboac/thread/task.h>
 
 #include "conf/exports_fsuipc.h"
 #include "conf/settings.h"
@@ -57,17 +58,53 @@ public:
       {
          fsuipc_client,
          std::bind(&domain::on_offset_changed, this, std::placeholders::_1)
+      },
+      _executor { std::make_shared<thread::task_executor>() },
+      _polling_task
+      {
+         _executor,
+         std::bind(
+               &fsuipc_update_observer_type::check_for_updates,
+               &_update_obs),
+         std::chrono::milliseconds(250)
       }
    {
       load_exports();
       mqtt_subscribe();
    }
 
-   const fsuipc_update_observer_type& fsuipc_observer() const
-   { return _update_obs; }
+   ~domain() { stop(); }
 
-   fsuipc_update_observer_type& fsuipc_observer()
-   { return _update_obs; }
+   bool is_running() const
+   {
+      return _executor_thread.get_id() != std::thread::id() &&
+            _polling_task.is_running();
+   }
+
+   void start()
+   {
+      if (!is_running())
+      {
+         log_info("starting FSUIPC Offsets domain");
+         _executor_thread = std::thread
+         { std::bind(&thread::task_executor::loop, _executor) };
+         _polling_task.start();
+         log_info("FSUIPC Offsets domain started successfully");
+      }
+   }
+
+   void stop()
+   {
+      if (is_running())
+      {
+         log_info("stopping domain FSUIPC Offsets");
+         _polling_task.stop();
+         _executor->stop_loop();
+         _executor_thread.join();
+         _executor_thread = std::thread();
+         log_info("FSUIPC Offsets domain stopped successfully");
+      }
+   }
 
 private:
 
@@ -77,6 +114,9 @@ private:
 
    conf::domain_settings _settings;
    fsuipc_update_observer_type _update_obs;
+   thread::task_executor_ptr _executor;
+   std::thread _executor_thread;
+   thread::recurrent_task<void> _polling_task;
 
    void load_exports()
    {
@@ -93,10 +133,19 @@ private:
 
    void mqtt_subscribe()
    {
+      // Please note that callback provided to MQTT for incoming messages
+      // is not directly invoking the on_message() function. Instead, it
+      // submits such invocation as a task to execute, which will invoke
+      // it from the very thread that is polling FSUIPC. That eliminates
+      // race conditions in the update observer object.
       mqtt().subscribe(
             format("%s/+", FSUIPC_OFFSETS_TOPIC_PREFIX),
             mqtt::qos_level::LEVEL_0,
-            std::bind(&domain::on_message, this, std::placeholders::_1));
+            [this](const mqtt::raw_message& msg)
+            {
+               _executor->submit_task<void>(
+                     std::bind(&domain::on_message, this, msg));
+            });
    }
 
    void observe_offset(const oac::fsuipc::offset& o)
@@ -105,7 +154,8 @@ private:
    }
 
    void on_offset_changed(const oac::fsuipc::valued_offset& o)
-   {      
+   {
+      log_trace("change detected in offset 0x%x:%d", o.address, o.length);
       mqtt().publish_as<oac::fsuipc::offset_value>(topic_for(o), o.value);
    }
 

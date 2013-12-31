@@ -73,6 +73,7 @@ struct let_test
    {
       _fsuipc_adapter = oac::fsuipc::make_dummy_user_adapter();
       _dom = fv::fsuipc::make_domain(_settings, _mqtt, _fsuipc_adapter);
+      _dom->start();
       return *this;
    }
 
@@ -82,18 +83,18 @@ struct let_test
       return *this;
    }
 
-   let_test& observe_for_changes()
-   {
-      _dom->fsuipc_observer().check_for_updates();
-      return *this;
-   }
-
    template <typename T>
    let_test& on_message_received(
          const mqtt::topic& tpc,
          const T& value)
    {
       _mqtt->publish_as(tpc, value, mqtt::qos_level::LEVEL_0);
+      return *this;
+   }
+
+   let_test& wait_for(long millis)
+   {
+      std::this_thread::sleep_for(std::chrono::milliseconds(millis));
       return *this;
    }
 
@@ -113,14 +114,6 @@ struct let_test
             "there is no registered subscription for " <<
                   tpc.to_string() << " on " <<
                   mqtt::qos_level_conversions::to_string(qos));
-      return *this;
-   }
-
-   let_test& assert_observing(const oac::fsuipc::offset& o)
-   {
-      BOOST_CHECK_MESSAGE(
-            _dom->fsuipc_observer().is_observing(o),
-            format("domain is not observing %x:%d", o.address, o.length));
       return *this;
    }
 
@@ -191,13 +184,7 @@ BOOST_AUTO_TEST_CASE(MustInitFromSettings)
          .init_domain()
          .assert_subscription(
                "/flightvars/fsuipc/offset/+",
-               mqtt::qos_level::LEVEL_0)
-         .assert_observing(
-               oac::fsuipc::offset(0x1000, oac::fsuipc::OFFSET_LEN_BYTE))
-         .assert_observing(
-               oac::fsuipc::offset(0x2000, oac::fsuipc::OFFSET_LEN_WORD))
-         .assert_observing(
-               oac::fsuipc::offset(0x3000, oac::fsuipc::OFFSET_LEN_DWORD));
+               mqtt::qos_level::LEVEL_0);
 }
 
 BOOST_AUTO_TEST_CASE(MustSendMessageOnOffsetChange)
@@ -210,7 +197,7 @@ BOOST_AUTO_TEST_CASE(MustSendMessageOnOffsetChange)
          .on_offset_change(
                oac::fsuipc::valued_offset(
                      0x1000, oac::fsuipc::OFFSET_LEN_BYTE, 150))
-         .observe_for_changes()
+         .wait_for(300) // let the observer propagate the change
          .assert_message_sent("/flightvars/fsuipc/offset/1000:1", 150);
 }
 
