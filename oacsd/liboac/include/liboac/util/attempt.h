@@ -155,7 +155,7 @@ template <typename T>
 attempt<T> make_success(const T& t) { return attempt<T>(t); }
 
 /** Make a successful void attempt. */
-attempt<void> make_success() { return attempt<void>(); }
+inline attempt<void> make_success() { return attempt<void>(); }
 
 /** Make a failed attempt. */
 template <typename T, typename Exception>
