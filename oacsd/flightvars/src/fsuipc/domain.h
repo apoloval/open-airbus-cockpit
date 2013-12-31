@@ -33,6 +33,18 @@ namespace oac { namespace fv { namespace fsuipc {
 
 extern const std::string FSUIPC_OFFSETS_TOPIC_PREFIX;
 
+template <typename T>
+struct message
+{
+   std::uint8_t sender;
+   std::uint8_t reserved;
+   T value;
+};
+
+using byte_message = message<std::uint8_t>;
+using word_message = message<std::uint16_t>;
+using dword_message = message<std::uint32_t>;
+
 template <typename FsuipcUserAdapter>
 class domain : public core::domain_controller,
                public logger_component
@@ -156,7 +168,27 @@ private:
    void on_offset_changed(const oac::fsuipc::valued_offset& o)
    {
       log_trace("change detected in offset 0x%x:%d", o.address, o.length);
-      mqtt().publish_as<oac::fsuipc::offset_value>(topic_for(o), o.value);
+      switch (o.length)
+      {
+         case oac::fsuipc::OFFSET_LEN_BYTE:
+         {
+            byte_message msg { 0, static_cast<std::uint8_t>(o.value) };
+            mqtt().publish_as<byte_message>(topic_for(o), msg);
+            break;
+         }
+         case oac::fsuipc::OFFSET_LEN_WORD:
+         {
+            word_message msg { 0, static_cast<std::uint16_t>(o.value) };
+            mqtt().publish_as<word_message>(topic_for(o), msg);
+            break;
+         }
+         case oac::fsuipc::OFFSET_LEN_DWORD:
+         {
+            dword_message msg { 0, o.value };
+            mqtt().publish_as<dword_message>(topic_for(o), msg);
+            break;
+         }
+      }
    }
 
    void on_message(const mqtt::raw_message& msg)
@@ -185,8 +217,6 @@ private:
       const auto& tpc = msg.tpc.to_string();
       try
       {
-         auto typed = msg.to_typed<oac::fsuipc::offset_value>();
-
          auto str_offset = tpc.substr(tpc.rfind('/') + 1);
          auto str_addr = str_offset.substr(0, str_offset.find(':'));
          auto str_len = str_offset.substr(str_offset.find(':') + 1);
@@ -194,11 +224,17 @@ private:
          auto addr = offset_address_for(str_addr);
          auto len = offset_length_for(str_len);
          if (addr && len)
-            return oac::fsuipc::valued_offset(*addr, *len, typed.data);
-      }
-      catch (const mqtt::raw_message::conversion_error& e)
-      {
-         log_warn("received a message with invalid payload: %s", e.report());
+         {
+            switch (*len)
+            {
+               case oac::fsuipc::OFFSET_LEN_BYTE:
+                  return extract_from_message<std::uint8_t>(*addr, *len, msg);
+               case oac::fsuipc::OFFSET_LEN_WORD:
+                  return extract_from_message<std::uint16_t>(*addr, *len, msg);
+               case oac::fsuipc::OFFSET_LEN_DWORD:
+                  return extract_from_message<std::uint32_t>(*addr, *len, msg);
+            }
+         }
       }
       catch (boost::bad_lexical_cast&)
       {
@@ -234,6 +270,26 @@ private:
             log_warn("received message with invalid offset length %s", str);
             return opt_offset_length();
       }
+   }
+
+   template <typename T>
+   opt_valued_offset extract_from_message(
+         const oac::fsuipc::offset_address& addr,
+         const oac::fsuipc::offset_length& len,
+         const mqtt::raw_message& msg)
+   {
+      try
+      {
+         auto typed = msg.to_typed<message<T>>();
+         // no sender means own message; ignore it
+         if (typed.data.sender)
+            return oac::fsuipc::valued_offset { addr, len, typed.data.value };
+      }
+      catch (const mqtt::raw_message::conversion_error& e)
+      {
+         log_warn("received a message with invalid payload: %s", e.report());
+      }
+      return opt_valued_offset {};
    }
 };
 
