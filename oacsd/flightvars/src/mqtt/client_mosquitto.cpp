@@ -29,7 +29,7 @@ const std::string
 mosquitto_client::DEFAULT_HOST("localhost");
 
 const unsigned int
-mosquitto_client::DEFAULT_KEEP_ALIVE(10);
+mosquitto_client::DEFAULT_KEEP_ALIVE(60);
 
 const std::uint16_t
 mosquitto_client::DEFAULT_PORT(1883);
@@ -44,8 +44,9 @@ mosquitto_client::mosquitto_client(
 {
    init();
    set_callbacks();
-   start();
    connect();
+   start();
+   wait_for_connect();
 }
 
 mosquitto_client::~mosquitto_client()
@@ -164,16 +165,6 @@ mosquitto_client::subscribe_callback_dispatcher(
 }
 
 void
-mosquitto_client::log_callback_dispatcher(
-      mosquitto* mosq,
-      void* client,
-      int level,
-      const char* msg)
-{
-   std::cerr << "mosquito says: " << msg << std::endl;
-}
-
-void
 mosquitto_client::on_connect(int rc)
 {
    async_result result = { async_op::CONNECT, 0, rc };
@@ -217,17 +208,22 @@ void
 mosquitto_client::connect(int keepalive)
 {
    log_info(
-         "Connecting to %s:%d with keep-alive %d seconds... ",
+         "connecting to %s:%d with keep-alive %d seconds... ",
          _server_host, _server_port, keepalive);
+   auto error = mosquitto_connect(
+         _mosq, _server_host.c_str(), _server_port, keepalive);
+   if (error != MOSQ_ERR_SUCCESS)
+      OAC_THROW_EXCEPTION(
+            connection_error(
+                  _server_host, _server_port, make_error_code(error)));
+}
+
+void
+mosquitto_client::wait_for_connect()
+{
+   log_info("waiting for connection response from broker... ");
    try
    {
-      auto error = mosquitto_connect(
-            _mosq, _server_host.c_str(), _server_port, keepalive);
-      if (error != MOSQ_ERR_SUCCESS)
-         OAC_THROW_EXCEPTION(
-               connection_error(
-                     _server_host, _server_port, make_error_code(error)));
-
       wait_for_async([](const async_result& r)
       {
          return r.op == async_op::CONNECT;
@@ -258,11 +254,6 @@ mosquitto_client::connect(int keepalive)
 void
 mosquitto_client::set_callbacks()
 {
-   /*
-   mosquitto_log_callback_set(
-         _mosq,
-         mosquitto_client::log_callback_dispatcher);
-   */
    mosquitto_connect_callback_set(
          _mosq,
          mosquitto_client::connect_callback_dispatcher);
@@ -280,25 +271,26 @@ mosquitto_client::set_callbacks()
 void
 mosquitto_client::start()
 {
-   auto error = mosquitto_loop_start(_mosq);
-   if (error != MOSQ_ERR_SUCCESS)
+   _loop_thread = std::thread
    {
-      OAC_THROW_EXCEPTION(mosquitto_internal_error(
-            "starting internal loop",
-            make_error_code(error)));
-   }
+      [this]()
+      {
+         log_info("starting mosquitto loop thread");
+         int rc;
+         do
+         {
+            rc = mosquitto_loop(_mosq, 1000, 1000);
+         } while (rc == MOSQ_ERR_SUCCESS);
+         log_info("exiting mosquitto loop thread with code %d", rc);
+      }
+   };
 }
 
 void
 mosquitto_client::stop()
 {
-   auto error = mosquitto_loop_stop(_mosq, true);
-   if (error != MOSQ_ERR_SUCCESS)
-   {
-      OAC_THROW_EXCEPTION(mosquitto_internal_error(
-            "starting internal loop",
-            make_error_code(error)));
-   }
+   if (_loop_thread.get_id() != std::thread::id())
+      _loop_thread.join();
 }
 
 void

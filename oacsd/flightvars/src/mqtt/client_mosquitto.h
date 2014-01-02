@@ -20,6 +20,7 @@
 #define OAC_FV_CLIENT_MOSQUITTO_H
 
 #include <string>
+#include <thread>
 
 #include <liboac/exception.h>
 #include <liboac/logging.h>
@@ -91,6 +92,7 @@ private:
    std::uint16_t _server_port;
 
    async_result_channel _async_result_chan;
+   std::thread _loop_thread;
 
    static void connect_callback_dispatcher(
          mosquitto* mosq,
@@ -129,6 +131,8 @@ private:
    void init();
 
    void connect(int keepalive = DEFAULT_KEEP_ALIVE);
+
+   void wait_for_connect();
 
    void set_callbacks();
 
