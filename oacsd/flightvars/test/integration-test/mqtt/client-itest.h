@@ -63,6 +63,8 @@ struct let_test
 
    let_test& connect_probe()
    {
+      // mosquitto fails to create a new client so fast, let's sleep
+      sleep(100);
       _probe.reset(new mqtt::mosquitto_client());
       return *this;
    }
