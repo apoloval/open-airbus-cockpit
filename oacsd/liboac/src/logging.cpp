@@ -18,6 +18,9 @@
 
 #include <cstdio>
 #include <ctime>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
 #include <liboac/logging.h>
 
@@ -41,13 +44,18 @@ logger::level_str(log_level level)
 std::string
 logger::get_time()
 {
-   auto t = time(nullptr);
-   char time_buf[26];
-   struct tm lt;
-   localtime_s(&lt, &t);
-   asctime_s(time_buf, &lt);
-   time_buf[24] = '\0';
-   return time_buf;
+   std::stringstream ss;
+   auto now = std::chrono::high_resolution_clock::now();
+   auto now_c = std::chrono::high_resolution_clock::to_time_t(now);
+   auto now_m = std::chrono::duration_cast<std::chrono::milliseconds>(
+      now.time_since_epoch());
+   struct tm local_now;
+   localtime_s(&local_now, &now_c);
+
+   ss << std::put_time(&local_now, "%Y-%m-%dT%H:%M:%S");
+   ss << "." << std::setfill('0') << std::setw(3) <<  now_m.count() % 1000;
+
+   return ss.str();
 }
 
 void
