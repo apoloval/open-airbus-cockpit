@@ -22,6 +22,6 @@
 namespace oac { namespace fv { namespace fsuipc {
 
 const std::string
-FSUIPC_OFFSETS_TOPIC_PREFIX { "/flightvars/fsuipc/offset" };
+FSUIPC_OFFSETS_TOPIC_PREFIX { "flightvars/fsuipc/offset" };
 
 }}}
