@@ -172,19 +172,19 @@ private:
       {
          case oac::fsuipc::OFFSET_LEN_BYTE:
          {
-            byte_message msg { 0, static_cast<std::uint8_t>(o.value) };
+            byte_message msg { 0, 0, static_cast<std::uint8_t>(o.value) };
             mqtt().publish_as<byte_message>(topic_for(o), msg);
             break;
          }
          case oac::fsuipc::OFFSET_LEN_WORD:
          {
-            word_message msg { 0, static_cast<std::uint16_t>(o.value) };
+            word_message msg { 0, 0, static_cast<std::uint16_t>(o.value) };
             mqtt().publish_as<word_message>(topic_for(o), msg);
             break;
          }
          case oac::fsuipc::OFFSET_LEN_DWORD:
          {
-            dword_message msg { 0, o.value };
+            dword_message msg { 0, 0, o.value };
             mqtt().publish_as<dword_message>(topic_for(o), msg);
             break;
          }
