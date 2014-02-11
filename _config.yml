@@ -134,6 +134,7 @@ JB :
       - { title: "What's OAC?", url: "/index.html" }
       - { title: "Contact", url: "/contact.html" }
       - { title: "News", url: "/news.html", matcher: "/news/" }
+      - { title: "Construction", url: "/construction.html", matcher: "/construction/" }
       - { title: "Software", url: "/software.html" }
       - { title: "Hardware", url: "/hardware.html", matcher: "/hardware/" }
       - { title: "Archive", url: "/archive.html" }
