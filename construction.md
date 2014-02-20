@@ -12,6 +12,6 @@ Before anything else, the cockpit needs a framework to support the rest of eleme
 In order to work with parts of a size we can easily handle, the structure is divided in the following sections that are assembled together after they are made. 
 
 * [Pedestal](/construction/pedestal.html)
-* Central deck
+* [Main deck](/construction/maindeck.html)
 * Sidestick pedestal
 * Glareshield
