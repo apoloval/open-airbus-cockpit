@@ -1,6 +1,8 @@
 #ifndef OAC_OACSP_H
 #define OAC_OACSP_H
 
+#include "Arduino.h"
+
 #define OACSP_PROTOCOL_VERSION 0x01
 
 namespace oac {
@@ -31,6 +33,42 @@ public:
     Serial.print('\n');
   }
 
+  void writeOffset(unsigned int offset, byte value) {
+    writeOffset(offset, "UB", value);
+  }
+
+  void writeOffset(unsigned int offset, char value) {
+    writeOffset(offset, "SB", value);
+  }
+
+  void writeOffset(unsigned int offset, unsigned int value) {
+    writeOffset(offset, "UW", value);
+  }
+
+  void writeOffset(unsigned int offset, int value) {
+    writeOffset(offset, "SW", value);
+  }
+
+  void writeOffset(unsigned int offset, unsigned long value) {
+    writeOffset(offset, "UD", value);
+  }
+
+  void writeOffset(unsigned int offset, long value) {
+    writeOffset(offset, "SD", value);
+  }
+
+private:
+
+  template <typename T>
+  int writeOffset(unsigned int offset, const char* len, T value) {
+    Serial.print("WRITE_OFFSET ");
+    Serial.print(offset, HEX);
+    Serial.print(":");
+    Serial.print(len);
+    Serial.print(" ");
+    Serial.print(value, DEC);
+    Serial.print('\n');
+  }
 };
 
 }

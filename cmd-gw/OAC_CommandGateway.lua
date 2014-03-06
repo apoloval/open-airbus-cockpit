@@ -11,12 +11,42 @@
 
 -- Process a WRITE_LVAR command from the device
 --
+--   handle -> The serial port handle
 --   lvar -> The LVAR to be written
 --   value -> The value to be written to the LVAR
-local function ProcessWriteLVar(lvar, value)
-	ipc.log(string.format("  --- > Writting on %s value %s", lvar, value))
+local function ProcessWriteLVar(handle, lvar, value)
+	ipc.log(string.format("WRITE LVAR '%s' with value %s", lvar, value))
 	ipc.writeLvar(lvar, tonumber(value, 10))
 end
+
+-- Process a WRITE_OFFSET command from the device.
+--
+--   handle -> The serial port handle
+--   offset -> The OFFSET to be read
+--   len -> The length of the offset (SB, UB, SW, UW, SD, UD)
+--   value -> The value to be written to the offset
+local function ProcessWriteOffset(handle, offset, len, value)
+	ipc.log(string.format(
+		"WRITE OFFSET 0x%s:%s with value %s", offset, len, value))
+	if len == "SB" then
+		ipc.writeSB(offset, tonumber(value, 10))
+	elseif len == "UB" then
+		ipc.writeUB(offset, tonumber(value, 10))
+	elseif len == "SW" then
+		ipc.writeSW(offset, tonumber(value, 10))
+	elseif len == "UW" then
+		ipc.writeUW(offset, tonumber(value, 10))
+	elseif len == "SD" then
+		ipc.writeSD(offset, tonumber(value, 10))
+	elseif len == "UD" then
+		ipc.writeUD(offset, tonumber(value, 10))
+	else
+		ipc.log(string.format(
+			"Protocol violation: invalid offset length %s", len))
+		ipc.log("Closing connection to remote device")
+		com.close(handle)
+	end
+end	
 
 -- Read the begin line from the device.
 --
@@ -46,14 +76,23 @@ end
 --   data -> The data read (as a string)
 --   len -> The length of the data read
 function OnDataReceived(handle, data, len)
-	ipc.log(string.format("Received %d bytes: %s", len, data))
+	if len > 0 then
+		local cmd, lvar, val = 
+			string.match(data, "(WRITE_LVAR) ([%a%d_]+) (%d+)")
+		if cmd then
+			ProcessWriteLVar(handle, lvar, val)
+			return
+		end
 
-	local cmd, lvar, val = string.match(data, "(WRITE_LVAR) ([%a%d_]+) (%d+)")
-	if cmd then
-		ProcessWriteLVar(lvar, val)
-	else
+		local cmd, offset, len, val = 
+			string.match(data, "(WRITE_OFFSET) (%x+):(%a+) (%d+)")
+		if cmd then
+			ProcessWriteOffset(handle, offset, len, val)
+			return
+		end
+
 		ipc.log(
-			string.format("Cannot find a suitable command in line: %s", data));
+			string.format("Cannot find a suitable command in line: %s", data))
 	end
 end
 
