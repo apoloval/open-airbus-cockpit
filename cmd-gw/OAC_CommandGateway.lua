@@ -18,6 +18,25 @@ local function ProcessWriteLVar(lvar, value)
 	ipc.writeLvar(lvar, tonumber(value, 10))
 end
 
+-- Read the begin line from the device.
+--
+--   handle -> The serial port handle.
+--   return -> A (number, string) tuple indicating the protocol version 
+--             and the client name, respectively. 
+local function ReadBeginLine(handle)
+	local line, len
+	repeat
+		line, len = com.read(handle, 64, -1, 10) -- 10 == '\n'
+	until len ~= 0
+	local ver, client = string.match(line, "BEGIN (%d+) ([%a%d_ ]+)")
+	if client ~= nil then
+		return ver, client
+	else
+		ipc.log(string.format("Error while processing begin line: %s", line))
+		return nil, nil
+	end
+end
+
 -- Callback function for data reception from serial port. 
 --
 -- It processes the incoming data in order to match a known OACSP command.
@@ -48,9 +67,16 @@ end
 local function OpenConnection(port)
 	local handle = com.open(port, 9600, 0)
 	if handle ~= 0 then
-		event.com(handle, 1024, -1, 10, "OnDataReceived")
-	else
-		ipc.log(string.format("Cannot open connection to serial port %s", port))
+		local ver, client = ReadBeginLine(handle)
+		if client ~= nil then 
+			ipc.log(string.format(
+				"Opening connection on port %s: '%s' with protocol version %d", 
+				port, client, ver))
+			event.com(handle, 1024, -1, 10, "OnDataReceived")
+		else
+			ipc.log(string.format("Connection closed to %s", port))
+			com.close(handle)
+		end
 	end
 end
 
