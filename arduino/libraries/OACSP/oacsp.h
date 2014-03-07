@@ -4,8 +4,24 @@
 #include "Arduino.h"
 
 #define OACSP_PROTOCOL_VERSION 0x01
+#define OACSP_BUFFER_LEN 256
 
 namespace oac {
+
+enum EventType {
+  LVAR_UPDATE
+};
+
+struct LVarUpdateEvent {
+  EventType type;
+  char name[64];
+  long value;
+};
+
+union Event {
+  EventType type;
+  LVarUpdateEvent lvar;
+};
 
 class SerialProtocol {
 public:
@@ -57,6 +73,25 @@ public:
     writeOffset(offset, "SD", value);
   }
 
+  void observeLVar(const char* lvar) {
+    Serial.print("OBS_LVAR ");
+    Serial.print(lvar);
+    Serial.print('\n');
+  }
+
+  bool readEvent(Event& e) {
+    char buf[OACSP_BUFFER_LEN];
+    int nread = Serial.readBytesUntil('\n', buf, OACSP_BUFFER_LEN - 1);
+    if (nread) {
+      buf[nread] = '\0';
+      String line((const char*) buf);
+      if (line.startsWith("EVENT_LVAR")) {
+        return readLVarEvent(line, e);
+      }
+    }
+    return false;
+  }
+
 private:
 
   template <typename T>
@@ -68,6 +103,20 @@ private:
     Serial.print(" ");
     Serial.print(value, DEC);
     Serial.print('\n');
+  }
+
+  bool readLVarEvent(String& line, Event& e) {
+    line.replace("EVENT_LVAR", "");
+    line.trim();
+    int sep = line.indexOf(' ');
+    if (sep == -1)
+      return false;
+    String lvar = line.substring(0, sep);
+    String value = line.substring(sep + 1, line.length());
+    e.type = LVAR_UPDATE;
+    lvar.toCharArray(e.lvar.name, 64);
+    e.lvar.value = value.toInt();
+    return true;
   }
 };
 

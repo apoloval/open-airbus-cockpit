@@ -9,6 +9,10 @@
 -- For further information on OAC Command Gateway functionaly, please check
 -- out http://github.com/apoloval/open-airbus-cockpit/
 
+
+-- A table to store the observers of each LVAR
+local LVarObs = {}
+
 -- Process a WRITE_LVAR command from the device
 --
 --   handle -> The serial port handle
@@ -48,6 +52,21 @@ local function ProcessWriteOffset(handle, offset, len, value)
 	end
 end	
 
+-- Process a OBS_LVAR command from the device
+--
+--   handle -> The serial port handle
+--   lvar -> The LVAR to observe
+local function ProcessObserveLVar(handle, lvar)
+	ipc.log(string.format("OBS LVAR '%s'", lvar))
+	local observers = LVarObs[lvar]
+	if observers == nil then
+		observers = {}
+	end
+	table.insert(observers, handle)
+	LVarObs[lvar] = observers
+	event.Lvar(lvar, 100, "OnLVarModified")
+end
+
 -- Read the begin line from the device.
 --
 --   handle -> The serial port handle.
@@ -64,6 +83,23 @@ local function ReadBeginLine(handle)
 	else
 		ipc.log(string.format("Error while processing begin line: %s", line))
 		return nil, nil
+	end
+end
+
+-- Callback function for LVAR modified event.
+--
+--   lvar -> The LVAR that was modified
+--   value -> The new value of the LVAR
+function OnLVarModified(lvar, value)
+	local observers = LVarObs[lvar]
+	if observers ~= nil then
+		ipc.log(string.format("EVENT LVAR '%s' with value %d", lvar, value))
+		for i, obs in ipairs(observers) do
+			com.write(obs, string.format("EVENT_LVAR %s %d\n", lvar, value))
+		end		
+	else
+		ipc.log(string.format(
+			"LVAR '%s' modified, but no handle found as observer", lvar))
 	end
 end
 
@@ -88,6 +124,13 @@ function OnDataReceived(handle, data, len)
 			string.match(data, "(WRITE_OFFSET) (%x+):(%a+) (%d+)")
 		if cmd then
 			ProcessWriteOffset(handle, offset, len, val)
+			return
+		end
+
+		local cmd, lvar = 
+			string.match(data, "(OBS_LVAR) ([%a%d_]+)")
+		if cmd then
+			ProcessObserveLVar(handle, lvar)
 			return
 		end
 
