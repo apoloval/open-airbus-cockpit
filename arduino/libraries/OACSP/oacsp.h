@@ -5,22 +5,42 @@
 
 #define OACSP_PROTOCOL_VERSION 0x01
 #define OACSP_BUFFER_LEN 256
+#define OACSP_MAX_NAME_LEN 64
 
 namespace oac {
 
+enum OffsetLength {
+  OFFSET_UINT8,
+  OFFSET_SINT8,
+  OFFSET_UINT16,
+  OFFSET_SINT16,
+  OFFSET_UINT32,
+  OFFSET_SINT32,
+};
+
+const char* OffsetLengthCode[]  = { "UB", "SB", "UW", "SW", "UD", "SD" };
+
 enum EventType {
-  LVAR_UPDATE
+  LVAR_UPDATE,
+  OFFSET_UPDATE,
 };
 
 struct LVarUpdateEvent {
   EventType type;
-  char name[64];
+  char name[OACSP_MAX_NAME_LEN];
+  long value;
+};
+
+struct OffsetUpdateEvent {
+  EventType type;
+  word address;
   long value;
 };
 
 union Event {
   EventType type;
   LVarUpdateEvent lvar;
+  OffsetUpdateEvent offset;
 };
 
 class SerialProtocol {
@@ -49,33 +69,52 @@ public:
     Serial.print('\n');
   }
 
-  void writeOffset(unsigned int offset, byte value) {
-    writeOffset(offset, "UB", value);
+  void writeOffset(word offset, unsigned char value) {
+    writeOffset(offset, OFFSET_UINT8, value);
   }
 
-  void writeOffset(unsigned int offset, char value) {
-    writeOffset(offset, "SB", value);
+  void writeOffset(word offset, char value) {
+    writeOffset(offset, OFFSET_SINT8, value);
   }
 
-  void writeOffset(unsigned int offset, unsigned int value) {
-    writeOffset(offset, "UW", value);
+  void writeOffset(word offset, unsigned int value) {
+    writeOffset(offset, OFFSET_UINT16, value);
   }
 
-  void writeOffset(unsigned int offset, int value) {
-    writeOffset(offset, "SW", value);
+  void writeOffset(word offset, int value) {
+    writeOffset(offset, OFFSET_SINT16, value);
   }
 
-  void writeOffset(unsigned int offset, unsigned long value) {
-    writeOffset(offset, "UD", value);
+  void writeOffset(word offset, unsigned long value) {
+    writeOffset(offset, OFFSET_UINT32, value);
   }
 
-  void writeOffset(unsigned int offset, long value) {
-    writeOffset(offset, "SD", value);
+  void writeOffset(word offset, long value) {
+    writeOffset(offset, OFFSET_SINT32, value);
+  }
+
+  template <typename T>
+  void writeOffset(word offset, OffsetLength len, T value) {
+    Serial.print("WRITE_OFFSET ");
+    Serial.print(offset, HEX);
+    Serial.print(":");
+    Serial.print(OffsetLengthCode[len]);
+    Serial.print(" ");
+    Serial.print(value, DEC);
+    Serial.print('\n');
   }
 
   void observeLVar(const char* lvar) {
     Serial.print("OBS_LVAR ");
     Serial.print(lvar);
+    Serial.print('\n');
+  }
+
+  void observeOffset(word offset, OffsetLength len) {
+    Serial.print("OBS_OFFSET ");
+    Serial.print(offset, HEX);
+    Serial.print(":");
+    Serial.print(OffsetLengthCode[len]);
     Serial.print('\n');
   }
 
@@ -87,6 +126,8 @@ public:
       String line((const char*) buf);
       if (line.startsWith("EVENT_LVAR")) {
         return readLVarEvent(line, e);
+      } else if (line.startsWith("EVENT_OFFSET")) {
+        return readOffsetEvent(line, e);
       }
     }
     return false;
@@ -94,28 +135,36 @@ public:
 
 private:
 
-  template <typename T>
-  int writeOffset(unsigned int offset, const char* len, T value) {
-    Serial.print("WRITE_OFFSET ");
-    Serial.print(offset, HEX);
-    Serial.print(":");
-    Serial.print(len);
-    Serial.print(" ");
-    Serial.print(value, DEC);
-    Serial.print('\n');
-  }
-
   bool readLVarEvent(String& line, Event& e) {
     line.replace("EVENT_LVAR", "");
     line.trim();
-    int sep = line.indexOf(' ');
-    if (sep == -1)
+    String lvar, value;
+    if (!parseTuple2(line, lvar, value))
       return false;
-    String lvar = line.substring(0, sep);
-    String value = line.substring(sep + 1, line.length());
     e.type = LVAR_UPDATE;
     lvar.toCharArray(e.lvar.name, 64);
     e.lvar.value = value.toInt();
+    return true;
+  }
+
+  bool readOffsetEvent(String& line, Event& e) {
+    line.replace("EVENT_OFFSET", "");
+    line.trim();
+    String offset, value;
+    if (!parseTuple2(line, offset, value))
+      return false;
+    e.type = OFFSET_UPDATE;
+    e.offset.address = offset.toInt();
+    e.offset.value = value.toInt();
+    return true;
+  }
+
+  bool parseTuple2(const String& line, String& tk1, String& tk2) {
+    int sep = line.indexOf(' ');
+    if (sep == -1)
+      return false;
+    tk1 = line.substring(0, sep);
+    tk2 = line.substring(sep + 1, line.length());
     return true;
   }
 };
