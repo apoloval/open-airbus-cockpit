@@ -154,7 +154,7 @@ private:
     if (!parseTuple2(line, offset, value))
       return false;
     e.type = OFFSET_UPDATE;
-    e.offset.address = offset.toInt();
+    e.offset.address = hexToLong(offset);
     e.offset.value = value.toInt();
     return true;
   }
@@ -166,6 +166,12 @@ private:
     tk1 = line.substring(0, sep);
     tk2 = line.substring(sep + 1, line.length());
     return true;
+  }
+
+  word hexToLong(const String& hex) {
+    char buf[9];
+    hex.toCharArray(buf, 8);
+    return strtol(buf, 0, 16);
   }
 };
 
