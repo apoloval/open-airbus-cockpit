@@ -1,3 +1,12 @@
+/*
+ * Open Airbus Cockpit - Arduino Button library
+ * Copyright (c) 2014 Alvaro Polo
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef OAC_BUTTON_H
 #define OAC_BUTTON_H
 
@@ -11,29 +20,29 @@
 typedef void (*NullaryCallback)();
 typedef void (*UnaryCallback)(int state);
 
-template <int OnState = DEFAULT_ON_STATE, 
+template <int OnState = DEFAULT_ON_STATE,
           long Debounce = DEFAULT_DEBOUNCE>
 class Button {
 public:
 
-  Button(int pin) : 
-      _pin(pin), 
-      _state(-1), 
-      _timeMark(0), 
-      _onPressed(0), 
+  Button(int pin) :
+      _pin(pin),
+      _state(-1),
+      _timeMark(0),
+      _onPressed(0),
       _onReleased(0),
       _onToggled(0) {
     pinMode(pin, INPUT);
   }
 
   int state() const { return _state; }
-  
+
   void setOnPressed(NullaryCallback onPressed) { _onPressed = onPressed; }
 
   void setOnReleased(NullaryCallback onReleased) { _onReleased = onReleased; }
 
   void setOnToggled(UnaryCallback onToggled) { _onToggled = onToggled; }
-  
+
   int check() {
     int prevState = _state;
     int newState = digitalRead(_pin);
@@ -49,7 +58,7 @@ public:
     }
     return _state;
   }
-  
+
 private:
 
   int _pin;
@@ -60,7 +69,7 @@ private:
   UnaryCallback _onToggled;
 };
 
-template <int NumPos, 
+template <int NumPos,
           int OnState = DEFAULT_ON_STATE,
           long Debounce = DEFAULT_DEBOUNCE>
 class RotarySwitch
@@ -69,7 +78,7 @@ public:
 
   typedef RotarySwitch<NumPos - 1, OnState, Debounce> ParentClass;
 
-  RotarySwitch(int fromPin) : 
+  RotarySwitch(int fromPin) :
       _parent(fromPin),
       _pos(-1),
       _btn(fromPin + NumPos - 1) {
@@ -99,7 +108,7 @@ template <int OnState,
           long Debounce>
 class RotarySwitch<0, OnState, Debounce> {
 public:
-  
+
   RotarySwitch(int fromPin) {}
 
   void setOnSelect(UnaryCallback onSelect) {}

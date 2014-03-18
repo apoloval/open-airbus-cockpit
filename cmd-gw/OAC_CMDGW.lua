@@ -1,13 +1,19 @@
--- Module: OAC Command Gateway
--- Author: Alvaro Polo
+--
+-- Open Airbus Cockpit - Command Gateway
+-- Copyright (c) 2014 Alvaro Polo
+--
+-- This Source Code Form is subject to the terms of the Mozilla Public
+-- License, v. 2.0. If a copy of the MPL was not distributed with this
+-- file, You can obtain one at http://mozilla.org/MPL/2.0/.
 --
 -- This module implements a command gateway functionality for Open Airbus
 -- Cockpit devices. Essentially, it opens connections to serial ports
 -- where OAC devices are found. Commands are read from these ports in order
--- to grant access to the devices to the internal state of the simulation. 
+-- to grant access to the devices to the internal state of the simulation.
 --
 -- For further information on OAC Command Gateway functionaly, please check
--- out http://github.com/apoloval/open-airbus-cockpit/
+-- out http://github.com/apoloval/open-airbus-cockpit/tree/master/cmd-gw
+--
 
 
 -- A table to store the observers of each event
@@ -29,17 +35,17 @@ end
 -- Execute the given function for each observer of given event
 --
 --   event -> The event whose handlers will be passed to func
---   func -> A function(handle) to be invoked for each handle observing 
+--   func -> A function(handle) to be invoked for each handle observing
 --           the event
 function EventObservers:foreach(event, func)
     local observers = self[event]
     if observers ~= nil then
         for i, obs in ipairs(observers) do
             func(obs)
-        end        
+        end
     else
         ipc.log(string.format("no handle found for event %s", event))
-    end    
+    end
 end
 
 
@@ -81,7 +87,7 @@ local function ProcessWriteOffset(handle, offset, len, value)
         ipc.log("Closing connection to remote device")
         com.close(handle)
     end
-end    
+end
 
 -- Process a OBS_LVAR command from the device
 --
@@ -107,8 +113,8 @@ end
 -- Read the begin line from the device.
 --
 --   handle -> The serial port handle.
---   return -> A (number, string) tuple indicating the protocol version 
---             and the client name, respectively. 
+--   return -> A (number, string) tuple indicating the protocol version
+--             and the client name, respectively.
 local function ReadBeginLine(handle)
     local line, len
     repeat
@@ -130,7 +136,7 @@ end
 function OnLVarModified(lvar, value)
     local cmd = string.format("EVENT_LVAR %s %d", lvar, value)
     ipc.log(cmd)
-    EventObservers:foreach(lvar, 
+    EventObservers:foreach(lvar,
         function (handle)
             com.write(handle, string.format("%s\n", cmd))
         end
@@ -145,45 +151,45 @@ end
 function OnOffsetModified(offset, value)
     local cmd = string.format("EVENT_OFFSET %x %d", offset, value)
     ipc.log(cmd)
-    EventObservers:foreach(offset, 
+    EventObservers:foreach(offset,
         function (handle)
             com.write(handle, string.format("%s\n", cmd))
         end
     )
 end
 
--- Callback function for data reception from serial port. 
+-- Callback function for data reception from serial port.
 --
 -- It processes the incoming data in order to match a known OACSP command.
--- If match, the corresponding treatment function is invoked. 
+-- If match, the corresponding treatment function is invoked.
 --
 --   handle -> The serial port handle
 --   data -> The data read (as a string)
 --   len -> The length of the data read
 function OnDataReceived(handle, data, len)
     if len > 0 then
-        local cmd, lvar, val = 
+        local cmd, lvar, val =
             string.match(data, "(WRITE_LVAR) ([%a%d_]+) (%d+)")
         if cmd then
             ProcessWriteLVar(handle, lvar, val)
             return
         end
 
-        local cmd, offset, len, val = 
+        local cmd, offset, len, val =
             string.match(data, "(WRITE_OFFSET) (%x+):(%a+) (%d+)")
         if cmd then
             ProcessWriteOffset(handle, offset, len, val)
             return
         end
 
-        local cmd, lvar = 
+        local cmd, lvar =
             string.match(data, "(OBS_LVAR) ([%a%d_]+)")
         if cmd then
             ProcessObserveLVar(handle, lvar)
             return
         end
 
-        local cmd, offset, len = 
+        local cmd, offset, len =
             string.match(data, "(OBS_OFFSET) (%x+):(%a+)")
         if cmd then
             ProcessObserveOffset(handle, offset, len)
@@ -196,19 +202,19 @@ function OnDataReceived(handle, data, len)
 end
 
 -- Open a new connection to given serial port.
--- 
+--
 -- This function tries to open a new connection to the given serial port.
 -- If success, the resulting port handle is configured with OnDataReceived
--- callback to process any input data. 
+-- callback to process any input data.
 --
 --   port -> The serial port to open a new connection (e.g., COM1, COM3...)
 local function OpenConnection(port)
     local handle = com.open(port, 9600, 0)
     if handle ~= 0 then
         local ver, client = ReadBeginLine(handle)
-        if client ~= nil then 
+        if client ~= nil then
             ipc.log(string.format(
-                "Opening connection on port %s: '%s' with protocol version %d", 
+                "Opening connection on port %s: '%s' with protocol version %d",
                 port, client, ver))
             event.com(handle, 1024, -1, 10, "OnDataReceived")
         else
@@ -218,11 +224,11 @@ local function OpenConnection(port)
     end
 end
 
--- Try to connect any device attached to any serial port. 
+-- Try to connect any device attached to any serial port.
 --
 -- This function tries to connect all the devices that might be connected
 -- to any serial port. It does so by brote force, trying to connect to ports
--- from COM3 to COM32 using the OpenConnection() function. 
+-- from COM3 to COM32 using the OpenConnection() function.
 local function ConnectDevices()
     for i=3,32 do
         local port = string.format("COM%d", i)

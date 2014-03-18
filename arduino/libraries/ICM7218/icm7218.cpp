@@ -1,19 +1,10 @@
 /*
- * This file is part of Open Airbus Cockpit
- * Copyright (C) 2012 Alvaro Polo
+ * Open Airbus Cockpit - Arduino ICM7218 library
+ * Copyright (c) 2012-2014 Alvaro Polo
  *
- * Open Airbus Cockpit is free software: you can redistribute it and/or 
- * modify it under the terms of the GNU General Public License as published 
- * by the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- * 
- * Open Airbus Cockpit is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- * 
- * You should have received a copy of the GNU General Public License
- * along with Open Airbus Cockpit.  If not, see <http://www.gnu.org/licenses/>.
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
 #include "icm7218.h"
@@ -53,7 +44,7 @@ ICM7218::setWritePin(int pin)
 {
    _writePin = pin;
    pinMode(_writePin, OUTPUT);
-  
+
    // WRITE must remain high from now on
    digitalWrite(_writePin, HIGH);
 }
@@ -89,20 +80,20 @@ ICM7218::displaySingleDigit(unsigned int  digit, unsigned int  digitValue)
    digitalWrite(_idPin[2], B0100 & (digit - 1));
    digitalWrite(_idPin[3], B1000 & (digit - 1));
    sendWrite();
-  
+
    digitalWrite(_modePin, LOW);
    digitalWrite(_idPin[0], B0001 & digitValue);
    digitalWrite(_idPin[1], B0010 & digitValue);
    digitalWrite(_idPin[2], B0100 & digitValue);
    digitalWrite(_idPin[3], B1000 & digitValue);
-   sendWrite();  
+   sendWrite();
 }
 
 void
 ICM7218::displayDigits(byte digits[8])
 {
    sendFullDataComing();
-  
+
    digitalWrite(_modePin, LOW);
    for (int i = 0; i < 8; i++)
    {
@@ -111,7 +102,7 @@ ICM7218::displayDigits(byte digits[8])
       digitalWrite(_idPin[2], B0100 & digits[i]);
       digitalWrite(_idPin[3], B1000 & digits[i]);
       digitalWrite(_idPin[7], HIGH);
-      sendWrite();  
+      sendWrite();
    }
 }
 
@@ -188,9 +179,9 @@ ICM7218::DisplayGroup::loadNumber(
       unsigned long number, bool isPositive, bool loadSign)
 {
    byte digits[8];
-   
+
    byte values[8];
-   byte signDigit = 0;   
+   byte signDigit = 0;
    for (int i = 0; i < 8; i++)
    {
       values[i] = number % 10;
@@ -198,7 +189,7 @@ ICM7218::DisplayGroup::loadNumber(
       if (_displays[i] < 8 && signDigit < _displays[i])
          signDigit = _displays[i];
    }
-   
+
    for (int i = 0; i < 8; i++)
    {
       if (loadSign && _displays[i] == signDigit)

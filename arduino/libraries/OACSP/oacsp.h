@@ -1,3 +1,12 @@
+/*
+ * Open Airbus Cockpit - Arduino OACSP library
+ * Copyright (c) 2014 Alvaro Polo
+ *
+ * This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ */
+
 #ifndef OAC_OACSP_H
 #define OAC_OACSP_H
 
@@ -56,11 +65,11 @@ public:
     Serial.print(clientName);
     Serial.print('\n');
   }
-  
+
   void end() {
     Serial.print("END\n");
   }
-  
+
   void writeLVar(const char* lvar, int value) {
     Serial.print("WRITE_LVAR ");
     Serial.print(lvar);
