@@ -7,42 +7,25 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#include <button.h>
+#include <oacbtn.h>
+#include <oacexp.h>
+#include <oacio.h>
 #include <oacsp.h>
+#include <oacshift.h>
 
-struct Engine {
-  Button<LOW> masterOneSw;
-  Button<LOW> masterTwoSw;
-  RotarySwitch<3, LOW> modeSel;
+#define DEVICE_NAME "PedestalMaster"
 
-  Engine() :
-    masterOneSw(2),
-    masterTwoSw(3),
-    modeSel(4) {}
-
-  static void onMasterOneToggle(int isOn) {
-    OACSP.writeLVar("AB_PDS_Eng1Master", isOn);
-  }
-
-  static void onMasterTwoToggle(int isOn) {
-    OACSP.writeLVar("AB_PDS_Eng2Master", isOn);
-  }
-
-  static void onModeSelected(int pos) {
-    OACSP.writeLVar("AB_PDS_ignition", pos);
-  }
-
-} engine;
+#include "ecam.h"
+#include "engine.h"
 
 void setup() {
-  OACSP.begin("PedestalMaster");
-  engine.masterOneSw.setOnToggled(engine.onMasterOneToggle);
-  engine.masterTwoSw.setOnToggled(engine.onMasterTwoToggle);
-  engine.modeSel.setOnSelect(engine.onModeSelected);
+  OACSP.begin(DEVICE_NAME);
+  ecam.setup();
+  engine.setup();
 }
 
 void loop() {
-  engine.masterOneSw.check();
-  engine.masterTwoSw.check();
-  engine.modeSel.check();
+  OACSP.pollEvent();
+  ecam.loop();
+  engine.loop();
 }

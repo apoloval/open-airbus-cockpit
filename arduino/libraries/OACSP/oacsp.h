@@ -16,7 +16,7 @@
 #define OACSP_BUFFER_LEN 256
 #define OACSP_MAX_NAME_LEN 64
 
-namespace oac {
+namespace OAC {
 
 enum OffsetLength {
   OFFSET_UINT8,
@@ -30,6 +30,7 @@ enum OffsetLength {
 const char* OffsetLengthCode[]  = { "UB", "SB", "UW", "SW", "UD", "SD" };
 
 enum EventType {
+  NO_EVENT,
   LVAR_UPDATE,
   OFFSET_UPDATE,
 };
@@ -55,9 +56,12 @@ union Event {
 class SerialProtocol {
 public:
 
-  SerialProtocol() {}
+  SerialProtocol() {
+    polledEvent.type = NO_EVENT;
+  }
 
   void begin(const char* clientName, int baudRate = 9600) {
+    Serial.setTimeout(50);
     Serial.begin(baudRate);
     Serial.print("BEGIN ");
     Serial.print(OACSP_PROTOCOL_VERSION, HEX);
@@ -70,12 +74,17 @@ public:
     Serial.print("END\n");
   }
 
-  void writeLVar(const char* lvar, int value) {
+  template <typename T> 
+  void writeLVarAs(const char* lvar, T value) {
     Serial.print("WRITE_LVAR ");
     Serial.print(lvar);
     Serial.print(" ");
     Serial.print(value, DEC);
     Serial.print('\n');
+  }
+
+  void writeLVar(const char* lvar, int value) {
+    writeLVarAs<int>(lvar, value);
   }
 
   void writeOffset(word offset, unsigned char value) {
@@ -127,45 +136,62 @@ public:
     Serial.print('\n');
   }
 
-  bool readEvent(Event& e) {
+  Event* pollEvent() {
     char buf[OACSP_BUFFER_LEN];
     int nread = Serial.readBytesUntil('\n', buf, OACSP_BUFFER_LEN - 1);
     if (nread) {
       buf[nread] = '\0';
       String line((const char*) buf);
       if (line.startsWith("EVENT_LVAR")) {
-        return readLVarEvent(line, e);
+        return pollLVarEvent(line);
       } else if (line.startsWith("EVENT_OFFSET")) {
-        return readOffsetEvent(line, e);
+        return pollOffsetEvent(line);
       }
     }
-    return false;
+    polledEvent.type = NO_EVENT;
+    return NULL;
+  }
+
+  Event* event() {
+    return (polledEvent.type != NO_EVENT) ? &polledEvent : NULL;
+  }
+
+  LVarUpdateEvent* lvarUpdateEvent(const char* lvar) {
+    return (
+      (polledEvent.type == LVAR_UPDATE) && 
+      strcmp(polledEvent.lvar.name, lvar) == 0) ? &(polledEvent.lvar) : NULL;
+  }
+
+  OffsetUpdateEvent* offsetUpdateEvent(word address) {
+    return (
+      (polledEvent.type == OFFSET_UPDATE) && 
+      (polledEvent.offset.address == address)) ? &(polledEvent.offset) : NULL;
   }
 
 private:
 
-  bool readLVarEvent(String& line, Event& e) {
+  Event* pollLVarEvent(String& line) {
     line.replace("EVENT_LVAR", "");
     line.trim();
     String lvar, value;
     if (!parseTuple2(line, lvar, value))
-      return false;
-    e.type = LVAR_UPDATE;
-    lvar.toCharArray(e.lvar.name, 64);
-    e.lvar.value = value.toInt();
-    return true;
+      return NULL;
+    polledEvent.type = LVAR_UPDATE;
+    lvar.toCharArray(polledEvent.lvar.name, 64);
+    polledEvent.lvar.value = value.toInt();
+    return &polledEvent;
   }
 
-  bool readOffsetEvent(String& line, Event& e) {
+  Event* pollOffsetEvent(String& line) {
     line.replace("EVENT_OFFSET", "");
     line.trim();
     String offset, value;
     if (!parseTuple2(line, offset, value))
-      return false;
-    e.type = OFFSET_UPDATE;
-    e.offset.address = hexToLong(offset);
-    e.offset.value = value.toInt();
-    return true;
+      return NULL;
+    polledEvent.type = OFFSET_UPDATE;
+    polledEvent.offset.address = hexToLong(offset);
+    polledEvent.offset.value = value.toInt();
+    return &polledEvent;
   }
 
   bool parseTuple2(const String& line, String& tk1, String& tk2) {
@@ -182,10 +208,12 @@ private:
     hex.toCharArray(buf, 8);
     return strtol(buf, 0, 16);
   }
+
+  Event polledEvent;
 };
 
 }
 
-oac::SerialProtocol OACSP;
+OAC::SerialProtocol OACSP;
 
 #endif

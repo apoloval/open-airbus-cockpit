@@ -7,15 +7,17 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-#ifndef OAC_BUTTON_H
-#define OAC_BUTTON_H
+#ifndef OACBTN_H
+#define OACBTN_H
 
-#include "Arduino.h"
+#include <Arduino.h>
 
 #define ON 1
 #define OFF 0
 #define DEFAULT_ON_STATE HIGH
 #define DEFAULT_DEBOUNCE 200
+
+namespace OAC {
 
 typedef void (*NullaryCallback)();
 typedef void (*UnaryCallback)(int state);
@@ -115,5 +117,7 @@ public:
 
   int check() { return -1; }
 };
+
+} // namespace OAC
 
 #endif

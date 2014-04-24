@@ -123,31 +123,27 @@ be read as follows.
 
 ```c++
 void loop() {
-	oac::Event event;
-	if (OACSP.readEvent(event)) {
-		switch (event.type) {
-			case oac::OFFSET_UPDATE:
-				if (event.offset.address == 0x0330) {
-					showQnh(event.offset.value);
-				}
-				break;
-		}
+	OACSP.pollEvent();
+	if (OAC::OffsetUpdateEvent* ev = OACSP.offsetUpdateEvent(0x0330)) {
+		showQnh(event->value);
 	}
 }
 ```
 
-In this example, the `loop()` function will retrieve an event from OACSP. If
-there is no event awaiting, the call to `OACSP.readEvent()` will return _false_.
-If there is an event, it returns _true_ and the `event` passed as argument
-is filled with the information processed by OACSP. Then, `event.type` indicates
-what kind of event has been received. In case of `oac::OFFSET_UPDATE` we
-know that's a change on an OFFSET. We may look at `event.offset.address` to
-know what's the offset that was changed. In case that's _0x0330_, we know
-the QNH has changed in the simulator. Then we invoke a function `showQnh()`
-that would show the new QNH value, stored in `event.offset.value`, to a 
-7-segment display array. Please note that this `showQnh()` function is not
-provided by OACSP but implemented by yourself. It's just an example of what
-we could do by observing offsets. 
+In this example, the `loop()` function will retrieve an event from OACSP using 
+`OACSP.pollEvent()`. This function makes `OACSP` memoize the incoming event
+(if any) so it can be manipulated latter. A subsequent call to 
+`OACSP.offsetUpdateEvent()` returns the event if it matches certain conditions.
+The first one is that the previous call to `OACSP.pollEvent()` actually
+retrieved an event (i.e., there was one event awaiting). The second condition
+is that the polled event is a offset update event for offset 0x0330. If both
+conditions met, a pointer to the event is returned. Otherwise, a NULL value
+is returned. The _if_ statement will evaluate to true if the returned event
+is not NULL, and then the update to offset 0x0330 will be processed by invoking 
+the function `showQnh()` that would show the new QNH value, stored in 
+`event.offset.value`, to a 7-segment display array. Please note that this 
+`showQnh()` function is not provided by OACSP but implemented by yourself. 
+It's just an example of what we could do by observing offsets. 
 
 ### Observe LVARs
 
@@ -167,29 +163,19 @@ observe. Then, after that LVAR is modified, a new event will arrive.
 
 ```c++
 void loop() {
-	oac::Event event;
-	if (OACSP.readEvent(event)) {
-		switch (event.type) {
-			case oac::OFFSET_UPDATE:
-				if (event.offset.address == 0x0330) {
-					showQnh(event.offset.value);
-				}
-				break;
-			case oac::LVAR_UPDATE:
-				if (strcmp(event.lvar.name, "AB_MPL_FD") == 0) {
-					digitalWrite(FD_LED, event.lvar.value);
-				}
-				break;
-		}
+	OACSP.pollEvent();
+	if (OAC::OffsetUpdateEvent* ev = OACSP.offsetUpdateEvent(0x0330)) {
+		showQnh(event->value);
+	} else if (OAC::LVarUpdateEvent* ev = OACSP.lvarUpdateEvent("AB_MPL_FD")) {
+		digitalWrite(FD_LED, event->value);
 	}
 }
 
 ```
 
-In this case, we add a new _case_ branch for `oac::LVAR_UPDATE`, which is
-the value of `event.type` that indicate the event represents a LVAR update. 
-Then, we can retrieve the name of the LVAR that was modified from 
-`event.lvar.name`, and the new value of the LVAR from `event.lvar.value`. In
-this example, we write in the digital output pin `FD_LED` the status of the
-FD obtained from the Command Gateway. 
-
+In this case, we add a new _else if_ branch that evaluates the result of
+`OACSP.lvarUpdateEvent()`. The mechanism is similar to the one used for
+FSUIPC offsets. The LVAR name is passed as argument. If the polled event
+corresponds to a LVAR update event for that LVAR name, the function returns
+a pointer to the event. Then, in this example we write in the digital output 
+pin `FD_LED` the status of the FD obtained from the Command Gateway. 
