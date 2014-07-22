@@ -55,9 +55,9 @@ end
 --   handle -> The serial port handle
 --   lvar -> The LVAR to be written
 --   value -> The value to be written to the LVAR
-local function ProcessWriteLVar(handle, lvar, value)
-    ipc.log(string.format("WRITE_LVAR '%s' with value %s", lvar, value))
-    ipc.writeLvar(lvar, tonumber(value, 10))
+function ProcessWriteLVar(handle, lvar, value)
+    ipc.log(string.format("WRITE_LVAR '%s' with value %d", lvar, value))
+    ipc.writeLvar(lvar, value)
 end
 
 -- Process a WRITE_OFFSET command from the device.
@@ -66,21 +66,22 @@ end
 --   offset -> The OFFSET to be read
 --   len -> The length of the offset (SB, UB, SW, UW, SD, UD)
 --   value -> The value to be written to the offset
-local function ProcessWriteOffset(handle, offset, len, value)
+function ProcessWriteOffset(handle, offset, len, value)
+    local len = string.upper(len)
     ipc.log(string.format(
-        "WRITE_OFFSET 0x%s:%s with value %s", offset, len, value))
+        "WRITE_OFFSET 0x%x:%s with value %s", offset, len, value))
     if len == "SB" then
-        ipc.writeSB(offset, tonumber(value, 10))
+        ipc.writeSB(offset, value)
     elseif len == "UB" then
-        ipc.writeUB(offset, tonumber(value, 10))
+        ipc.writeUB(offset, value)
     elseif len == "SW" then
-        ipc.writeSW(offset, tonumber(value, 10))
+        ipc.writeSW(offset, value)
     elseif len == "UW" then
-        ipc.writeUW(offset, tonumber(value, 10))
+        ipc.writeUW(offset, value)
     elseif len == "SD" then
-        ipc.writeSD(offset, tonumber(value, 10))
+        ipc.writeSD(offset, value)
     elseif len == "UD" then
-        ipc.writeUD(offset, tonumber(value, 10))
+        ipc.writeUD(offset, value)
     else
         ipc.log(string.format(
             "Protocol violation: invalid offset length %s", len))
@@ -105,8 +106,8 @@ end
 --   lvar -> The offset to observe
 --   len -> The length of the offset (SB, UB, SW, UW, SD, UD)
 local function ProcessObserveOffset(handle, offset, len)
-    ipc.log(string.format("OBS_OFFSET %s:%s", offset, len))
-    EventObservers:insert(tonumber(offset, 16), handle)
+    ipc.log(string.format("OBS_OFFSET %x:%s", offset, len))
+    EventObservers:insert(offset, handle)
     event.offset(offset, len, "OnOffsetModified")
 end
 
@@ -114,8 +115,9 @@ end
 --
 --   handle -> The serial port handle.
 --   return -> A (number, string) tuple indicating the protocol version
---             and the client name, respectively.
-local function ReadBeginLine(handle)
+--             and the client name, respectively, or nil if begin line read
+--             fails or contains invalid data. 
+function ReadBeginLine(handle)
     local line, len
     repeat
         line, len = com.read(handle, 64, -1, 10) -- 10 == '\n'
@@ -127,6 +129,55 @@ local function ReadBeginLine(handle)
         ipc.log(string.format("Error while processing begin line: %s", line))
         return nil, nil
     end
+end
+
+function ParseCommand(data)
+    if data == nil or string.len(data) == 0 then
+        ipc.log("cannot parse command: null or empty data")
+    end
+    local cmd, lvar, val =
+        string.match(data, "(WRITE_LVAR) ([%a%d_]+) (-?%d+)")
+    if cmd then
+        return {
+            action = cmd,
+            lvar = lvar,
+            value = tonumber(val)
+        }
+    end
+
+    local cmd, offset, len, val =
+        string.match(data, "(WRITE_OFFSET) (%x+):(%a+) (-?%d+)")
+    if cmd then
+        return {
+            action = cmd,
+            offset = tonumber(offset, 16),
+            length = len,
+            value = tonumber(val)
+        }
+    end
+
+    local cmd, lvar =
+        string.match(data, "(OBS_LVAR) ([%a%d_]+)")
+    if cmd then
+        return {
+            action = cmd,
+            lvar = lvar
+        }
+    end
+
+    local cmd, offset, len =
+        string.match(data, "(OBS_OFFSET) (%x+):(%a+)")
+    if cmd then
+        return {
+            action = cmd,
+            offset = tonumber(offset, 16),
+            length = len
+        }
+    end
+
+    ipc.log(
+        string.format("Cannot find a suitable command in line: %s", data))
+    return nil
 end
 
 -- Callback function for LVAR modified event.
@@ -168,36 +219,25 @@ end
 --   len -> The length of the data read
 function OnDataReceived(handle, data, len)
     if len > 0 then
-        local cmd, lvar, val =
-            string.match(data, "(WRITE_LVAR) ([%a%d_]+) (%d+)")
-        if cmd then
-            ProcessWriteLVar(handle, lvar, val)
-            return
+        local cmd = ParseCommand(data)
+
+        if cmd == nil then
+            ipc.log(string.format(
+                "Cannot find a suitable command in line: %s", data))
         end
 
-        local cmd, offset, len, val =
-            string.match(data, "(WRITE_OFFSET) (%x+):(%a+) (%d+)")
-        if cmd then
-            ProcessWriteOffset(handle, offset, len, val)
-            return
+        if cmd.action == "WRITE_LVAR" then
+            ProcessWriteLVar(handle, cmd.lvar, cmd.value)
+        elseif cmd.action == "WRITE_OFFSET" then
+            ProcessWriteOffset(handle, cmd.offset, cmd.length, cmd.value)
+        elseif cmd.action == "OBS_LVAR" then
+            ProcessObserveLVar(handle, cmd.lvar)
+        elseif cmd.action == "OBS_OFFSET" then
+            ProcessObserveOffset(handle, cmd.offset, cmd.length)
+        else
+            ipc.log(string.format(
+                "Unknow parsed command action %s", cmd.action))
         end
-
-        local cmd, lvar =
-            string.match(data, "(OBS_LVAR) ([%a%d_]+)")
-        if cmd then
-            ProcessObserveLVar(handle, lvar)
-            return
-        end
-
-        local cmd, offset, len =
-            string.match(data, "(OBS_OFFSET) (%x+):(%a+)")
-        if cmd then
-            ProcessObserveOffset(handle, offset, len)
-            return
-        end
-
-        ipc.log(
-            string.format("Cannot find a suitable command in line: %s", data))
     end
 end
 
@@ -236,5 +276,7 @@ local function ConnectDevices()
     end
 end
 
--- The entry point of OAC Command Gateway: connect to devices
-ConnectDevices()
+if CommandGatewayIsTesting ~= true then
+    -- The entry point of OAC Command Gateway: connect to devices
+    ConnectDevices()
+end
