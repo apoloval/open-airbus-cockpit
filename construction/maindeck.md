@@ -2,7 +2,7 @@
 layout: page
 title: Main Deck Construction
 group: navigation
-permalink: maindeck.html
+permalink: construction/maindeck.html
 section:
   - { title: "Construction", url: "/maindeck.html" }
 ---

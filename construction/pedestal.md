@@ -2,7 +2,7 @@
 layout: page
 title: Pedestal Construction
 group: navigation
-permalink: pedestal.html
+permalink: construction/pedestal.html
 section:
   - { title: "Construction", url: "/construction.html" }
 ---
