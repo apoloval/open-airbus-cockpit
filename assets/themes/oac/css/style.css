@@ -1,13 +1,17 @@
 
+a {
+  text-decoration: none;
+}
+
 body {
   background-color: #e6e6e6;
-  color: #4c4c4c;
-  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  color: #333;
+  font-family: 'HelveticaNeue-Light','Helvetica Neue Light', Helvetica, Arial, sans-serif;
   font-size: 15px;
   font-style: normal;
   font-variant: normal;
   font-weight: 300;
-  line-height: 24px;
+  line-height: 20px;
 }
 
 footer {
@@ -30,6 +34,12 @@ hr {
   border-bottom:1px solid #ffffff;
 }
 
+pre > code {
+    white-space: pre;
+    margin-top: -20px;
+    display: block;
+}
+
 #brand {
   color: white;
   font-family: 'Helvetica Neue', Helvetica;
@@ -50,14 +60,37 @@ hr {
 }
 
 #content h1 {
-    color: #697a81;
+    border-bottom: solid 1px #777;
+    color: #777;
+    font-weight: 200;
+    font-size: 24px;
+    padding: 5px;
     text-align: left;
 }
 
 #content h2 {
-    color: #697a81;
+    color: #777;
     font-weight: 300;
     text-align: left;
+}
+
+#content h3 {
+    color: #777;
+    font-weight: 200;
+    text-align: left;
+}
+
+#markdown-toc {
+  background-color: #f0f0f0;
+  border: solid 1px #bbb;
+  border-radius: 3px;
+  box-shadow: 5px 5px 15px #bbb;
+  float: right;  
+  font-size: 14px;  
+  line-height: 20px;
+  list-style: none;
+  margin: 0 0 20px 30px;
+  padding: 10px;
 }
 
 #navbar {
@@ -98,7 +131,6 @@ hr {
 #navbar li a {
   color: #777;
   padding: 0.5em;
-  text-decoration: none;
 }
 
 #page {
@@ -110,10 +142,8 @@ hr {
 }
 
 #page-header {
-  background: -moz-linear-gradient(bottom, #697a81 32%, #719a9b 66%);
-  background: -webkit-linear-gradient(bottom, #697a81 32%, #719a9b 66%);
-  background: linear-gradient(bottom, #697a81 32%, #719a9b 66%);
-  border-bottom: 1px solid #aaa;
+  background-image: url(http://jekyllthemes.org/assets/img/darkdenim3.png);
+  border-bottom: 1px solid black;
   height: 40px;
   padding: 0.5em 1em;
   width: 100% - 1em;
@@ -124,11 +154,14 @@ hr {
   position: relative;
 }
 
-.button {
-}
-
-a.button {
-  text-decoration: none;
+.code {
+  background-color: #f5f9f6;
+  border: solid 1px #ccc;
+  border-radius: 3px;
+  color: #555;
+  font-size: 14px;
+  line-height: 20px;
+  padding: 0px 15px;
 }
 
 .date {
@@ -138,6 +171,15 @@ a.button {
 .inline {
   display: inline;
   list-style-type: none;
+}
+
+.image-right {
+  float: right; 
+  margin: 15px 0 5px 20px;
+}
+
+img.image-framed {
+  box-shadow: 0px 0px 8px #111;
 }
 
 .pagination ul li {
