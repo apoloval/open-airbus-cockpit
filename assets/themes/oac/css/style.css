@@ -18,8 +18,9 @@ footer {
   background-color: white;
   border-top: 1px solid #fff;
   clear: both;
+  color: #aaa;
   height: 40px;
-  font-size: 12px;
+  font-size: 10px;
   margin-left: 151px;
   padding: 0 1em;
   text-align: right;
@@ -262,4 +263,12 @@ img.image-framed {
 
 .title {
   border-top: 1px solid #eee;
+}
+
+.warning {
+  background-color: #ffa;  
+  border: solid 1px #aa8;
+  border-radius: 3px;
+  color: #885;
+  padding: 10px;
 }
