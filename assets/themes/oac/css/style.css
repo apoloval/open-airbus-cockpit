@@ -5,9 +5,9 @@ a {
 
 body {
   background-color: #e6e6e6;
-  color: #333;
-  font-family: 'HelveticaNeue-Light','Helvetica Neue Light', Helvetica, Arial, sans-serif;
-  font-size: 15px;
+  color: #456;
+  font-family: 'Ek Mukta', sans-serif;
+  font-size: 16px;
   font-style: normal;
   font-variant: normal;
   font-weight: 300;
@@ -37,17 +37,21 @@ hr {
 
 pre > code {
     white-space: pre;
+    font-family: 'Source Code Pro';
     margin-top: -20px;
     display: block;
 }
 
 #brand {
+  bottom: 30px;
+  right: 20px;
   color: white;
-  font-family: 'Helvetica Neue', Helvetica;
-  font-size: 32px;
-  font-weight: 100;
-  line-height: 100%;
+  font-family: 'Roboto', sans-serif;
+  font-size: 36px;
+  font-weight: 200;
+  position: absolute;
   text-decoration: none;
+  text-shadow: 1px 1px 1px black;
 }
 
 #content {
@@ -64,7 +68,7 @@ pre > code {
     border-bottom: solid 1px #777;
     color: #777;
     font-weight: 200;
-    font-size: 24px;
+    font-size: 28px;
     padding: 5px;
     text-align: left;
 }
@@ -143,10 +147,10 @@ pre > code {
 }
 
 #page-header {
-  background-image: url(http://jekyllthemes.org/assets/img/darkdenim3.png);
+  background-image: url('http://s3-eu-west-1.amazonaws.com/open-airbus-cockpit/website/assets/img/banner.jpg');
   border-bottom: 1px solid black;
-  height: 40px;
-  padding: 0.5em 1em;
+  height: 120px;
+  position: relative;
   width: 100% - 1em;
 }
 
@@ -156,6 +160,7 @@ pre > code {
 }
 
 .code {
+  vertical-align: text-bottom;
   background-color: #f5f9f6;
   border: solid 1px #ccc;
   border-radius: 3px;
