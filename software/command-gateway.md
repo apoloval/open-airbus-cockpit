@@ -56,11 +56,11 @@ reading data but in being notified when such data change. This technique
 allows your hardware to save computing resources by reducing the number of
 interactions with the simulator. 
 
-After all serial ports are scanned for compliant devices, they are able to
-send one of the command messages described above. In addition, Command Gateway
-will send messages to report changes in the FSUIPC offsets or LVARs only when 
-they are produced. This process continues until the script is terminated or
-killed. 
+After all serial ports are scanned in search for compliant devices, they are
+able to send one of the command messages described above. In addition, Command
+Gateway will send messages to report changes in the FSUIPC offsets or LVARs
+only when  they are produced. This process continues until the script is
+killed or the simulator closes.
 
 ## Installation
 
@@ -73,10 +73,9 @@ simulator. You can obtain it from the
 * The Command Gateway script. You may find it in 
 [GitHub repository](https://raw.githubusercontent.com/apoloval/open-airbus-cockpit/master/cmd-gw/OAC_CMDGW.lua).
 
-<div class="warning">
-Important note! FSUIPC scripting is only available for registered version of 
-FSUIPC. You have to adquire a license for Command Gateway to work.
-</div>
+<div class="warning"> Important note! FSUIPC scripting is only available for
+registered versions. You have to adquire a FSUIPC license in order to Command
+Gateway to work. </div>
 
 As mentioned above, the file OAC_CMDGW.lua contains the Command Gateway script 
 aimed to be run in FSUIPC Lua scripting engine. To do so, just copy the file 
@@ -103,10 +102,10 @@ This will make the script to be run when FSUIPC is loaded.
 
 ### Run on Keystroke
 
-This is the recommented method. Instead of run the script on simulator startup, 
-the script will start when a keystroke is pressed. If there was any running 
-instance of the script, it will be killed and replaced by a new instance. This 
-allow the user to reset the script if a strange behavior occurs.
+This is the recommented method. Instead of running the script on simulator
+startup,  the script will start when a keystroke is pressed. If there was any
+running  instance of the script, it will be killed and replaced by a new
+instance. This  allow the user to reset the script if a strange behavior occurs.
 
 To configure a keystroke to run the script go to the FSUIPC config window by 
 selecting the _Add-ons > FSUIPC_ option in the top bar. Then the tab 
@@ -117,9 +116,8 @@ will be launched each time you press the key stroke you have chosen.
 
 ## Troubleshooting
 
-Sometimes things go wrong. If you experiment issues or problems with Command 
-Gateway, it would be better off checking out its log file to have more 
-details.
+Sometimes things go wrong. If you experiment issues with Command Gateway, it
+would be better off checking out its log file to have more  details.
 
 It is highly recommended to configure FSUIPC to log the Lua scripts in 
 separate files. To do so, go to the _Logging_ tab in FSUIPC configuration
