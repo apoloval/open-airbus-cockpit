@@ -33,7 +33,7 @@ In this section you will find relevant information that will help you to make
 all the hardware to have a complete A320 cockpit. 
 
 * [Computers](/hardware/computers.html)
-* External view
+* [External view](/hardware/external-view.html)
 * Controllers
   * Making replicas
   * Sticks
