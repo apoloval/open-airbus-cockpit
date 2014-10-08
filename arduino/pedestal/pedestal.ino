@@ -10,6 +10,7 @@
 #include <oacbtn.h>
 #include <oacexp.h>
 #include <oacio.h>
+#include <oackb.h>
 #include <oacsp.h>
 #include <oacshift.h>
 
@@ -17,15 +18,18 @@
 
 #include "ecam.h"
 #include "engine.h"
+#include "mcdu.h"
 
 void setup() {
   OACSP.begin(DEVICE_NAME);
   ecam.setup();
   engine.setup();
+  mcdu.setup();
 }
 
 void loop() {
   OACSP.pollEvent();
   ecam.loop();
   engine.loop();
+  mcdu.loop();
 }
