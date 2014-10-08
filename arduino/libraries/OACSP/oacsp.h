@@ -63,6 +63,7 @@ public:
   void begin(const char* clientName, int baudRate = 9600) {
     Serial.setTimeout(50);
     Serial.begin(baudRate);
+    while (!Serial) {} // Wait for port to be open in Leonardo and Due
     Serial.print("BEGIN ");
     Serial.print(OACSP_PROTOCOL_VERSION, HEX);
     Serial.print(" ");
