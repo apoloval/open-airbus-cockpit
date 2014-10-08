@@ -14,6 +14,38 @@
 
 namespace OAC {
 
+/** 
+ * A keypad controlled by OAC Keypad expansion cards. 
+ * 
+ * Objects of this class manage an array of Open Airbus Cockpit Keypad 
+ * Expansion Cards. Each expansion card comprises two MM74C922 controllers,
+ * each one handling 16 keys. These controllers are connected in a common
+ * 4-bits data bus with independent control lines. Each card have up-link
+ * connectors for data bus and power line, which makes possible to chain
+ * several cards sharing the same data bus. The control line comprises two
+ * connections: DAV (Data Available), which is HIGH when the controller
+ * wants to send data, and OE (Output Enabled), which is LOW when the
+ * Arduino board authorizes the controller to use the bus. 
+ * 
+ * The complexity of the array this array of expansion cards is hidden by
+ * this class. The user code only have to deal with the following primitives.
+ * 
+ * <ul>
+ *   <li>Bus configuration. Using configBus() function, the user indicates what
+ *       pins correspond to the shared data bus.
+ *   <li>Controller configuration. For each connected controller, the user
+ *       indicates what pins correspond to the DAV and the OE signals using
+ *       the configController() function. 
+ *    <li>Read key. Using readKey() function, the user code can interrogate
+ *        what's the currenty pressed key.
+ *    <li>Read key type. Using readKeyType() function, the user code can
+ *        interrogate what's the last key type (key pressed and then released).
+ * </ul>
+ *
+ * Important note: the keys are numbered in consecutive ranges respect the
+ * index of its controller. I.e., CONTROLLER_0 keys goes from 0 to 15, 
+ * CONTROLLER_1 goes from 16 to 31, and so. 
+ */
 class Keypad {
 public:
 
@@ -123,6 +155,10 @@ public:
       return -1;
    }
 
+   /**
+    * Read a key type. A key type means a key is pressed and then released. 
+    * It returns the typed key, or -1 if no type is detected. 
+    */
    short readKeyType() {
       short key = readKey();
       short result = (key < 0 && lastKey >= 0) ? lastKey : -1;
