@@ -18,25 +18,38 @@ class ExpansionCard {
 
 public:
 
-   ExpansionCard() : lastInput(0) {}
+   ExpansionCard() : prevInput(0), currentInput(0) {}
 
+   /** Set the pins to be used by this expansion card. */
    void setPins(int i0, int i1, int i2, int o0, int o1, int o2) {
       input.setPins(i0, i1, i2);
       output.setPins(o0, o1, o2);
    }
 
+   /** 
+    * Read the input from the shift in register.
+    * 
+    * This reads one byte from the shift-in register, store that byte 
+    * internally and returns it.
+    */
    byte readInput() {
       input.parallelIn();
-      lastInput = input.shiftByteIn();
-      return lastInput;
+      prevInput = currentInput;
+      currentInput = input.shiftByteIn();
+      return currentInput;
    }
 
-   byte readActive() {      
-      byte prevInput = lastInput;
-      readInput();
-      return (lastInput ^ prevInput) & lastInput;
+   /** The input lines that have been activated in last read. */
+   byte inputActivated() {
+      return (prevInput ^ currentInput) & currentInput;
    }
 
+   /** The input lines that have been deactivated in last read. */
+   byte inputDeactivated() {
+      return (prevInput ^ currentInput) & prevInput;
+   }
+
+   /** Write the given byte to the shift-out register. */
    void writeOutput(byte out) {
       output.shiftByteOut(out);
    }
@@ -46,7 +59,8 @@ private:
    Shift4021 input;
    Shift595 output;
 
-   byte lastInput;
+   byte prevInput;
+   byte currentInput;
 };
 
 } // namespace OAC

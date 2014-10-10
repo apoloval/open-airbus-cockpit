@@ -68,63 +68,19 @@ struct {
     processOutputs();
   }
   
-  inline void processInputs() {
-    // First check what buttons have been actived
-    word active = card0.readActive() | (word(card1.readActive()) << 8);
-    switch (active) {
-      case ECAM_ENG_BTN: 
-        OACSP.writeLVar("ECAM_MODE", 1); break;
-      case ECAM_BLEED_BTN:
-        OACSP.writeLVar("ECAM_MODE", 2); break;
-      case ECAM_PRESS_BTN:
-        OACSP.writeLVar("ECAM_MODE", 3); break;
-      case ECAM_ELEC_BTN:
-        OACSP.writeLVar("ECAM_MODE", 4); break;
-      case ECAM_HYD_BTN:
-        OACSP.writeLVar("ECAM_MODE", 5); break;
-      case ECAM_FUEL_BTN:
-        OACSP.writeLVar("ECAM_MODE", 6); break;
-      case ECAM_APU_BTN:
-        OACSP.writeLVar("ECAM_MODE", 7); break;
-      case ECAM_COND_BTN:
-        OACSP.writeLVar("ECAM_MODE", 8); break;
-      case ECAM_DOOR_BTN:
-        OACSP.writeLVar("ECAM_MODE", 9); break;
-      case ECAM_WHEEL_BTN:
-        OACSP.writeLVar("ECAM_MODE", 10); break;
-      case ECAM_FCTL_BTN:
-        OACSP.writeLVar("ECAM_MODE", 11); break;
-      case ECAM_CLR_BTN:
-        OACSP.writeLVar("AB_ECAM_CLR", 1); break;
-      case ECAM_STS_BTN:
-        break; // not implemented
-      case ECAM_RCL_BTN:
-        OACSP.writeLVar("AB_ECAM_RCL", 1); break;
-    }
+  void processInputs() {
+    card0.readInput();
+    card1.readInput();
+
+    // First check what buttons have been activated
+    word activated = card0.inputActivated() | 
+      (word(card1.inputActivated()) << 8);
+    sendButtonState(activated, 1);
     
-    // Now check what buttons are pressed
-    word prevButtons = buttons;
-    buttons = card0.readInput() | (word(card1.readInput()) << 8);
-    switch (buttons) {
-      case 0:
-        if (prevButtons & ECAM_TOCFG_BTN) {
-          OACSP.writeLVar("AB_ECAM_TOCFG", 0); 
-        }
-        if (prevButtons & ECAM_ALL_BTN) {
-          OACSP.writeLVar("AB_ECAM_page12", 0); 
-        }
-        break;
-      case ECAM_TOCFG_BTN:
-        if ((prevButtons & ECAM_TOCFG_BTN) == 0) { 
-          OACSP.writeLVar("AB_ECAM_TOCFG", 1); 
-          OACSP.writeLVar("AB_ECAM_TOconf", 1); 
-        }
-        break;
-      case ECAM_ALL_BTN:
-        OACSP.writeLVar("AB_ECAM_page12", 1); 
-        OACSP.writeLVar("ECAM_MODE", 12); 
-        break;
-    }
+    // Now check what buttons are deactivated
+    word deactivated = card0.inputDeactivated() | 
+      (word(card1.inputDeactivated()) << 8);
+    sendButtonState(deactivated, 0);
     
     // Finally check the bright controls
     if (upperBright.isChanged()) {
@@ -135,7 +91,7 @@ struct {
     }
   }
   
-  inline void processOutputs() {
+  void processOutputs() {
     if (OAC::LVarUpdateEvent* ev = OACSP.lvarUpdateEvent("AB_ECAM_CLR_Light")) {
       lights = ev->value ? (lights | ECAM_CLR_LGT) : (lights & ~ECAM_CLR_LGT);
     } else if (OAC::LVarUpdateEvent* ev = OACSP.lvarUpdateEvent("ECAM_MODE")) {
@@ -150,9 +106,55 @@ struct {
       lights = ev->value == 9 ? (lights | ECAM_DOOR_LGT) : (lights & ~ECAM_DOOR_LGT);
       lights = ev->value == 10 ? (lights | ECAM_WHEEL_LGT) : (lights & ~ECAM_WHEEL_LGT);
       lights = ev->value == 11 ? (lights | ECAM_FCTL_LGT) : (lights & ~ECAM_FCTL_LGT);
+      lights = ev->value == 13 ? (lights | ECAM_STS_LGT) : (lights & ~ECAM_STS_LGT);
     }
     card0.writeOutput(lights);
     card1.writeOutput(lights >> 8);
   }
+
+private:
+
+  void sendButtonState(word button, byte state) {
+    switch (button) {
+      case ECAM_TOCFG_BTN:
+        OACSP.writeLVar("AB_ECAM_TOCFG", state);
+        if (state) {
+          OACSP.writeLVar("AB_ECAM_TOconf", state); 
+        }
+        break;
+      case ECAM_ENG_BTN: 
+        OACSP.writeLVar("AB_ECAM_page01", state); break;
+      case ECAM_BLEED_BTN:
+        OACSP.writeLVar("AB_ECAM_page02", state); break;
+      case ECAM_PRESS_BTN:
+        OACSP.writeLVar("AB_ECAM_page03", state); break;
+      case ECAM_ELEC_BTN:
+        OACSP.writeLVar("AB_ECAM_page04", state); break;
+      case ECAM_HYD_BTN:
+        OACSP.writeLVar("AB_ECAM_page05", state); break;
+      case ECAM_FUEL_BTN:
+        OACSP.writeLVar("AB_ECAM_page06", state); break;
+      case ECAM_APU_BTN:
+        OACSP.writeLVar("AB_ECAM_page07", state); break;
+      case ECAM_COND_BTN:
+        OACSP.writeLVar("AB_ECAM_page08", state); break;
+      case ECAM_DOOR_BTN:
+        OACSP.writeLVar("AB_ECAM_page09", state); break;
+      case ECAM_WHEEL_BTN:
+        OACSP.writeLVar("AB_ECAM_page10", state); break;
+      case ECAM_FCTL_BTN:
+        OACSP.writeLVar("AB_ECAM_page11", state); break;
+      case ECAM_ALL_BTN:
+        OACSP.writeLVar("AB_ECAM_page12", state); break;
+      case ECAM_CLR_BTN:
+        OACSP.writeLVar("AB_ECAM_CLR", state); break;
+      case ECAM_STS_BTN:
+        OACSP.writeLVar("AB_ECAM_page13", state); break;
+      case ECAM_RCL_BTN:
+        OACSP.writeLVar("AB_ECAM_RCL", state); break;
+    }
+
+  }
+
 } ecam;
 
