@@ -1,0 +1,4 @@
+This program would install Open Airbus Cockpit Arduino libraries in your system.
+
+The installation process would copy the libraries into the Arduino folder of your user account. That means these libraries would be available only for this user only. 
+

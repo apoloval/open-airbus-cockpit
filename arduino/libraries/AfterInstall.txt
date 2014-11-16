@@ -1,0 +1,6 @@
+The libraries have been installed in the Arduino folder of your user account. 
+
+Now you can open the Arduino IDE and use the libraries by selecting Sketch > Import Library in the application menu. 
+
+Thank you very much for using the software of Open Airbus Cockpit. 
+
